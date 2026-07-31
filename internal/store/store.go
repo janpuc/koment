@@ -193,6 +193,40 @@ func writeAtomically(path string, content []byte) error {
 	return nil
 }
 
+// FindByID locates one annotation across every record, by its stable id.
+func (s *Store) FindByID(id string) (*Record, int, error) {
+	files, err := s.AnnotatedFiles()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for _, file := range files {
+		record, err := s.Load(file)
+		if err != nil {
+			return nil, 0, err
+		}
+		for i, annotation := range record.Annotations {
+			if annotation.ID == id {
+				return record, i, nil
+			}
+		}
+	}
+	return nil, 0, fmt.Errorf("no annotation with id %s", id)
+}
+
+// Remove deletes a file's record entirely, for when its last annotation moved
+// elsewhere. An empty record file would fail validation on the next load.
+func (s *Store) Remove(file string) error {
+	path, err := s.RecordPath(file)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("removing %s: %w", path, err)
+	}
+	return nil
+}
+
 // AnnotatedFiles lists every source path that has a record, sorted.
 func (s *Store) AnnotatedFiles() ([]string, error) {
 	root := s.annotationsRoot()

@@ -10,7 +10,7 @@ import (
 
 func runShow(args []string, env Environment) int {
 	flags := flagSet("show", env)
-	target, ok := oneFileArgument("show", flags, args, env)
+	target, ok := onePositional("show", "a file", flags, args, env)
 	if !ok {
 		return ExitUsage
 	}

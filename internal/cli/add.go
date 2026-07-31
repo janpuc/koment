@@ -17,7 +17,7 @@ func runAdd(args []string, env Environment) int {
 	excerpt := flags.String("excerpt", "", "verbatim snippet to anchor to; omit to annotate the whole file")
 	kind := flags.String("kind", "", "one of why, gotcha, invariant, anti-pattern")
 	body := flags.String("body", "", "the rationale; - reads it from stdin")
-	target, ok := oneFileArgument("add", flags, args, env)
+	target, ok := onePositional("add", "a file", flags, args, env)
 	if !ok {
 		return ExitUsage
 	}
@@ -100,6 +100,9 @@ func anchorTo(annotation *store.Annotation, annotations *store.Store, file, exce
 
 	if excerpt == "" {
 		annotation.Scope = store.ScopeFile
+		annotation.Excerpt = ""
+		annotation.ExcerptSHA256 = ""
+		annotation.LastSeenLine = 0
 		return nil
 	}
 

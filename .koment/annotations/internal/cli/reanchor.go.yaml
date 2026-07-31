@@ -1,0 +1,28 @@
+version: 1
+file: internal/cli/reanchor.go
+annotations:
+  - id: 01KYW39J5GTD9HB75C35DGWC6S
+    scope: excerpt
+    excerpt: func relocate(annotations *store.Store, from *store.Record, index int, target string, moved store.Annotation) error {
+    excerpt_sha256: f3f7ec2b136c7f7f820d7d8c9dd044c857508ad9e9b1c6dfda6073eb94870ff5
+    last_seen_line: 62
+    kind: why
+    body: |-
+      Re-anchoring keeps the annotation's ULID and its created date on purpose.
+      The annotation is the same annotation; only where it points changed.
+      Deleting and re-adding would be simpler code but would mint a new id and a
+      new date, so the record would claim to be younger than the thinking in it,
+      and would sever it from its own git history. ADR 0012.
+    created: "2026-07-31"
+  - id: 01KYW39J5RCPKYCH1865WPHG82
+    scope: excerpt
+    excerpt: func reanchorTo(annotation *store.Annotation, annotations *store.Store, file, excerpt string) error {
+    excerpt_sha256: 09770bc914f46f141cce245fedbe51ecb59b18f9ab5152fd8517a36dbc2ec87e
+    last_seen_line: 55
+    kind: gotcha
+    body: |-
+      An annotation that only changes file keeps its existing excerpt rather than
+      requiring it to be retyped. This is the renamed-file case, which is the
+      common one: the code did not change, its path did. Passing --excerpt as well
+      is still allowed, for a rename that also edited the annotated lines.
+    created: "2026-07-31"

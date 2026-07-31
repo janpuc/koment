@@ -94,6 +94,7 @@ koment add <file> [--excerpt <text>] --kind <kind> --body <text>
 koment show <file>              # annotations for one file, resolved
 koment check [path...]          # drift gate; non-zero on drifted/orphaned
 koment list [--kind k]          # everything, for review
+koment reanchor <id> [--excerpt <text>] [--file <path>]   # fix drift; keeps the id
 koment mcp                      # MCP server over stdio
 koment mcp --http <addr>              # ... over HTTP, JSON responses
 koment mcp --streamable-http <addr>   # ... over HTTP, SSE responses
@@ -153,11 +154,7 @@ Do not start these until v1 is in real use:
   evaluate re-anchoring against.
 - Editor integration, web UI, annotation suggestion.
 
-- **`koment reanchor <id> --excerpt <text>`.** Not hypothetical: within the
-  first hour of the store existing, a signature change drifted an annotation,
-  and the only way to fix it was hand-editing YAML and computing a SHA-256 by
-  hand. Every drift the tool reports currently ends in that. The deterministic
-  version of this is small and should come before any LLM re-anchoring.
+*(`koment reanchor` was on this list and is now built — ADR 0012.)*
 
 ## Prior art
 

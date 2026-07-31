@@ -23,9 +23,11 @@ const usage = `koment — out-of-band code annotations
   koment show <file>
   koment check [path...]
   koment list [--kind <kind>]
+  koment reanchor <id> [--excerpt <text>] [--file <path>]
   koment mcp
 
-check exits non-zero when an annotation is drifted or orphaned.
+check exits non-zero when an annotation is drifted or orphaned. reanchor is how
+you fix one: it recomputes the hash and the line, and keeps the id.
 `
 
 type Environment struct {
@@ -46,10 +48,11 @@ func Run(args []string, env Environment, serveMCP MCPServer) int {
 
 	command, rest := args[0], args[1:]
 	run, known := map[string]func([]string, Environment) int{
-		"add":   runAdd,
-		"show":  runShow,
-		"check": runCheck,
-		"list":  runList,
+		"add":      runAdd,
+		"show":     runShow,
+		"check":    runCheck,
+		"list":     runList,
+		"reanchor": runReanchor,
 	}[command]
 
 	switch {
@@ -85,25 +88,25 @@ func flagSet(name string, env Environment) *flag.FlagSet {
 	return flags
 }
 
-func oneFileArgument(command string, flags *flag.FlagSet, args []string, env Environment) (string, bool) {
-	file, rest := leadingNonFlag(args)
+func onePositional(command, what string, flags *flag.FlagSet, args []string, env Environment) (string, bool) {
+	value, rest := leadingNonFlag(args)
 	if err := flags.Parse(rest); err != nil {
 		return "", false
 	}
 
 	switch {
-	case file == "":
-		file = flags.Arg(0)
+	case value == "":
+		value = flags.Arg(0)
 	case flags.NArg() > 0:
-		misuse(env, "%s takes one file, also got %s", command, strings.Join(flags.Args(), " "))
+		misuse(env, "%s takes one %s, also got %s", command, what, strings.Join(flags.Args(), " "))
 		return "", false
 	}
 
-	if file == "" {
-		misuse(env, "%s needs a file", command)
+	if value == "" {
+		misuse(env, "%s needs %s", command, what)
 		return "", false
 	}
-	return file, true
+	return value, true
 }
 
 func leadingNonFlag(args []string) (string, []string) {
