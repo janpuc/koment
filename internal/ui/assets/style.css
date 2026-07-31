@@ -79,6 +79,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.snapshot {
+  padding: .55rem 1.25rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--rule);
+  font-size: .76rem;
+  color: var(--ink-soft);
+}
+.snapshot code, .snapshot a { font-family: var(--mono); color: var(--accent); }
+
 .app {
   display: grid;
   grid-template-columns: 16.5rem minmax(0, 1fr);

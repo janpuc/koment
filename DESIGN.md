@@ -130,6 +130,15 @@ Every request re-reads the working tree, so what is rendered is what is on
 disk. A `drifted` annotation is shown as struck-through history and never laid
 over current code.
 
+```
+koment export --out <dir>       # static snapshot, for the demo site only
+```
+
+`export` renders the same templates and the same resolutions to static HTML. It
+exists to publish koment's own demo on every push to `main`, and is deliberately
+not offered as a way to read your own annotations — a snapshot goes stale, which
+is the failure koment exists to prevent. ADR 0014.
+
 Prior art: [konflate](https://github.com/home-operations/konflate), a read-only
 Flux PR review tool with the same shape of thesis. koment takes its
 embed-the-frontend-in-the-binary trick and its status-first visual language, and

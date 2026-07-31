@@ -1,0 +1,108 @@
+# Development
+
+## Build and test
+
+```sh
+go build ./...
+go test ./...
+go vet ./...
+gofmt -l .
+
+go build -o koment ./cmd/koment
+./koment check          # koment's own annotations must resolve
+```
+
+CI runs exactly that. Go version comes from `go.mod`.
+
+## Layout
+
+```
+cmd/koment/          entrypoint, flag parsing only
+internal/cli/        add, show, check, list, reanchor
+internal/store/      read/write .koment/annotations, ULIDs, prose wrapping
+internal/anchor/     resolution and drift status
+internal/listen/     bind address resolution, shared by both servers
+internal/mcp/        MCP server — stdio and HTTP
+internal/ui/         local read-only web view
+docs/decisions/      ADRs
+```
+
+Dependency direction is one-way: `store` depends on nothing internal, `anchor`
+on `store`, everything else on those. `cli` deliberately imports neither `mcp`
+nor `ui` — both are injected into `cli.Run` as function values, which is what
+keeps the MCP SDK out of the CLI's link graph.
+
+## Conventions
+
+Read [AGENTS.md](../AGENTS.md). It applies to humans too; it is addressed to
+agents because that is who mostly writes here.
+
+The short version:
+
+**Comments are a last resort.** Before writing one: rename the thing, extract a
+function whose name is the comment, introduce a named constant, or restructure
+so the invariant is obvious. Only when all four fail has a comment earned its
+place — and then it explains *why*, never *what*. Godoc on exported identifiers
+is API documentation and doesn't count.
+
+**Rationale goes in an ADR or an annotation.** Project-wide reasoning becomes an
+ADR in `docs/decisions/`. Reasoning bound to a place in the code becomes a
+koment annotation. This repository is koment's own first user — see
+[ADR 0010](decisions/0010-dogfood-koment-on-koment.md).
+
+**Every dependency needs an ADR.** Standard library first; a small
+well-understood module over a framework. The graph is currently two direct
+dependencies and the bar for a third is high.
+
+**ADRs are immutable.** Changed your mind? Write a new one that supersedes the
+old, and mark the old one. The history is the product — see
+[ADR 0001](decisions/0001-record-architecture-decisions.md).
+
+**Design before code.** For anything beyond a bugfix, update `DESIGN.md` first
+and get it agreed. Don't open a large diff that also invents the design.
+
+**Fail loudly.** Never swallow an error, never return a partial result that
+looks complete, never serve an annotation without its status. A tool that
+silently serves a stale annotation is worse than one that crashes.
+
+## Tests
+
+Every anchoring rule gets a test with a real before/after file pair —
+`internal/anchor/testdata/` holds them. Drift detection has a test per status.
+
+The servers are tested end-to-end against real clients rather than by calling
+handlers: `internal/mcp` drives the official SDK client over an in-memory
+transport and over HTTP, and `cmd/koment` builds the binary and speaks to it as
+a subprocess over real stdio. That last one exists because the in-memory
+transport never exercises the stdio wiring every agent actually connects
+through.
+
+## Annotating your own changes
+
+```sh
+./koment add <file> --excerpt '<snippet>' --kind gotcha --body -
+./koment check
+```
+
+If a change drifts an existing annotation, fix the anchor rather than deleting
+the annotation:
+
+```sh
+./koment reanchor <id> --excerpt '<new snippet>'
+```
+
+## Commits
+
+Conventional subjects: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`.
+One concern per commit — if reviewing needs a section-by-section walkthrough,
+split it. Stage deliberately; never `git add -A` blindly.
+
+`main` requires a pull request with CI green, signed commits and linear history.
+
+## Where to start reading
+
+`DESIGN.md` for the architecture, then `docs/decisions/` in order. ADRs 0002,
+0003 and 0005 carry the load-bearing decisions: where annotations live, how they
+anchor, and how they reach agents.
+
+Then run `koment ui` and look at the repository through its own tool.

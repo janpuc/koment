@@ -25,6 +25,7 @@ const usage = `koment — out-of-band code annotations
   koment list [--kind <kind>]
   koment reanchor <id> [--excerpt <text>] [--file <path>]
   koment ui [--listen <addr>]
+  koment export --out <dir>
   koment mcp
 
 check exits non-zero when an annotation is drifted or orphaned. reanchor is how
@@ -42,7 +43,7 @@ type Environment struct {
 type Server func(args []string, stderr io.Writer) error
 
 // Run dispatches a subcommand.
-func Run(args []string, env Environment, serveMCP, serveUI Server) int {
+func Run(args []string, env Environment, serveMCP, serveUI, exportUI Server) int {
 	if len(args) == 0 {
 		fmt.Fprint(env.Stderr, usage)
 		return ExitUsage
@@ -67,6 +68,11 @@ func Run(args []string, env Environment, serveMCP, serveUI Server) int {
 		return ExitOK
 	case command == "ui":
 		if err := serveUI(rest, env.Stderr); err != nil {
+			return fail(env, err)
+		}
+		return ExitOK
+	case command == "export":
+		if err := exportUI(rest, env.Stderr); err != nil {
 			return fail(env, err)
 		}
 		return ExitOK
