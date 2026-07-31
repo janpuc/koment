@@ -1,8 +1,7 @@
 # koment — design
 
-Status: **draft, not yet implemented.** Agreed in outline; the next agent
-implements against this document. Change it by proposing a diff, not by
-diverging in code.
+Status: **implemented.** Change it by proposing a diff, not by diverging in
+code; the decisions behind it are in `docs/decisions/`.
 
 ## Problem
 
@@ -130,6 +129,7 @@ Every request re-reads the working tree, so what is rendered is what is on
 disk. A `drifted` annotation is shown as struck-through history and never laid
 over current code.
 
+
 Prior art: [konflate](https://github.com/home-operations/konflate), a read-only
 Flux PR review tool with the same shape of thesis. koment takes its
 embed-the-frontend-in-the-binary trick and its status-first visual language, and
@@ -175,9 +175,10 @@ Do not start these until v1 is in real use:
   when an excerpt drifts. This is the interesting problem and the reason to
   build the deterministic layer first: without it there is no ground truth to
   evaluate re-anchoring against.
-- Editor integration, web UI, annotation suggestion.
+- Editor integration and annotation suggestion.
 
-*(`koment reanchor` was on this list and is now built — ADR 0012.)*
+*(`koment reanchor` and the web UI were on this list and are now built —
+ADR 0012 and ADR 0013.)*
 
 ## Prior art
 

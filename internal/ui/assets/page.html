@@ -4,9 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{if .File}}{{.File.Path}} — {{end}}koment</title>
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="{{.Stylesheet}}">
 </head>
 <body>
+
+{{if .Banner}}<div class="snapshot">{{.Banner}}{{if .BannerHref}} <a href="{{.BannerHref}}">{{.BannerHref}}</a>{{end}}</div>{{end}}
 
 {{if .Empty}}
 <div class="hollow">
@@ -33,7 +35,7 @@
     {{range .Groups}}
       <div class="dir">{{.Dir}}/</div>
       {{range .Files}}
-        <a class="file" href="{{href .Path}}"{{if .Current}} aria-current="page"{{end}}>
+        <a class="file" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>
           <span class="dot {{.Worst}}"></span>
           <span class="name">{{.Name}}</span>
           <span class="count">{{.Count}}</span>

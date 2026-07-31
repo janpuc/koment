@@ -11,13 +11,28 @@ import (
 )
 
 type view struct {
-	Total    int
-	Tally    []tallyEntry
-	Groups   []group
-	Current  string
-	File     *fileView
-	Empty    bool
-	NotFound bool
+	Total      int
+	Tally      []tallyEntry
+	Groups     []group
+	Current    string
+	File       *fileView
+	Empty      bool
+	NotFound   bool
+	Stylesheet string
+	Banner     string
+	BannerHref string
+}
+
+type links struct {
+	file       func(target string) string
+	stylesheet string
+}
+
+func servedLinks() links {
+	return links{
+		file:       func(target string) string { return filePrefix + target },
+		stylesheet: "/assets/style.css",
+	}
 }
 
 type tallyEntry struct {
@@ -33,6 +48,7 @@ type group struct {
 type entry struct {
 	Path    string
 	Name    string
+	Href    string
 	Count   int
 	Worst   anchor.Status
 	Current bool
@@ -74,13 +90,13 @@ var statusOrder = []anchor.Status{
 	anchor.StatusOK, anchor.StatusMoved, anchor.StatusDrifted, anchor.StatusOrphaned,
 }
 
-func build(annotations *store.Store, requested string) (*view, error) {
+func build(annotations *store.Store, requested string, how links) (*view, error) {
 	files, err := annotations.AnnotatedFiles()
 	if err != nil {
 		return nil, err
 	}
 	if len(files) == 0 {
-		return &view{Empty: true}, nil
+		return &view{Empty: true, Stylesheet: how.stylesheet}, nil
 	}
 
 	current := requested
@@ -88,7 +104,7 @@ func build(annotations *store.Store, requested string) (*view, error) {
 		current = files[0]
 	}
 
-	built := &view{Current: current}
+	built := &view{Current: current, Stylesheet: how.stylesheet}
 	counts := map[anchor.Status]int{}
 	byDirectory := map[string][]entry{}
 
@@ -111,6 +127,7 @@ func build(annotations *store.Store, requested string) (*view, error) {
 		byDirectory[directory] = append(byDirectory[directory], entry{
 			Path:    file,
 			Name:    path.Base(file),
+			Href:    how.file(file),
 			Count:   len(resolutions),
 			Worst:   worst,
 			Current: file == current,

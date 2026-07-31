@@ -1,0 +1,116 @@
+# CI and pre-commit
+
+`koment check` exits non-zero when any annotation is `drifted` or `orphaned`.
+That is the whole integration.
+
+## GitHub Actions
+
+```yaml
+name: annotations
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  koment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with: { go-version: stable }
+      - run: go install github.com/janpuc/koment/cmd/koment@latest
+      - run: koment check
+```
+
+Already have a Go job? Add one line rather than a whole workflow:
+
+```yaml
+      - run: go run github.com/janpuc/koment/cmd/koment@latest check
+```
+
+## GitLab CI
+
+```yaml
+annotations:
+  image: golang:alpine
+  script:
+    - go install github.com/janpuc/koment/cmd/koment@latest
+    - koment check
+```
+
+## Pre-commit
+
+Catching drift before it is pushed is kinder than catching it in review.
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: koment
+        name: annotations still resolve
+        entry: koment check
+        language: system
+        pass_filenames: false
+```
+
+`pass_filenames: false` matters: `koment check` takes paths to *narrow* to, and
+handing it the staged file list would silently skip everything else — including
+the annotation you just broke in a file you didn't stage.
+
+Plain git hook, no framework:
+
+```sh
+# .git/hooks/pre-commit
+#!/bin/sh
+exec koment check
+```
+
+## Narrowing
+
+```sh
+koment check internal/ cmd/
+```
+
+Useful in a monorepo where one team owns a subtree. Note the caveat above:
+narrowing means annotations outside those paths are not checked, and an edit
+inside your subtree can perfectly well drift an annotation outside it.
+
+## What a failure looks like
+
+```
+internal/store/ulid.go
+  drifted   gotcha        internal/store/ulid.go  01KYW1ETE3CVB6S0ND70GGZVWM
+    26 Crockford characters carry 130 bits but a ULID holds 128, so the value
+    is left-padded by two. Drop the padding and every character shifts.
+11 annotations across 8 files: 8 ok, 2 moved, 1 drifted
+koment: 1 annotations no longer resolve; revisit them or update the anchor
+```
+
+Failures print to stdout with the annotation body, so whoever reads the CI log
+has the reasoning in front of them and can judge it without checking anything
+out. The summary goes to stdout; the count of failures to stderr.
+
+## Handling a red build
+
+Do not delete the annotation to go green. Read it, then:
+
+```sh
+koment reanchor <id> --excerpt '<the code that replaced it>'
+koment reanchor <id> --file <the new path>
+```
+
+Commit the updated record alongside the change that caused the drift. Reviewers
+then see the code change and the reasoning change together, which is the entire
+argument for keeping annotations in the repository.
+
+## Should drift block a merge?
+
+Yes — that is the design. But it is your build.
+
+If a large refactor produces drift you genuinely intend to resolve later, make
+that visible rather than silent: `continue-on-error: true` on the step keeps the
+signal in the log while unblocking the merge. Turning the check off entirely
+gets you back to comments that rot, with a YAML file.

@@ -95,7 +95,7 @@ func serve(ctx context.Context, annotations *store.Store, listener net.Listener)
 // Handler routes the view. Every request re-reads the working tree, so what is
 // rendered is what is on disk rather than what was on disk at startup.
 func Handler(annotations *store.Store) http.Handler {
-	templates := template.Must(template.New("").Funcs(helpers).ParseFS(assets, "assets/*.html"))
+	templates := template.Must(template.ParseFS(assets, "assets/*.html"))
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /assets/", http.FileServerFS(assets))
@@ -109,7 +109,7 @@ func Handler(annotations *store.Store) http.Handler {
 }
 
 func render(w http.ResponseWriter, templates *template.Template, annotations *store.Store, requested string) {
-	view, err := build(annotations, requested)
+	view, err := build(annotations, requested, servedLinks())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -119,8 +119,4 @@ func render(w http.ResponseWriter, templates *template.Template, annotations *st
 	if err := templates.ExecuteTemplate(w, "page.html", view); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-var helpers = template.FuncMap{
-	"href": func(file string) string { return filePrefix + file },
 }
