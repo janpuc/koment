@@ -114,9 +114,7 @@ MCP tools exposed:
 - `koment_get(file)` — annotations for a path, with resolution status
 - `koment_search(query)` — full-text across bodies
 
-### Proposed: `koment ui`
-
-Not built. Design under review — ADR 0013.
+### `koment ui`
 
 ```
 koment ui [--listen <addr>]     # local read-only web view, loopback default
@@ -124,9 +122,13 @@ koment ui [--listen <addr>]     # local read-only web view, loopback default
 
 Everything above is addressed to machines. `show` prints annotations *beside* a
 file; a person needs them *on* it. `koment ui` is two panels — a file tree
-carrying drift status, and the source with annotation cards anchored at their
-line — rendered from Go templates embedded with `go:embed`, no node toolchain
-and no new dependency.
+carrying drift status, and the source with annotation cards anchored in the
+margin of the line they describe — rendered from Go templates embedded with
+`go:embed`, no node toolchain and no new dependency. ADR 0013.
+
+Every request re-reads the working tree, so what is rendered is what is on
+disk. A `drifted` annotation is shown as struck-through history and never laid
+over current code.
 
 Prior art: [konflate](https://github.com/home-operations/konflate), a read-only
 Flux PR review tool with the same shape of thesis. koment takes its
@@ -140,10 +142,12 @@ laptop. Consistent with the rest of this stack.
 
 ```
 cmd/koment/          entrypoint, flag parsing only
-internal/cli/        the add/show/check/list commands
+internal/cli/        the add/show/check/list/reanchor commands
 internal/store/      read/write .koment/annotations
 internal/anchor/     resolution and drift status
+internal/listen/     bind address resolution, shared by both servers
 internal/mcp/        MCP server
+internal/ui/         local read-only web view
 ```
 
 Standard library wherever possible. Every dependency needs an ADR.

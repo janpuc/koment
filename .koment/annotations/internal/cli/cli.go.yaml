@@ -16,9 +16,9 @@ annotations:
     created: "2026-07-31"
   - id: 01KYW1ETDBHG5PX4SRR8D69J5W
     scope: excerpt
-    excerpt: func Run(args []string, env Environment, serveMCP MCPServer) int {
-    excerpt_sha256: 889fbfd9906d1ce225f8cff40ac436dad34228ff6b11251b07eb20d85f33ebb6
-    last_seen_line: 41
+    excerpt: func Run(args []string, env Environment, serveMCP, serveUI Server) int {
+    excerpt_sha256: 464ac0e778c2745b0c9c37e47febee42e19e927cc08ca63175dfb58a02e4bc99
+    last_seen_line: 45
     kind: why
     body: |-
       serveMCP is injected rather than imported so that package cli never links

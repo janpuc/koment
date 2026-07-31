@@ -93,53 +93,6 @@ func TestJSONResponseModeReturnsJSONContentType(t *testing.T) {
 	}
 }
 
-func TestLoopbackByDefault(t *testing.T) {
-	cases := map[string]string{
-		"8765":            "127.0.0.1:8765",
-		":8765":           "127.0.0.1:8765",
-		"127.0.0.1:8765":  "127.0.0.1:8765",
-		"0.0.0.0:8765":    "0.0.0.0:8765",
-		"localhost:8765":  "localhost:8765",
-		"192.168.1.5:900": "192.168.1.5:900",
-	}
-
-	for address, want := range cases {
-		got, err := loopbackByDefault(address)
-		if err != nil {
-			t.Errorf("loopbackByDefault(%q): %v", address, err)
-			continue
-		}
-		if got != want {
-			t.Errorf("loopbackByDefault(%q) = %q, want %q", address, got, want)
-		}
-	}
-}
-
-func TestLoopbackByDefaultRejectsNonsense(t *testing.T) {
-	for _, address := range []string{"not-a-port", "1:2:3", ""} {
-		if got, err := loopbackByDefault(address); err == nil {
-			t.Errorf("loopbackByDefault(%q) = %q, want an error", address, got)
-		}
-	}
-}
-
-func TestNonLoopbackBindIsWarnedAbout(t *testing.T) {
-	var warning strings.Builder
-	warnIfReachableFromTheNetwork("0.0.0.0:8765", &warning)
-	if !strings.Contains(warning.String(), "WARNING") {
-		t.Errorf("binding to all interfaces must warn, got %q", warning.String())
-	}
-	if !strings.Contains(warning.String(), "no authentication") {
-		t.Errorf("the warning must say why it matters, got %q", warning.String())
-	}
-
-	var quiet strings.Builder
-	warnIfReachableFromTheNetwork("127.0.0.1:8765", &quiet)
-	if quiet.String() != "" {
-		t.Errorf("loopback must not warn, got %q", quiet.String())
-	}
-}
-
 func TestServeRejectsBothTransportsAtOnce(t *testing.T) {
 	var stderr strings.Builder
 	err := Serve([]string{"--http", "8765", "--streamable-http", "8766"}, &stderr)

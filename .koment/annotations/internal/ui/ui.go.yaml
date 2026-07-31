@@ -1,0 +1,17 @@
+version: 1
+file: internal/ui/ui.go
+annotations:
+  - id: 01KYWG17GDDCHE8Q05N8PQ62H2
+    scope: excerpt
+    excerpt: func Handler(annotations *store.Store) http.Handler {
+    excerpt_sha256: f492669e03b96854f636cc0d552fbdbc38aa7fae5b110c6afdf6bf5c433bc61d
+    last_seen_line: 97
+    kind: invariant
+    body: |-
+      Every request rebuilds the whole view from the working tree rather than
+      caching it at startup. This is the point of a local tool: what is on screen
+      is what is on disk, so editing a file and refreshing shows the drift you
+      just caused. Caching would reintroduce exactly the staleness koment exists
+      to detect. The cost is re-reading every annotated file per request, which is
+      milliseconds at repository scale.
+    created: "2026-07-31"

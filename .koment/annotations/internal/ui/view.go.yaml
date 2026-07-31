@@ -1,0 +1,17 @@
+version: 1
+file: internal/ui/view.go
+annotations:
+  - id: 01KYWG17GJZTM91CZ23D8B1RK8
+    scope: excerpt
+    excerpt: func describe(resolution anchor.Resolution) note {
+    excerpt_sha256: 45bb566f0432455983125c993a33bab2054ec5e05d10d52979ff8bb6e76c5d51
+    last_seen_line: 198
+    kind: invariant
+    body: |-
+      A drifted or orphaned annotation is deliberately rendered away from the
+      code: its excerpt is shown struck through and labelled as no longer present,
+      never laid over the current source. Anchoring a stale note to whatever now
+      occupies that line would assert something false, which is worse than showing
+      nothing. ADR 0005 requires this in the MCP payload; this is the same
+      guarantee expressed visually.
+    created: "2026-07-31"

@@ -13,6 +13,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/janpuc/koment/internal/listen"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -76,11 +77,11 @@ func openHere() (*store.Store, error) {
 }
 
 func serveHTTP(ctx context.Context, annotations *store.Store, address string, jsonResponses bool, stderr io.Writer) error {
-	resolved, err := loopbackByDefault(address)
+	resolved, err := listen.Address(address)
 	if err != nil {
 		return err
 	}
-	warnIfReachableFromTheNetwork(resolved, stderr)
+	listen.WarnIfPublic(resolved, stderr)
 
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return newServer(annotations) },
@@ -113,47 +114,4 @@ func annotatedFileCount(annotations *store.Store) int {
 		return 0
 	}
 	return len(files)
-}
-
-// loopbackByDefault fills in a missing host with the loopback interface, so
-// that a bare port never publishes the repository to the local network.
-func loopbackByDefault(address string) (string, error) {
-	if _, _, err := net.SplitHostPort(address); err != nil {
-		if port, portErr := parseBarePort(address); portErr == nil {
-			return net.JoinHostPort("127.0.0.1", port), nil
-		}
-		return "", fmt.Errorf("%q is not a valid address or port: %w", address, err)
-	}
-
-	host, port, _ := net.SplitHostPort(address)
-	if host == "" {
-		return net.JoinHostPort("127.0.0.1", port), nil
-	}
-	return address, nil
-}
-
-func parseBarePort(address string) (string, error) {
-	if address == "" {
-		return "", errors.New("no port given")
-	}
-	if _, err := net.LookupPort("tcp", address); err != nil {
-		return "", err
-	}
-	return address, nil
-}
-
-func warnIfReachableFromTheNetwork(address string, stderr io.Writer) {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return
-	}
-	if parsed := net.ParseIP(host); parsed != nil && parsed.IsLoopback() {
-		return
-	}
-	if host == "localhost" {
-		return
-	}
-	fmt.Fprintf(stderr,
-		"koment: WARNING serving on %s, which is not loopback. There is no authentication; "+
-			"anyone who can reach this port can read every annotation in the repository.\n", address)
 }

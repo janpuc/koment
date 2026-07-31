@@ -51,6 +51,25 @@ koment list --kind gotcha             # everything, filtered
 koment check                          # drift gate; non-zero on drifted/orphaned
 ```
 
+When `check` reports drift, fix it without touching YAML — the id comes straight
+from the output, and the hash and line are recomputed for you:
+
+```sh
+koment reanchor 01KYW1ETE3CVB6S0ND70GGZVWM --excerpt 'func NewID(at time.Time) (string, error) {'
+koment reanchor 01KYW1ETE3CVB6S0ND70GGZVWM --file internal/ulid/ulid.go   # after a rename
+```
+
+## Look at it
+
+```sh
+koment ui          # http://127.0.0.1:<port>, read-only
+```
+
+Two panels: a file tree carrying drift status, and the source with each
+annotation in the margin of the line it describes. Drifted annotations render as
+struck-through history, never over current code. Served from Go templates
+embedded in the binary — no node, no build step (ADR 0013).
+
 ## Wire it into an agent
 
 `.mcp.json` is committed, so an MCP-capable client working in this checkout
@@ -91,8 +110,10 @@ docs/decisions/      ADRs — why it is the way it is
 cmd/koment/          entrypoint, flag parsing only
 internal/store/      read/write .koment/annotations
 internal/anchor/     resolution and drift status
-internal/cli/        add, show, check, list
+internal/cli/        add, show, check, list, reanchor
+internal/listen/     bind address resolution, shared by both servers
 internal/mcp/        MCP server, stdio and HTTP
+internal/ui/         local read-only web view
 ```
 
 ## Prior art

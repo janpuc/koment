@@ -24,6 +24,7 @@ const usage = `koment — out-of-band code annotations
   koment check [path...]
   koment list [--kind <kind>]
   koment reanchor <id> [--excerpt <text>] [--file <path>]
+  koment ui [--listen <addr>]
   koment mcp
 
 check exits non-zero when an annotation is drifted or orphaned. reanchor is how
@@ -36,11 +37,12 @@ type Environment struct {
 	Stderr io.Writer
 }
 
-// MCPServer runs the MCP server, parsing its own transport flags.
-type MCPServer func(args []string, stderr io.Writer) error
+// Server runs a long-lived server, parsing its own flags. They are injected
+// so package cli links neither the MCP SDK nor the UI templates.
+type Server func(args []string, stderr io.Writer) error
 
 // Run dispatches a subcommand.
-func Run(args []string, env Environment, serveMCP MCPServer) int {
+func Run(args []string, env Environment, serveMCP, serveUI Server) int {
 	if len(args) == 0 {
 		fmt.Fprint(env.Stderr, usage)
 		return ExitUsage
@@ -60,6 +62,11 @@ func Run(args []string, env Environment, serveMCP MCPServer) int {
 		return run(rest, env)
 	case command == "mcp":
 		if err := serveMCP(rest, env.Stderr); err != nil {
+			return fail(env, err)
+		}
+		return ExitOK
+	case command == "ui":
+		if err := serveUI(rest, env.Stderr); err != nil {
 			return fail(env, err)
 		}
 		return ExitOK

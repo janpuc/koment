@@ -1,0 +1,102 @@
+{{define "page.html"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{if .File}}{{.File.Path}} — {{end}}koment</title>
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+{{if .Empty}}
+<div class="hollow">
+  <h1>No annotations yet</h1>
+  <p>Record the first one, then reload:</p>
+  <pre>koment add &lt;file&gt; --excerpt '&lt;snippet&gt;' --kind why --body '&lt;rationale&gt;'</pre>
+</div>
+{{else}}
+
+<div class="app">
+  <nav class="rail" aria-label="Annotated files">
+    <div class="brand">
+      <b>koment</b>
+      <span>{{.Total}} annotation{{if ne .Total 1}}s{{end}}</span>
+    </div>
+
+    <div class="tally">
+      <div class="tally-line">Working tree</div>
+      <div class="pills">
+        {{range .Tally}}<span class="pill {{.Status}}">{{.Count}} {{.Status}}</span>{{end}}
+      </div>
+    </div>
+
+    {{range .Groups}}
+      <div class="dir">{{.Dir}}/</div>
+      {{range .Files}}
+        <a class="file" href="{{href .Path}}"{{if .Current}} aria-current="page"{{end}}>
+          <span class="dot {{.Worst}}"></span>
+          <span class="name">{{.Name}}</span>
+          <span class="count">{{.Count}}</span>
+        </a>
+      {{end}}
+    {{end}}
+  </nav>
+
+  <main class="panel">
+    {{if .NotFound}}
+      <div class="panel-head"><h1>Not annotated</h1></div>
+      <p class="hollow-inline">Nothing recorded against <code>{{.Current}}</code>.</p>
+    {{else}}
+      <div class="panel-head">
+        <h1>{{.File.Path}}</h1>
+        {{if .File.Missing}}<span class="pill orphaned">file is gone</span>{{end}}
+      </div>
+
+      {{if .File.Detached}}
+        <div class="detached">
+          <div class="detached-head">Not anchored to a line</div>
+          {{range .File.Detached}}{{template "note" .}}{{end}}
+        </div>
+      {{end}}
+
+      {{if .File.Lines}}
+        <div class="code-scroll">
+          <div class="code">
+            {{range .File.Lines}}
+              <div class="row{{if .Notes}} marked {{(index .Notes 0).Status}}{{end}}">
+                <div class="ln">{{.Number}}</div>
+                <div class="src{{if not .Text}} void{{end}}">{{if .Text}}{{.Text}}{{else}} {{end}}</div>
+                <div class="margin">{{range .Notes}}{{template "note" .}}{{end}}</div>
+              </div>
+            {{end}}
+          </div>
+        </div>
+      {{end}}
+    {{end}}
+  </main>
+</div>
+{{end}}
+
+</body>
+</html>{{end}}
+
+{{define "note"}}
+<div class="note {{.Status}}{{if .Stale}} stale{{end}}">
+  <div class="note-head">
+    <span class="kind">{{.Kind}}</span>
+    <span class="sep">·</span><span>{{.Status}}</span>
+    <span class="sep">·</span><span>{{.Created}}</span>
+  </div>
+
+  {{if .Stale}}{{if .Excerpt}}
+    <div class="was">
+      <span class="label">excerpt no longer in the file</span><s>{{.Excerpt}}</s>
+    </div>
+  {{end}}{{end}}
+
+  {{range .Body}}<p class="body">{{.}}</p>{{end}}
+
+  {{if .Warning}}<div class="warn">{{.Warning}}</div>{{end}}
+  <div class="note-id">{{.ID}}</div>
+</div>
+{{end}}

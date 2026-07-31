@@ -39,7 +39,10 @@ func koment(t *testing.T, args ...string) result {
 	var stdout, stderr bytes.Buffer
 	env := Environment{Stdin: strings.NewReader(""), Stdout: &stdout, Stderr: &stderr}
 
-	code := Run(args, env, func([]string, io.Writer) error { t.Fatal("mcp must not be reached"); return nil })
+	unreachable := func(name string) Server {
+		return func([]string, io.Writer) error { t.Fatalf("%s must not be reached", name); return nil }
+	}
+	code := Run(args, env, unreachable("mcp"), unreachable("ui"))
 	return result{code: code, stdout: stdout.String(), stderr: stderr.String()}
 }
 
@@ -258,7 +261,7 @@ func TestAddReadsTheBodyFromStdin(t *testing.T) {
 		Stdout: &stdout,
 		Stderr: &stderr,
 	}
-	code := Run([]string{"add", "main.go", "--kind", "why", "--body", "-"}, env, nil)
+	code := Run([]string{"add", "main.go", "--kind", "why", "--body", "-"}, env, nil, nil)
 	if code != ExitOK {
 		t.Fatalf("add exited %d: %s%s", code, stdout.String(), stderr.String())
 	}
