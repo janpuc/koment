@@ -114,6 +114,25 @@ MCP tools exposed:
 - `koment_get(file)` — annotations for a path, with resolution status
 - `koment_search(query)` — full-text across bodies
 
+### Proposed: `koment ui`
+
+Not built. Design under review — ADR 0013.
+
+```
+koment ui [--listen <addr>]     # local read-only web view, loopback default
+```
+
+Everything above is addressed to machines. `show` prints annotations *beside* a
+file; a person needs them *on* it. `koment ui` is two panels — a file tree
+carrying drift status, and the source with annotation cards anchored at their
+line — rendered from Go templates embedded with `go:embed`, no node toolchain
+and no new dependency.
+
+Prior art: [konflate](https://github.com/home-operations/konflate), a read-only
+Flux PR review tool with the same shape of thesis. koment takes its
+embed-the-frontend-in-the-binary trick and its status-first visual language, and
+declines its Svelte build.
+
 ## Implementation
 
 Go. Single static binary, no runtime, trivial to ship into a container or onto a
