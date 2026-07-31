@@ -1,0 +1,16 @@
+package anchor
+
+import (
+	"strings"
+)
+
+func Resolve(excerpt string, content string) bool {
+	if excerpt == "" {
+		return false
+	}
+
+	return strings.Contains(
+		content,
+		excerpt,
+	)
+}

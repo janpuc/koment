@@ -1,0 +1,14 @@
+package anchor
+
+import "strings"
+
+func normalize(s string) string {
+	return strings.TrimSpace(s)
+}
+
+func Resolve(excerpt string, content string) bool {
+	if excerpt == "" {
+		return false
+	}
+	return strings.Contains(content, excerpt)
+}
