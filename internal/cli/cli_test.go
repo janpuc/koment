@@ -42,7 +42,7 @@ func koment(t *testing.T, args ...string) result {
 	unreachable := func(name string) Server {
 		return func([]string, io.Writer) error { t.Fatalf("%s must not be reached", name); return nil }
 	}
-	code := Run(args, env, unreachable("mcp"), unreachable("ui"), unreachable("export"))
+	code := Run(args, env, Servers{MCP: unreachable("mcp"), UI: unreachable("ui")})
 	return result{code: code, stdout: stdout.String(), stderr: stderr.String()}
 }
 
@@ -261,7 +261,7 @@ func TestAddReadsTheBodyFromStdin(t *testing.T) {
 		Stdout: &stdout,
 		Stderr: &stderr,
 	}
-	code := Run([]string{"add", "main.go", "--kind", "why", "--body", "-"}, env, nil, nil, nil)
+	code := Run([]string{"add", "main.go", "--kind", "why", "--body", "-"}, env, Servers{})
 	if code != ExitOK {
 		t.Fatalf("add exited %d: %s%s", code, stdout.String(), stderr.String())
 	}

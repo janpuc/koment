@@ -16,15 +16,19 @@ annotations:
     created: "2026-07-31"
   - id: 01KYW1ETDBHG5PX4SRR8D69J5W
     scope: excerpt
-    excerpt: func Run(args []string, env Environment, serveMCP, serveUI, exportUI Server) int {
-    excerpt_sha256: cb5a888bb367fec2f14379d8593c1042d1c77c61782e00019d7f26e7c73ce5dc
-    last_seen_line: 46
+    excerpt: type Servers struct {
+    excerpt_sha256: b3107ddc3a01132a304122357d889c240496ae2d1cc0162126ed6d3d4bb74c4c
+    last_seen_line: 45
     kind: why
     body: |-
       The servers are injected as function values rather than imported, so that
       package cli links neither the MCP SDK nor the UI templates. ADR 0007
       accepts eight transitive modules only on the condition that they stay
-      confined to internal/mcp, and these parameters are what actually enforce
-      it. Importing internal/mcp or internal/ui here would quietly spend the
-      escape hatch the ADR was bought with, and nothing would fail to warn you.
+      confined to internal/mcp, and these fields are what actually enforce it.
+      Importing internal/mcp or internal/ui here would quietly spend the escape
+      hatch the ADR was bought with, and nothing would fail to warn you.
+
+      This is a struct rather than parameters on Run because it was parameters,
+      and Run's signature changed every time a server was added — drifting this
+      annotation three times in one session. A new server is now a new field.
     created: "2026-07-31"

@@ -25,7 +25,6 @@ const usage = `koment — out-of-band code annotations
   koment list [--kind <kind>]
   koment reanchor <id> [--excerpt <text>] [--file <path>]
   koment ui [--listen <addr>]
-  koment export --out <dir>
   koment mcp
 
 check exits non-zero when an annotation is drifted or orphaned. reanchor is how
@@ -38,12 +37,18 @@ type Environment struct {
 	Stderr io.Writer
 }
 
-// Server runs a long-lived server, parsing its own flags. They are injected
-// so package cli links neither the MCP SDK nor the UI templates.
+// Server runs a long-lived server, parsing its own flags.
 type Server func(args []string, stderr io.Writer) error
 
+// Servers are injected rather than imported. Adding one is a new field, not a
+// new parameter, so signatures here stop changing shape.
+type Servers struct {
+	MCP Server
+	UI  Server
+}
+
 // Run dispatches a subcommand.
-func Run(args []string, env Environment, serveMCP, serveUI, exportUI Server) int {
+func Run(args []string, env Environment, servers Servers) int {
 	if len(args) == 0 {
 		fmt.Fprint(env.Stderr, usage)
 		return ExitUsage
@@ -62,17 +67,12 @@ func Run(args []string, env Environment, serveMCP, serveUI, exportUI Server) int
 	case known:
 		return run(rest, env)
 	case command == "mcp":
-		if err := serveMCP(rest, env.Stderr); err != nil {
+		if err := servers.MCP(rest, env.Stderr); err != nil {
 			return fail(env, err)
 		}
 		return ExitOK
 	case command == "ui":
-		if err := serveUI(rest, env.Stderr); err != nil {
-			return fail(env, err)
-		}
-		return ExitOK
-	case command == "export":
-		if err := exportUI(rest, env.Stderr); err != nil {
+		if err := servers.UI(rest, env.Stderr); err != nil {
 			return fail(env, err)
 		}
 		return ExitOK

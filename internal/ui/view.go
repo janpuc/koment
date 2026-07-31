@@ -23,8 +23,6 @@ type view struct {
 	BannerHref string
 }
 
-// links differ between the served tree, which can use absolute paths, and the
-// exported one, which must be relative to survive being hosted under a subpath.
 type links struct {
 	file       func(target string) string
 	stylesheet string
