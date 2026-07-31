@@ -1,0 +1,17 @@
+version: 1
+file: internal/cli/add.go
+annotations:
+  - id: 01KYW1ETE9RCDVQZJ9Z38XVYRD
+    scope: excerpt
+    excerpt: func anchorTo(
+    excerpt_sha256: 532eaf740349a323101fcfd10dc7a51edef3a0a3ce88e611a2279fff8465c004
+    last_seen_line: 91
+    kind: why
+    body: |-
+      An excerpt that matches nothing, or that matches several places, is refused
+      here at creation rather than guessed at during resolution. Creation is the
+      only moment when a person is present and the intent is still known. ADR 0009
+      leans on this: because ambiguity cannot be stored, resolution never has to
+      disambiguate, and a "moved" result can be trusted to mean movement rather
+      than a coin flip between two candidates.
+    created: "2026-07-31"

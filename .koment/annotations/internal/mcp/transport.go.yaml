@@ -1,0 +1,32 @@
+version: 1
+file: internal/mcp/transport.go
+annotations:
+  - id: 01KYW1TRADHM8KAHE6H8S4MZ27
+    scope: excerpt
+    excerpt: func loopbackByDefault(address string) (string, error) {
+    excerpt_sha256: c85853d63488f0545cc19392b40cfd497b4063cf6706b7a0f67f83d8e1b3a184
+    last_seen_line: 120
+    kind: invariant
+    body: |-
+      The HTTP transports have no authentication: anything that can reach the port
+      reads every annotation in the repository. That is only tolerable because the
+      default bind is loopback and the surface is read-only. Do not "helpfully"
+      change this to 0.0.0.0 to make containers easier - ADR 0011 rejected that
+      explicitly, and net.SplitHostPort treats a bare ":8765" as an empty host,
+      which binds every interface. The empty-host case is why this function exists
+      at all.
+    created: "2026-07-31"
+  - id: 01KYW1TRASR4YZ5NEE0YEV0SD8
+    scope: excerpt
+    excerpt: func Serve(args []string, stderr io.Writer) error {
+    excerpt_sha256: 71c016124179acaaf66c68cddfda61230acbc58329ca1574514faebdc06cea9d
+    last_seen_line: 34
+    kind: why
+    body: |-
+      The mcp subcommand parses its own flags here rather than in package cli, so
+      that cli never imports this package and therefore never links the MCP SDK.
+      ADR 0007 accepted eight transitive modules only on the condition that they
+      stay confined to internal/mcp, and this split is what keeps that true.
+      Moving these flags into cli would spend the escape hatch without anyone
+      noticing.
+    created: "2026-07-31"

@@ -1,0 +1,16 @@
+version: 1
+file: internal/store/record.go
+annotations:
+  - id: 01KYW1ETEEVMZ8QGW15J0WSBM9
+    scope: excerpt
+    excerpt: "\t\tif a.Excerpt == \"\" {"
+    excerpt_sha256: 01053f8338dde773950b4ebbcc5c9f41137084d553b351d5564d6a8208f47dbd
+    last_seen_line: 102
+    kind: gotcha
+    body: |-
+      An empty excerpt means file scope, not "matches everything". Treating it as
+      a wildcard makes every annotation resolve at offset zero and report ok
+      forever - which is precisely the silent-staleness failure koment exists to
+      prevent. ExcerptLines returns no matches for an empty needle for the same
+      reason, so the two halves agree.
+    created: "2026-07-31"

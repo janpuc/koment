@@ -1,0 +1,17 @@
+version: 1
+file: internal/mcp/mcp.go
+annotations:
+  - id: 01KYW1ETDYF6V8Q9JR83DFNSZ1
+    scope: excerpt
+    excerpt: func warningFor(status anchor.Status) string {
+    excerpt_sha256: 74db4ce1c4399a7b72554826524e3ade9df7fed4acfbe27b3f4474fc521bd0ca
+    last_seen_line: 159
+    kind: invariant
+    body: |-
+      ADR 0005 requires that a drifted annotation is never served to an agent as
+      though it described the current code. The status field alone does not
+      achieve that - an agent has no reason to know what "drifted" costs it. Every
+      failing status must carry prose that spells out the consequence. A new
+      status added to internal/anchor needs a case here, or it will be served
+      silently and confidently wrong.
+    created: "2026-07-31"

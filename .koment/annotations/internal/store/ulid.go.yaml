@@ -1,0 +1,16 @@
+version: 1
+file: internal/store/ulid.go
+annotations:
+  - id: 01KYW1ETE3CVB6S0ND70GGZVWM
+    scope: excerpt
+    excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(timestampBytes+entropyBytes)"
+    excerpt_sha256: b3f62f10e117b76946406e5a3c83a1b897d1d01d6fbcfe312d9bf1e08d3b3152
+    last_seen_line: 18
+    kind: gotcha
+    body: |-
+      26 Crockford characters carry 130 bits but a ULID holds 128, so the value is
+      left-padded by two. Drop the padding and every character shifts: the ids are
+      still 26 characters of valid alphabet, and still wrong. Nothing downstream
+      can detect that. TestEncodeCrockfordCoversTheWholeValue pins both extremes -
+      all-zero bytes must encode to 26 zeros, all-ones to "7" followed by 25 Z.
+    created: "2026-07-31"

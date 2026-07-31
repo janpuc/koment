@@ -1,0 +1,29 @@
+version: 1
+file: internal/cli/cli.go
+annotations:
+  - id: 01KYW1ETD1M4B3BQEVKZBG8EPZ
+    scope: excerpt
+    excerpt: func leadingNonFlag(args []string) (string, []string) {
+    excerpt_sha256: ef7ad9cf3f8f44d4c23253024539c8f24b32380dbf37e6f34c554f56f630cbec
+    last_seen_line: 106
+    kind: gotcha
+    body: |-
+      flag.FlagSet.Parse stops at the first argument that is not a flag, so
+      "koment add main.go --kind why --body x" parses zero flags and reports the
+      rest as six stray arguments. The file has to come off the front before Parse
+      sees the slice. DESIGN.md documents the file-first order, so the parser
+      bends rather than the interface. The CLI tests caught this, not review.
+    created: "2026-07-31"
+  - id: 01KYW1ETDBHG5PX4SRR8D69J5W
+    scope: excerpt
+    excerpt: func Run(args []string, env Environment, serveMCP MCPServer) int {
+    excerpt_sha256: 889fbfd9906d1ce225f8cff40ac436dad34228ff6b11251b07eb20d85f33ebb6
+    last_seen_line: 41
+    kind: why
+    body: |-
+      serveMCP is injected rather than imported so that package cli never links
+      the MCP SDK. ADR 0007 accepts that dependency only on the condition that it
+      stays confined to internal/mcp, and this parameter is what actually enforces
+      the condition. Importing internal/mcp here would quietly spend the escape
+      hatch the ADR was bought with.
+    created: "2026-07-31"
