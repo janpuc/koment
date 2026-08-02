@@ -35,14 +35,14 @@ jobs:
       # green and those two statuses fail the build.
       - name: export koment
         run: |
-          ./koment export --out dist/koment --name koment \
+          ./koment site --out dist/koment --name koment \
             --banner "koment's own annotations, rebuilt from ${GITHUB_SHA::7}. These are real — each was written because an edit was about to lose a real reason." \
             --banner-link "https://github.com/${GITHUB_REPOSITORY}"
 
       - name: export the fixture
         working-directory: demo
         run: |
-          ../koment export --out ../dist/demo --name demo \
+          ../koment site --out ../dist/demo --name demo \
             --banner "A fixture. Its drift is deliberate, so the demo can show what drifted and orphaned look like — which koment's own repository never can." \
             --banner-link "https://github.com/${GITHUB_REPOSITORY}/tree/main/demo"
 

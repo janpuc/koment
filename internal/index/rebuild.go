@@ -115,23 +115,27 @@ func (i *Index) indexFile(ctx context.Context, transaction execer, repository Re
 func (i *Index) insertAnnotation(ctx context.Context, transaction execer, repository Repository, file string,
 	annotation store.Annotation, resolution anchor.Resolution) error {
 
-	authorName, authorKind := "", ""
+	var author store.Author
 	if annotation.Author != nil {
-		authorName, authorKind = annotation.Author.Name, string(annotation.Author.Kind)
+		author = *annotation.Author
 	}
-	gitCommit := ""
+	var git store.GitContext
 	if annotation.Git != nil {
-		gitCommit = annotation.Git.Commit
+		git = *annotation.Git
 	}
 
 	if _, err := transaction.ExecContext(ctx, i.rebind(
 		`INSERT INTO annotations
 		   (id, repository_id, path, kind, scope, body, excerpt, created,
-		    author_name, author_kind, git_commit, status, line)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+		    author_name, author_kind, git_commit, status, line,
+		    excerpt_sha256, last_seen_line, git_path, git_line, git_end_line,
+		    author_email, author_source, author_account, author_verified)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
 		annotation.ID, repository.ID, file, string(annotation.Kind), string(annotation.Scope),
 		annotation.Body, annotation.Excerpt, annotation.Created.Format("2006-01-02"),
-		authorName, authorKind, gitCommit, string(resolution.Status), resolution.Line); err != nil {
+		author.Name, string(author.Kind), git.Commit, string(resolution.Status), resolution.Line,
+		annotation.ExcerptSHA256, annotation.LastSeenLine, git.Path, git.Line, git.EndLine,
+		author.Email, string(author.Source), author.Account, author.Verified); err != nil {
 		return fmt.Errorf("indexing annotation %s: %w", annotation.ID, err)
 	}
 

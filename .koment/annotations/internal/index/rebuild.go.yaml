@@ -24,3 +24,27 @@ annotations:
       email: janpuc@proton.me
       kind: human
       source: git-config
+  - id: 01KZ1P80HBMQQHASN7BRS82BZY
+    scope: excerpt
+    excerpt: func (i *Index) insertAnnotation(ctx context.Context, transaction execer, repository Repository, file string,
+    excerpt_sha256: ba740c35df841a113aa8726e015baae20c6965db7565e137ab1e0152ceb8e987
+    last_seen_line: 115
+    kind: invariant
+    body: |-
+      The index must store every field a record carries, not just the ones queries
+      need. Export reconstructs .koment from these columns, so a field stored
+      nowhere is a field silently dropped on recovery - valid-looking YAML with
+      the provenance gone, discovered only when the original is already lost.
+      TestRoundTripIsByteIdentical exercises a record with every optional field
+      set and fails if one goes missing. Adding a field to store.Annotation means
+      adding it here.
+    created: "2026-08-02"
+    git:
+      commit: b1978aa01d2f5ee28f21e7de7c1e36159f396467
+      path: internal/index/rebuild.go
+      line: 115
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config

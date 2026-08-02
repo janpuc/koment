@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/janpuc/koment/internal/anchor"
 	"github.com/janpuc/koment/internal/index"
 )
 
-func runIndex(args []string, env Environment) int {
-	flags := flagSet("index", env)
+// runExport rebuilds .koment from the index. It is the inverse of the rebuild
+// that fills the index from .koment, and the two are exact (ADR 0023).
+func runExport(args []string, env Environment) int {
+	flags := flagSet("export", env)
 	databaseURL := flags.String("database-url", "", "Postgres connection string; SQLite is used when empty")
 	path := flags.String("index", "", "SQLite index file; defaults to a per-repository file in the cache directory")
 	name := flags.String("name", "", "repository name recorded in the index; defaults to the directory name")
-	rebuild := flags.Bool("rebuild", false, "discard and rebuild rather than refreshing changed files only")
 	if err := flags.Parse(args); err != nil {
 		return ExitUsage
 	}
@@ -41,41 +41,26 @@ func runIndex(args []string, env Environment) int {
 	}
 	defer func() { _ = built.Close() }()
 
-	switch {
-	case *rebuild:
-		if err := built.Rebuild(ctx, repository, annotations); err != nil {
-			return fail(env, err)
-		}
-		fmt.Fprintf(env.Stdout, "rebuilt %s from %s\n", repository.Name, annotations.Root())
-	default:
-		bootstrapped, err := built.Bootstrap(ctx, repository, annotations)
-		if err != nil {
-			return fail(env, err)
-		}
-		if bootstrapped {
-			fmt.Fprintf(env.Stdout, "bootstrapped %s from %s\n", repository.Name, annotations.Root())
-			break
-		}
-		touched, err := built.Refresh(ctx, annotations, repository)
-		if err != nil {
-			return fail(env, err)
-		}
-		fmt.Fprintf(env.Stdout, "refreshed %s (%d files re-resolved)\n", repository.Name, touched)
-	}
-
+	// An empty index would export an empty store, quietly deleting nothing and
+	// achieving nothing. Say so rather than reporting success.
 	counts, err := built.Counts(ctx, index.Filter{Repository: repository.ID})
 	if err != nil {
 		return fail(env, err)
 	}
-	files, err := built.Files(ctx, index.Filter{Repository: repository.ID})
+	total := 0
+	for _, count := range counts {
+		total += count
+	}
+	if total == 0 {
+		return fail(env, fmt.Errorf("the index holds no annotations for %s; run koment index first", repository.Name))
+	}
+
+	files, err := built.Export(ctx, repository, annotations)
 	if err != nil {
 		return fail(env, err)
 	}
 
-	total := 0
-	for _, status := range []anchor.Status{anchor.StatusOK, anchor.StatusMoved, anchor.StatusDrifted, anchor.StatusOrphaned} {
-		total += counts[status]
-	}
-	fmt.Fprintf(env.Stdout, "%d annotations across %d files, via %s\n", total, len(files), built.Driver())
+	fmt.Fprintf(env.Stdout, "wrote %d annotations across %d files to %s\n",
+		total, files, annotations.Root()+"/.koment/annotations")
 	return ExitOK
 }

@@ -19,11 +19,11 @@ const (
 	stylesheetName = "style.css"
 )
 
-const exportUsage = `koment export renders the view to static HTML.
+const exportUsage = `koment site renders the view to static HTML.
 
-  koment export --out <dir> [--banner <text>]
+  koment site --out <dir> [--banner <text>]
 
-This exists to publish koment's own demo site (ADR 0014). It is a snapshot, not
+This exists to publish the demo site (ADR 0018, 0021). It is a snapshot, not
 a view of your working tree: read your own annotations with koment ui, which
 re-reads the tree on every request. Exporting a private repository and hosting
 the result publishes your source and your annotations.
@@ -31,8 +31,8 @@ the result publishes your source and your annotations.
 
 // Export writes the same pages koment ui serves, with relative links so the
 // tree survives being hosted under a subpath.
-func Export(args []string, stderr io.Writer) error {
-	flags := flag.NewFlagSet("export", flag.ContinueOnError)
+func Site(args []string, stderr io.Writer) error {
+	flags := flag.NewFlagSet("site", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.Usage = func() {
 		fmt.Fprint(stderr, exportUsage, "\nFlags (each also settable from the environment):\n", config.Usage(flags))
@@ -49,7 +49,7 @@ func Export(args []string, stderr io.Writer) error {
 		return err
 	}
 	if *out == "" {
-		return fmt.Errorf("export needs --out")
+		return fmt.Errorf("site needs --out")
 	}
 
 	root, err := repositoryRoot()

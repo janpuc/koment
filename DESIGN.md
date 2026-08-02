@@ -121,6 +121,10 @@ Resolution stays live. The index records each file's `(mtime, size)` when it
 resolved it, and any file whose stamp has changed is re-resolved before it is
 served — so a status is never stale, and an unchanged file is never re-read.
 
+The derivation runs both ways and is exact: `.koment/` bootstraps an empty
+index, and `koment export` reconstructs `.koment/` from the index
+byte-identically. Either side can be lost without losing annotations. ADR 0023.
+
 The CLI (`add`, `check`, `reanchor`) reads YAML directly and needs no index at
 all, which is what keeps "reading a checkout never depends on a network call"
 true.

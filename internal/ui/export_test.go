@@ -113,9 +113,9 @@ func TestExportRendersTheSameContentAsTheServer(t *testing.T) {
 	}
 }
 
-func TestExportNeedsAnOutputDirectory(t *testing.T) {
+func TestSiteNeedsAnOutputDirectory(t *testing.T) {
 	var stderr strings.Builder
-	if err := Export(nil, &stderr); err == nil {
+	if err := Site(nil, &stderr); err == nil {
 		t.Fatal("want an error without --out")
 	}
 }

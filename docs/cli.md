@@ -7,6 +7,7 @@ koment check [path...]
 koment list [--kind <kind>] [path...]
 koment reanchor <id> [--excerpt <text>] [--file <path>]
 koment index [--rebuild] [--database-url <url>]
+koment export [--database-url <url>]     # rebuild .koment from the index
 koment ui [--listen <addr>]
 koment mcp [--http <addr> | --streamable-http <addr>]
 ```
@@ -116,6 +117,43 @@ what the index thinks.
 
 The index is **derived**. Deleting it costs a rebuild and nothing else; the
 annotations themselves are the YAML in git. It is gitignored for that reason.
+
+## export
+
+Rebuilds `.koment/` from the index. The inverse of `index`, and exact — a record
+read in and written back out is byte-identical.
+
+```sh
+koment export
+```
+
+This is the recovery path. If `.koment/` is lost or damaged and the index
+survives, the annotations are still there:
+
+```sh
+rm -rf .koment/annotations   # disaster
+koment export                # recovered, byte-identical
+```
+
+It refuses rather than writing an empty store if the index holds nothing for the
+repository, because an empty export achieves nothing and reporting success would
+be a lie.
+
+Git remains the record; this does not make the index authoritative. `koment
+check` still reads YAML.
+
+## site
+
+Renders the read-only view to static HTML. Scoped to publishing the demo — for
+your own annotations use `koment ui`, which re-reads the working tree per
+request (ADR 0013).
+
+```sh
+koment site --out dist --name myrepo
+```
+
+Was `koment export` before 0.2; the plainer name went to the store rebuild,
+which is the more central operation.
 
 ## ui
 
