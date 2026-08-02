@@ -6,10 +6,12 @@ import (
 	"errors"
 	"io/fs"
 	"strings"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/janpuc/koment/internal/anchor"
+	"github.com/janpuc/koment/internal/metrics"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -25,11 +27,25 @@ const (
 		"by topic when you do not already know which file holds it."
 )
 
-func newServer(annotations *store.Store) *sdk.Server {
+func newServer(annotations *store.Store, recorder metrics.Recorder) *sdk.Server {
 	server := sdk.NewServer(&sdk.Implementation{Name: serverName, Version: serverVersion}, nil)
-	sdk.AddTool(server, &sdk.Tool{Name: "koment_get", Description: getDescription}, get(annotations))
-	sdk.AddTool(server, &sdk.Tool{Name: "koment_search", Description: searchDescription}, search(annotations))
+	sdk.AddTool(server, &sdk.Tool{Name: "koment_get", Description: getDescription}, get(annotations, recorder))
+	sdk.AddTool(server, &sdk.Tool{Name: "koment_search", Description: searchDescription}, search(annotations, recorder))
 	return server
+}
+
+// measure records a tool call and, for each annotation handed over, its
+// resolution status — so a rising drifted rate is visible as agents reading
+// history as though it were current (ADR 0020).
+func measure(recorder metrics.Recorder, tool string, started time.Time, served []Annotation, err error) {
+	outcome := "ok"
+	if err != nil {
+		outcome = "error"
+	}
+	recorder.ObserveMCPCall(tool, outcome, time.Since(started))
+	for _, annotation := range served {
+		recorder.ObserveServed(anchor.Status(annotation.Status))
+	}
 }
 
 type GetInput struct {
@@ -63,8 +79,11 @@ type Annotation struct {
 	Warning string `json:"warning,omitempty"`
 }
 
-func get(annotations *store.Store) sdk.ToolHandlerFor[GetInput, GetOutput] {
-	return func(_ context.Context, _ *sdk.CallToolRequest, input GetInput) (*sdk.CallToolResult, GetOutput, error) {
+func get(annotations *store.Store, recorder metrics.Recorder) sdk.ToolHandlerFor[GetInput, GetOutput] {
+	return func(_ context.Context, _ *sdk.CallToolRequest, input GetInput) (result *sdk.CallToolResult, out GetOutput, err error) {
+		started := time.Now()
+		defer func() { measure(recorder, "koment_get", started, out.Annotations, err) }()
+
 		file, err := annotations.FromRoot(input.File)
 		if err != nil {
 			return nil, GetOutput{}, err
@@ -81,8 +100,11 @@ func get(annotations *store.Store) sdk.ToolHandlerFor[GetInput, GetOutput] {
 	}
 }
 
-func search(annotations *store.Store) sdk.ToolHandlerFor[SearchInput, SearchOutput] {
-	return func(_ context.Context, _ *sdk.CallToolRequest, input SearchInput) (*sdk.CallToolResult, SearchOutput, error) {
+func search(annotations *store.Store, recorder metrics.Recorder) sdk.ToolHandlerFor[SearchInput, SearchOutput] {
+	return func(_ context.Context, _ *sdk.CallToolRequest, input SearchInput) (result *sdk.CallToolResult, out SearchOutput, err error) {
+		started := time.Now()
+		defer func() { measure(recorder, "koment_search", started, out.Matches, err) }()
+
 		query := strings.TrimSpace(input.Query)
 		if query == "" {
 			return nil, SearchOutput{}, errors.New("query must not be empty")

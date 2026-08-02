@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -33,28 +34,30 @@ the result publishes your source and your annotations.
 func Export(args []string, stderr io.Writer) error {
 	flags := flag.NewFlagSet("export", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	flags.Usage = func() { fmt.Fprint(stderr, exportUsage) }
+	flags.Usage = func() {
+		fmt.Fprint(stderr, exportUsage, "\nFlags (each also settable from the environment):\n", config.Usage(flags))
+	}
 
 	out := flags.String("out", "", "directory to write into")
+	name := flags.String("name", "", "repository name shown on every page; defaults to the directory name")
 	banner := flags.String("banner", "", "notice shown on every page, naming the snapshot")
 	bannerHref := flags.String("banner-link", "", "URL shown beside the banner")
 	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if err := config.FromEnvironment(flags); err != nil {
 		return err
 	}
 	if *out == "" {
 		return fmt.Errorf("export needs --out")
 	}
 
-	workingDirectory, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("finding the working directory: %w", err)
-	}
-	root, err := store.FindRoot(workingDirectory)
+	root, err := repositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	written, err := export(store.Open(root), *out, *banner, *bannerHref)
+	written, err := export(store.Open(root), *out, *banner, *bannerHref, repositoryName(*name, root))
 	if err != nil {
 		return err
 	}
@@ -62,7 +65,14 @@ func Export(args []string, stderr io.Writer) error {
 	return nil
 }
 
-func export(annotations *store.Store, out, banner, bannerHref string) (int, error) {
+func repositoryName(given, root string) string {
+	if given != "" {
+		return given
+	}
+	return filepath.Base(root)
+}
+
+func export(annotations *store.Store, out, banner, bannerHref, name string) (int, error) {
 	files, err := annotations.AnnotatedFiles()
 	if err != nil {
 		return 0, err
@@ -83,7 +93,7 @@ func export(annotations *store.Store, out, banner, bannerHref string) (int, erro
 	}
 
 	for page, file := range pages {
-		rendered, err := renderPage(templates, annotations, file, exportedLinks(page), banner, bannerHref)
+		rendered, err := renderPage(templates, annotations, file, exportedLinks(page), banner, bannerHref, name)
 		if err != nil {
 			return 0, err
 		}
@@ -104,13 +114,14 @@ func exportedLinks(page string) links {
 	}
 }
 
-func renderPage(templates *template.Template, annotations *store.Store, file string, how links, banner, bannerHref string) ([]byte, error) {
+func renderPage(templates *template.Template, annotations *store.Store, file string, how links, banner, bannerHref, name string) ([]byte, error) {
 	built, err := build(annotations, file, how)
 	if err != nil {
 		return nil, err
 	}
 	built.Banner = banner
 	built.BannerHref = bannerHref
+	built.Repository = name
 
 	var page strings.Builder
 	if err := templates.ExecuteTemplate(&page, "page.html", built); err != nil {

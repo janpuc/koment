@@ -10,7 +10,7 @@ import (
 func exportTo(t *testing.T) string {
 	t.Helper()
 	out := t.TempDir()
-	if _, err := export(repository(t), out, "snapshot of commit abc1234", "https://example.test/koment"); err != nil {
+	if _, err := export(repository(t), out, "snapshot of commit abc1234", "https://example.test/koment", "fixture"); err != nil {
 		t.Fatalf("export: %v", err)
 	}
 	return out
@@ -71,6 +71,17 @@ func TestExportedLinksWalkUpForDeepPaths(t *testing.T) {
 	}
 }
 
+func TestExportedPagesNameTheirRepository(t *testing.T) {
+	out := exportTo(t)
+
+	for _, page := range []string{"index.html", filepath.Join("f", "main.go.html")} {
+		content := read(t, filepath.Join(out, page))
+		if !strings.Contains(content, "fixture") {
+			t.Errorf("%s does not say which repository it belongs to", page)
+		}
+	}
+}
+
 func TestExportedPagesCarryTheSnapshotBanner(t *testing.T) {
 	out := exportTo(t)
 
@@ -85,7 +96,7 @@ func TestExportedPagesCarryTheSnapshotBanner(t *testing.T) {
 func TestExportRendersTheSameContentAsTheServer(t *testing.T) {
 	annotations := repository(t)
 	out := t.TempDir()
-	if _, err := export(annotations, out, "", ""); err != nil {
+	if _, err := export(annotations, out, "", "", "fixture"); err != nil {
 		t.Fatal(err)
 	}
 

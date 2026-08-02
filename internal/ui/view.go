@@ -21,6 +21,7 @@ type view struct {
 	Stylesheet string
 	Banner     string
 	BannerHref string
+	Repository string
 }
 
 type links struct {

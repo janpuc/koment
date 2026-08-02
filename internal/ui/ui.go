@@ -15,7 +15,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/listen"
+	"github.com/janpuc/koment/internal/metrics"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -25,6 +27,7 @@ var assets embed.FS
 const (
 	defaultAddress = "127.0.0.1:0"
 	shutdownGrace  = 5 * time.Second
+	sweepInterval  = 30 * time.Second
 	headerTimeout  = 10 * time.Second
 	filePrefix     = "/f/"
 )
@@ -43,21 +46,23 @@ can read every annotation in the repository.
 func Serve(args []string, stderr io.Writer) error {
 	flags := flag.NewFlagSet("ui", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	flags.Usage = func() { fmt.Fprint(stderr, usage) }
+	flags.Usage = func() {
+		fmt.Fprint(stderr, usage, "\nFlags (each also settable from the environment):\n", config.Usage(flags))
+	}
 
 	address := flags.String("listen", defaultAddress, "address to serve on; a bare port is bound on loopback")
+	metricsAddress := flags.String("metrics", "", "serve Prometheus metrics on this separate address; off unless given")
 	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if err := config.FromEnvironment(flags); err != nil {
 		return err
 	}
 	if flags.NArg() > 0 {
 		return fmt.Errorf("ui takes no arguments, got %s", flags.Arg(0))
 	}
 
-	workingDirectory, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("finding the working directory: %w", err)
-	}
-	root, err := store.FindRoot(workingDirectory)
+	root, err := repositoryRoot()
 	if err != nil {
 		return err
 	}
@@ -74,11 +79,66 @@ func Serve(args []string, stderr io.Writer) error {
 	}
 	fmt.Fprintf(stderr, "koment: http://%s\n", listener.Addr())
 
-	return serve(context.Background(), store.Open(root), listener, stderr)
+	annotations := store.Open(root)
+	ctx := context.Background()
+	recorder := startMetrics(ctx, annotations, *metricsAddress, stderr)
+
+	return serve(ctx, annotations, listener, stderr, recorder)
 }
 
-func serve(ctx context.Context, annotations *store.Store, listener net.Listener, stderr io.Writer) error {
-	server := &http.Server{Handler: Handler(annotations), ReadHeaderTimeout: headerTimeout}
+// startMetrics returns a no-op recorder unless an address was given, so the
+// default posture exposes nothing new (ADR 0020).
+// repositoryRoot prefers KOMENT_REPO, because in a container the working
+// directory is a mount point rather than somewhere a person navigated to.
+func repositoryRoot() (string, error) {
+	if root, ok := config.Root(); ok {
+		return store.FindRoot(root)
+	}
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("finding the working directory: %w", err)
+	}
+	return store.FindRoot(workingDirectory)
+}
+
+func startMetrics(ctx context.Context, annotations *store.Store, address string, stderr io.Writer) metrics.Recorder {
+	if address == "" {
+		return metrics.Discard{}
+	}
+
+	recorder := metrics.New()
+	go func() {
+		if err := recorder.Serve(ctx, address, stderr); err != nil {
+			fmt.Fprintf(stderr, "koment: metrics: %v\n", err)
+		}
+	}()
+	go sweepPeriodically(ctx, annotations, recorder, stderr)
+	return recorder
+}
+
+// sweepPeriodically keeps the repository gauges current. It is on a timer
+// rather than driven by a scrape so that a scraper cannot drive load.
+func sweepPeriodically(ctx context.Context, annotations *store.Store, recorder metrics.Recorder, stderr io.Writer) {
+	ticker := time.NewTicker(sweepInterval)
+	defer ticker.Stop()
+
+	for {
+		if err := metrics.Sweep(annotations, recorder); err != nil {
+			fmt.Fprintf(stderr, "koment: metrics sweep: %v\n", err)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func serve(ctx context.Context, annotations *store.Store, listener net.Listener, stderr io.Writer, recorder metrics.Recorder) error {
+	server := &http.Server{
+		Handler:           metrics.Instrument(recorder, "ui", Handler(annotations)),
+		ReadHeaderTimeout: headerTimeout,
+	}
 
 	go func() {
 		<-ctx.Done()

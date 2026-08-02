@@ -85,19 +85,31 @@ then implement. Do not open a large diff that also invents the design.
 This project exists because stale information is worse than no information.
 Hold yourself to the same bar.
 
-- Do not claim a library, flag or API exists without checking it.
+- **Never state a library's API, flags or defaults from memory.** Check
+  `pkg.go.dev`, the vendored source in the module cache, or this project's own
+  code. Model memory of a library is a snapshot of some version, and it is not
+  this one.
 - Do not report something works without running it.
 - If you could not verify a claim, say so explicitly in your summary.
 - Quote real output when reporting results. Paraphrased output is not evidence.
+- Toolchain versions come from `go.mod` and the workflow files, not from
+  assumption.
 
 ## 5. Fail loudly
 
 A tool that silently serves a stale annotation is worse than one that crashes.
 
 - Never swallow an error to keep going.
+- `_ = someCall()` is only for genuinely fire-and-forget calls, and the reason
+  must be obvious from context. It is a deliberate discard, never a way to quiet
+  a linter.
 - Never return a partial result that looks complete.
 - When an anchor cannot be resolved, say so in the output — do not omit it.
 - Prefer a non-zero exit and a clear message over a best guess.
+
+Logging is `log/slog` when logging is needed. Most of koment writes to the
+`io.Writer` it was handed instead, which is what makes the commands testable —
+do not reach for a global logger.
 
 ## 6. Tests are part of the change
 
@@ -110,6 +122,15 @@ A tool that silently serves a stale annotation is worse than one that crashes.
 
 One concern per commit. If the diff needs a section-by-section walkthrough to
 review, split it.
+
+**Do not refactor or "improve" adjacent code.** If you notice something worth
+fixing while you are in a file, say so in your summary and leave it. A change
+that also tidies three unrelated things is a change nobody can review, and it
+buries the part that mattered.
+
+Configuration is flags with a `KOMENT_` environment fallback, wired through
+`internal/config`. Anything a person might reasonably want to change should be
+settable both ways; adding a flag gets the environment variable for free.
 
 ## 8. Git discipline
 
@@ -164,7 +185,19 @@ annotation no longer resolves, including ones you invalidated by editing the
 code they were anchored to. Fix the annotation or fix the anchor — do not delete
 the annotation to make the check pass.
 
-## 13. Reporting
+## 13. Working as an agent
+
+You are trusted with a lot here, so be explicit about what you did.
+
+- Record yourself honestly: `koment add --agent` sets the author kind so a
+  reader can weigh an agent-written annotation differently from a human one.
+  Never let an agent-written annotation inherit a human's git identity silently.
+- Do not write pull request descriptions or commit messages that claim more than
+  you verified. "Tests pass" means you ran them and can quote the output.
+- If an instruction here conflicts with what you were asked to do, say so rather
+  than quietly picking one. The conflict is usually the interesting part.
+
+## 14. Reporting
 
 When you finish, state plainly:
 

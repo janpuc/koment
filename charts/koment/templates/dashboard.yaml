@@ -1,0 +1,17 @@
+{{- if and .Values.metrics.enabled .Values.metrics.dashboard.enabled }}
+{{- /*
+  The Grafana sidecar discovers dashboards by label rather than by name, so the
+  label is the whole interface here. It is configurable because the label a
+  cluster uses is set on the Grafana side, not this one.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "koment.fullname" . }}-dashboard
+  labels:
+    {{- include "koment.labels" . | nindent 4 }}
+    {{ .Values.metrics.dashboard.label }}: {{ .Values.metrics.dashboard.labelValue | quote }}
+data:
+  koment.json: |
+{{ .Files.Get "dashboards/koment.json" | indent 4 }}
+{{- end }}

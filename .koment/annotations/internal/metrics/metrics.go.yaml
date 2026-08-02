@@ -1,0 +1,93 @@
+version: 1
+file: internal/metrics/metrics.go
+annotations:
+  - id: 01KZ0JZA8F91P151JJHP9ERT0B
+    scope: excerpt
+    excerpt: func (m *Metrics) ObserveRepository(resolved map[anchor.Status]int, files int, took time.Duration) {
+    excerpt_sha256: 846a7a6a2b96d9bb1298acae57a64a3bbe6c8aca3463fca5e4efad00e3dac97d
+    last_seen_line: 134
+    kind: invariant
+    body: |-
+      Every status is set on every sweep, including the ones at zero. Skipping a
+      zero would make a drift that someone fixed look identical to a scrape gap:
+      the series simply stops, and a dashboard cannot tell "no longer drifting"
+      from "no longer reporting". Setting all four unconditionally costs three
+      samples and removes the ambiguity.
+    created: "2026-08-02"
+    git:
+      commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+      path: internal/metrics/metrics.go
+      line: 134
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+  - id: 01KZ0JZAAB54QT3DV3GB7YHTP4
+    scope: excerpt
+    excerpt: func Sweep(annotations *store.Store, recorder Recorder) error {
+    excerpt_sha256: e05e03f0c750e399b212408eebcf4b99218650c13c5afe10b6fc1fc31270aa7a
+    last_seen_line: 198
+    kind: why
+    body: |-
+      The sweep runs on a timer rather than when a scrape arrives. A sweep is
+      O(annotations) and reads every annotated file, so wiring it to the scrape
+      would let anyone who can reach the metrics port drive real work by scraping
+      faster. The gauges are therefore up to sweepInterval stale, which is the
+      correct trade for a number that changes when someone commits.
+    created: "2026-08-02"
+    git:
+      commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+      path: internal/metrics/metrics.go
+      line: 198
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+  - id: 01KZ0JZABHW296ZPV7DM3D11N4
+    scope: excerpt
+    excerpt: func (m *Metrics) Serve(ctx context.Context, address string, stderr io.Writer) error {
+    excerpt_sha256: a2dc1b2ed6009c861d67b3d43f23e2b9b7d4d2a1703234532b228c6309f7a105
+    last_seen_line: 164
+    kind: invariant
+    body: |-
+      Metrics get their own listener and are never mounted on the serving mux. The
+      serving port is unauthenticated by design and expected to sit behind an
+      ingress; /metrics leaks repository shape through label values and would
+      inherit that exposure the moment it shared a port. ADR 0020. If you are
+      tempted to add /metrics to the UI handler to save a flag, that is the thing
+      this prevents.
+    created: "2026-08-02"
+    git:
+      commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+      path: internal/metrics/metrics.go
+      line: 164
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+  - id: 01KZ0JZW9AT48RT1Q9EFR5J60Q
+    scope: excerpt
+    excerpt: type Recorder interface {
+    excerpt_sha256: 9d75accedceb16fc6f77fb5202e374cc96cb35d7ffa1dc1ebbcd6ef97c869bab
+    last_seen_line: 32
+    kind: why
+    body: |-
+      The Recorder interface exists so that neither server names a Prometheus
+      type. Discard satisfies it, so a deployment without --metrics pays one
+      interface call per request and links nothing it uses. This is weaker
+      confinement than ADR 0007 bought for the MCP SDK - the servers do import
+      this package - but it keeps every Prometheus API call inside
+      internal/metrics, so removing the dependency stays mechanical.
+    created: "2026-08-02"
+    git:
+      commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+      path: internal/metrics/metrics.go
+      line: 32
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
