@@ -1,0 +1,26 @@
+version: 1
+file: internal/index/rebuild.go
+annotations:
+  - id: 01KZ1MMMM96Z2CZTDQKDHJCBWH
+    scope: excerpt
+    excerpt: type stamp struct {
+    excerpt_sha256: 48acbd000517e4976a4b8f52996b866d4eb171f174ac163379f6d285f6c87b34
+    last_seen_line: 151
+    kind: invariant
+    body: |-
+      mtime alone cannot tell you a file is unchanged: an edit within the same
+      second that happens to preserve length would go unnoticed, and the index
+      would keep serving a resolution that no longer matches the file. Size
+      travels with it for exactly that case. This guard is what lets a caller read
+      status from the index without breaking ADR 0013's promise that what you see
+      is what is on disk.
+    created: "2026-08-02"
+    git:
+      commit: 80cede7d9e321fa6af7a945004ed73994398c25c
+      path: internal/index/rebuild.go
+      line: 151
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config

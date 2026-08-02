@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -63,6 +65,7 @@ func Run(args []string, env Environment, servers Servers) int {
 		"check":    runCheck,
 		"list":     runList,
 		"reanchor": runReanchor,
+		"index":    runIndex,
 	}[command]
 
 	switch {
@@ -134,6 +137,17 @@ func leadingNonFlag(args []string) (string, []string) {
 		return args[0], args[1:]
 	}
 	return "", args
+}
+
+func environmentDefaults(flags *flag.FlagSet) error {
+	return config.FromEnvironment(flags)
+}
+
+func repositoryName(given, root string) string {
+	if given != "" {
+		return given
+	}
+	return filepath.Base(root)
 }
 
 func openStore() (*store.Store, error) {

@@ -123,6 +123,8 @@ wins.
 | `KOMENT_STREAMABLE_HTTP` | address for `koment mcp --streamable-http` |
 | `KOMENT_METRICS` | address for the metrics listener; off unless set |
 | `KOMENT_OUT` | output directory for `koment export` |
+| `KOMENT_INDEX` | SQLite index file; defaults to the cache directory |
+| `KOMENT_DATABASE_URL` | use Postgres for the index, which makes the service stateless |
 
 `koment <command> --help` lists every flag alongside its variable.
 

@@ -6,6 +6,7 @@ koment show <file>
 koment check [path...]
 koment list [--kind <kind>] [path...]
 koment reanchor <id> [--excerpt <text>] [--file <path>]
+koment index [--rebuild] [--database-url <url>]
 koment ui [--listen <addr>]
 koment mcp [--http <addr> | --streamable-http <addr>]
 ```
@@ -92,6 +93,29 @@ koment reanchor 01KYW1ETE3CVB6S0ND70GGZVWM --file internal/auth/session.go
 At least one is required. The SHA-256 and line are recomputed, never typed. The
 new excerpt is validated exactly as `add` validates one. Ids come from `check`
 output, ready to paste.
+
+## index
+
+Builds or refreshes the derived index that the serving read paths query.
+
+```sh
+koment index              # refresh: re-resolve only files that changed
+koment index --rebuild    # discard and rebuild from YAML
+```
+
+| flag | |
+|---|---|
+| `--rebuild` | throw the index away and rebuild it |
+| `--database-url <url>` | use Postgres instead of SQLite |
+| `--index <path>` | SQLite file; defaults to a per-repository file in the cache directory |
+| `--name <name>` | repository name recorded in the index |
+
+You rarely need to run this by hand — the servers keep the index current. It
+exists for a cold start, for a Postgres deployment, and for when you want to see
+what the index thinks.
+
+The index is **derived**. Deleting it costs a rebuild and nothing else; the
+annotations themselves are the YAML in git. It is gitignored for that reason.
 
 ## ui
 

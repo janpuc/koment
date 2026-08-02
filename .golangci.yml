@@ -78,6 +78,17 @@ linters:
           - gosec
           - errcheck
 
+      # G701/G202 flag the query builder in internal/index, which concatenates
+      # only code-chosen fragments: a literal table prefix, "?" placeholders
+      # generated from an int count, and a %d LIMIT on an int. Every value a
+      # caller supplies is bound through args and never reaches the string.
+      # TestFilterValuesAreBoundNotInterpolated enforces that rather than
+      # leaving it as a claim in this comment.
+      - path: internal/index/
+        text: "G701|G202"
+        linters:
+          - gosec
+
 formatters:
   enable:
     - gofmt
