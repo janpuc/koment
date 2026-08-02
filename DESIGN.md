@@ -100,6 +100,31 @@ Resolution reads the excerpt and nothing else. Deleting the whole `git` block
 changes no status — there is a test for that. The commit hash is authoritative
 for reconstructing history; the excerpt is authoritative for applicability.
 
+### Storage: git is the record, the database does the work
+
+```
+.koment/annotations/**.yaml   record      reviewed, merged, cloned
+        ↓ rebuild (deterministic)
+        index                 derived     queried, searched, filtered
+```
+
+YAML in git stays the source of truth — reviewable in a pull request, mergeable,
+and present in every clone. A derived index (SQLite by default, Postgres for a
+stateless multi-replica deployment) holds the same annotations in queryable
+form, and every serving read path goes through it. ADR 0022.
+
+The index is never edited directly and never the only copy of anything: a
+missing, stale or corrupt index is a rebuild, not a loss. It lives in the cache
+directory and is gitignored, because it is a build artifact.
+
+Resolution stays live. The index records each file's `(mtime, size)` when it
+resolved it, and any file whose stamp has changed is re-resolved before it is
+served — so a status is never stale, and an unchanged file is never re-read.
+
+The CLI (`add`, `check`, `reanchor`) reads YAML directly and needs no index at
+all, which is what keeps "reading a checkout never depends on a network call"
+true.
+
 ## Data model
 
 A deployment may serve many repositories. The repository stays the unit of
@@ -212,6 +237,9 @@ internal/cli/        the add/show/check/list/reanchor commands
 internal/store/      read/write .koment/annotations
 internal/anchor/     resolution and drift status
 internal/listen/     bind address resolution, shared by both servers
+internal/index/      derived index — SQLite and Postgres
+internal/config/     KOMENT_* environment fallback for every flag
+internal/metrics/    Prometheus instrumentation
 internal/mcp/        MCP server
 internal/ui/         local read-only web view
 ```

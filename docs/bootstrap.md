@@ -76,6 +76,23 @@ applicability. ADR 0014 has the reasoning.
 Resolution produces one of four statuses. `drifted` and `orphaned` exit
 non-zero; `ok` and `moved` do not.
 
+### Where the data lives
+
+Two things, and it matters which is which:
+
+| | is | lives in |
+|---|---|---|
+| `.koment/annotations/**.yaml` | **the record** — reviewed, merged, cloned | git |
+| the index | **derived** — queried, searched, filtered | cache dir, or Postgres |
+
+The index is rebuilt from YAML and is never authoritative. Delete it and run
+`koment index --rebuild`; nothing is lost. It is gitignored because it is a
+build artifact, and a database file in git would be unreviewable and unmergeable
+(ADR 0022).
+
+Resolution stays live: the index stamps each file with `(mtime, size)` and
+re-resolves anything that changed before serving a status.
+
 ## Run and test it locally
 
 ```sh
@@ -106,6 +123,9 @@ internal/store/      records, ULIDs, prose wrapping, git context, authorship
 internal/anchor/     resolution and drift status
 internal/provenance/ captures git context and author identity
 internal/listen/     bind address resolution, shared by both servers
+internal/index/      derived index — SQLite and Postgres
+internal/config/     KOMENT_* environment fallback for every flag
+internal/metrics/    Prometheus instrumentation
 internal/mcp/        MCP server — stdio and HTTP
 internal/ui/         web view and static export
 charts/koment/       Helm chart

@@ -13,3 +13,8 @@ coverage.*
 .idea/
 .vscode/
 *.swp
+
+# Derived index — a build artifact, never repository content (ADR 0022).
+*.db
+*.db-wal
+*.db-shm

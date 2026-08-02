@@ -1,0 +1,49 @@
+version: 1
+file: internal/index/query.go
+annotations:
+  - id: 01KZ1MMMNHDDYGJGVKV398XBZQ
+    scope: excerpt
+    excerpt: func (f Filter) conditionsOn(prefix string) ([]string, []any) {
+    excerpt_sha256: b53a9c25537d980bdc5c09e2a7b7973d0601f57b2210c0dd08fd3b7a0ae3ebde
+    last_seen_line: 292
+    kind: gotcha
+    body: |-
+      Everything a caller supplies is bound through args. The only things
+      concatenated into the query string are a literal table prefix chosen in
+      code, "?" placeholders generated from an int count, and a %d LIMIT on an
+      int. gosec's taint analysis cannot see that and flags G701, which is
+      excluded for this package with that reasoning - and
+      TestFilterValuesAreBoundNotInterpolated enforces it, so the exclusion rests
+      on a test rather than on a comment.
+    created: "2026-08-02"
+    git:
+      commit: 80cede7d9e321fa6af7a945004ed73994398c25c
+      path: internal/index/query.go
+      line: 292
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+  - id: 01KZ1MMMPR740G2XQM7BCARV0A
+    scope: excerpt
+    excerpt: func (i *Index) Search(ctx context.Context, filter Filter) ([]Annotation, error) {
+    excerpt_sha256: 207ba67fce915407065ed7abe3618e338e4e9966a6eea63955931d72d8707d18
+    last_seen_line: 128
+    kind: why
+    body: |-
+      Search is full text, not substring: FTS5 on SQLite and a GIN-indexed
+      tsvector on Postgres. Both stem, so a search for "annotation" finds a body
+      containing "annotating", which strings.Contains cannot do and which is a
+      large part of why the index earns its dependency. The two drivers get
+      different queries on purpose rather than one query that is mediocre on both.
+    created: "2026-08-02"
+    git:
+      commit: 80cede7d9e321fa6af7a945004ed73994398c25c
+      path: internal/index/query.go
+      line: 128
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
