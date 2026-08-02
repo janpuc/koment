@@ -3,7 +3,7 @@ package index
 // The index is derived, so migrations only ever need to bring an empty database
 // up to date — there is no data to preserve. A schema change bumps the version,
 // which discards the old index and rebuilds it from YAML.
-const schemaVersion = 1
+const schemaVersion = 2
 
 var sqliteSchema = []string{
 	`CREATE TABLE IF NOT EXISTS meta (
@@ -38,6 +38,15 @@ var sqliteSchema = []string{
 		git_commit    TEXT NOT NULL DEFAULT '',
 		status        TEXT NOT NULL DEFAULT '',
 		line          INTEGER NOT NULL DEFAULT 0,
+		excerpt_sha256  TEXT NOT NULL DEFAULT '',
+		last_seen_line  INTEGER NOT NULL DEFAULT 0,
+		git_path        TEXT NOT NULL DEFAULT '',
+		git_line        INTEGER NOT NULL DEFAULT 0,
+		git_end_line    INTEGER NOT NULL DEFAULT 0,
+		author_email    TEXT NOT NULL DEFAULT '',
+		author_source   TEXT NOT NULL DEFAULT '',
+		author_account  TEXT NOT NULL DEFAULT '',
+		author_verified TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (repository_id, id)
 	)`,
 	`CREATE INDEX IF NOT EXISTS annotations_by_path ON annotations (repository_id, path)`,
@@ -86,6 +95,15 @@ var postgresSchema = []string{
 		git_commit    TEXT NOT NULL DEFAULT '',
 		status        TEXT NOT NULL DEFAULT '',
 		line          INTEGER NOT NULL DEFAULT 0,
+		excerpt_sha256  TEXT NOT NULL DEFAULT '',
+		last_seen_line  INTEGER NOT NULL DEFAULT 0,
+		git_path        TEXT NOT NULL DEFAULT '',
+		git_line        INTEGER NOT NULL DEFAULT 0,
+		git_end_line    INTEGER NOT NULL DEFAULT 0,
+		author_email    TEXT NOT NULL DEFAULT '',
+		author_source   TEXT NOT NULL DEFAULT '',
+		author_account  TEXT NOT NULL DEFAULT '',
+		author_verified TEXT NOT NULL DEFAULT '',
 		PRIMARY KEY (repository_id, id)
 	)`,
 	`CREATE INDEX IF NOT EXISTS annotations_by_path ON annotations (repository_id, path)`,

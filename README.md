@@ -126,6 +126,10 @@ wins.
 | `KOMENT_INDEX` | SQLite index file; defaults to the cache directory |
 | `KOMENT_DATABASE_URL` | use Postgres for the index, which makes the service stateless |
 
+`.koment/` bootstraps the index when it is empty, and `koment export` rebuilds
+`.koment/` from the index — byte-identically. Either can be lost without losing
+annotations.
+
 `koment <command> --help` lists every flag alongside its variable.
 
 ## Give it to your agents

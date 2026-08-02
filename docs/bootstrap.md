@@ -93,6 +93,16 @@ build artifact, and a database file in git would be unreviewable and unmergeable
 Resolution stays live: the index stamps each file with `(mtime, size)` and
 re-resolves anything that changed before serving a status.
 
+The derivation runs both ways, exactly (ADR 0023):
+
+```sh
+koment index      # .koment  ->  index   (automatic when the index is empty)
+koment export     # index    ->  .koment (byte-identical)
+```
+
+So a wiped cache costs a rebuild, and a lost `.koment/` costs an export. Neither
+loses an annotation.
+
 ## Run and test it locally
 
 ```sh
@@ -149,7 +159,7 @@ invisible to `koment check` at the root.
 ```sh
 cd demo
 ../koment list                 # 1 ok, 2 moved, 1 drifted, 1 orphaned
-../koment export --out /tmp/demo
+../koment site --out /tmp/demo
 open /tmp/demo/index.html
 ```
 
