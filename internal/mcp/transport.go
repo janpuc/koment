@@ -13,13 +13,16 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/listen"
+	"github.com/janpuc/koment/internal/metrics"
 	"github.com/janpuc/koment/internal/store"
 )
 
 const (
 	shutdownGrace = 5 * time.Second
 	headerTimeout = 10 * time.Second
+	sweepInterval = 30 * time.Second
 )
 
 const transportUsage = `koment mcp serves annotations to agents.
@@ -38,11 +41,17 @@ can read every annotation in the repository.
 func Serve(args []string, stderr io.Writer) error {
 	flags := flag.NewFlagSet("mcp", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	flags.Usage = func() { fmt.Fprint(stderr, transportUsage) }
+	flags.Usage = func() {
+		fmt.Fprint(stderr, transportUsage, "\nFlags (each also settable from the environment):\n", config.Usage(flags))
+	}
 
 	httpAddress := flags.String("http", "", "serve over HTTP at this address, with JSON responses")
 	streamableAddress := flags.String("streamable-http", "", "serve over HTTP at this address, with SSE responses")
+	metricsAddress := flags.String("metrics", "", "serve Prometheus metrics on this separate address; off unless given")
 	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if err := config.FromEnvironment(flags); err != nil {
 		return err
 	}
 	if flags.NArg() > 0 {
@@ -58,28 +67,67 @@ func Serve(args []string, stderr io.Writer) error {
 	}
 
 	ctx := context.Background()
+	recorder := startMetrics(ctx, annotations, *metricsAddress, stderr)
+
 	switch {
 	case *httpAddress != "":
-		return serveHTTP(ctx, annotations, *httpAddress, true, stderr)
+		return serveHTTP(ctx, annotations, *httpAddress, true, stderr, recorder)
 	case *streamableAddress != "":
-		return serveHTTP(ctx, annotations, *streamableAddress, false, stderr)
+		return serveHTTP(ctx, annotations, *streamableAddress, false, stderr, recorder)
 	}
-	return newServer(annotations).Run(ctx, &sdk.StdioTransport{})
+	return newServer(annotations, recorder).Run(ctx, &sdk.StdioTransport{})
+}
+
+// repositoryRoot prefers KOMENT_REPO, because in a container the working
+// directory is a mount point rather than somewhere a person navigated to.
+func repositoryRoot() (string, error) {
+	if root, ok := config.Root(); ok {
+		return store.FindRoot(root)
+	}
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("finding the working directory: %w", err)
+	}
+	return store.FindRoot(workingDirectory)
 }
 
 func openHere() (*store.Store, error) {
-	workingDirectory, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("finding the working directory: %w", err)
-	}
-	root, err := store.FindRoot(workingDirectory)
+	root, err := repositoryRoot()
 	if err != nil {
 		return nil, err
 	}
 	return store.Open(root), nil
 }
 
-func serveHTTP(ctx context.Context, annotations *store.Store, address string, jsonResponses bool, stderr io.Writer) error {
+func startMetrics(ctx context.Context, annotations *store.Store, address string, stderr io.Writer) metrics.Recorder {
+	if address == "" {
+		return metrics.Discard{}
+	}
+
+	recorder := metrics.New()
+	go func() {
+		if err := recorder.Serve(ctx, address, stderr); err != nil {
+			fmt.Fprintf(stderr, "koment: metrics: %v\n", err)
+		}
+	}()
+	go func() {
+		ticker := time.NewTicker(sweepInterval)
+		defer ticker.Stop()
+		for {
+			if err := metrics.Sweep(annotations, recorder); err != nil {
+				fmt.Fprintf(stderr, "koment: metrics sweep: %v\n", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	return recorder
+}
+
+func serveHTTP(ctx context.Context, annotations *store.Store, address string, jsonResponses bool, stderr io.Writer, recorder metrics.Recorder) error {
 	resolved, err := listen.Address(address)
 	if err != nil {
 		return err
@@ -87,7 +135,7 @@ func serveHTTP(ctx context.Context, annotations *store.Store, address string, js
 	listen.WarnIfPublic(resolved, stderr)
 
 	handler := sdk.NewStreamableHTTPHandler(
-		func(*http.Request) *sdk.Server { return newServer(annotations) },
+		func(*http.Request) *sdk.Server { return newServer(annotations, recorder) },
 		&sdk.StreamableHTTPOptions{JSONResponse: jsonResponses},
 	)
 

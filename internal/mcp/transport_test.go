@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/janpuc/koment/internal/metrics"
 )
 
 func serveOverHTTP(t *testing.T, jsonResponses bool) *httptest.Server {
@@ -15,7 +17,7 @@ func serveOverHTTP(t *testing.T, jsonResponses bool) *httptest.Server {
 	annotations := repositoryWithOneAnnotation(t)
 
 	handler := sdk.NewStreamableHTTPHandler(
-		func(*http.Request) *sdk.Server { return newServer(annotations) },
+		func(*http.Request) *sdk.Server { return newServer(annotations, metrics.Discard{}) },
 		&sdk.StreamableHTTPOptions{JSONResponse: jsonResponses},
 	)
 	server := httptest.NewServer(handler)

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>koment — annotations beside the code</title>
+<link rel="stylesheet" href="koment/style.css">
+<style>
+  .landing { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+  .landing h1 { font-family: var(--mono); font-size: 1.6rem; letter-spacing: -.03em; margin: 0 0 .4rem; }
+  .lede { font-family: var(--serif); font-size: 1.05rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 2.5rem; max-width: 42rem; }
+  .repos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+  .repo { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent); padding: 1.1rem 1.2rem 1.2rem; }
+  .repo:hover { border-left-color: var(--ok); background: var(--surface-2); }
+  .repo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .repo h2 { font-family: var(--mono); font-size: 1rem; margin: 0 0 .35rem; }
+  .repo p { font-family: var(--serif); font-size: .92rem; line-height: 1.5; color: var(--ink-soft); margin: 0 0 .8rem; }
+  .repo .shows { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
+  .note { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule-soft); font-size: .85rem; color: var(--ink-soft); line-height: 1.6; }
+  .note code { font-family: var(--mono); font-size: .8rem; color: var(--accent); }
+  .note a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="landing">
+  <h1>koment</h1>
+  <p class="lede">
+    Keeps the <em>why</em> of a codebase beside the code instead of inside it —
+    anchored to a snippet, kept in git, and checked. When the code an annotation
+    describes changes, koment fails the build rather than quietly serving a note
+    that no longer applies.
+  </p>
+
+  <div class="repos">
+    <a class="repo" href="koment/">
+      <h2>koment</h2>
+      <p>
+        This project's own annotations. Real ones: each was written because an
+        edit was about to lose a reason that was not written down anywhere. Read
+        these to judge whether the idea is worth anything.
+      </p>
+      <span class="shows">ok · moved</span>
+    </a>
+
+    <a class="repo" href="demo/">
+      <h2>demo</h2>
+      <p>
+        A small fixture whose drift is deliberate and permanent. It exists
+        because koment's own repository can never show a failing status — CI
+        keeps it green, and that is the whole point.
+      </p>
+      <span class="shows">ok · moved · drifted · orphaned</span>
+    </a>
+  </div>
+
+  <p class="note">
+    Both pages are static, rebuilt from source on every push, and rendered by
+    the same code that <code>koment ui</code> serves live against a working
+    tree. The demo is the tool explaining itself.
+    <br><br>
+    <a href="https://github.com/janpuc/koment">Source and documentation on GitHub</a>
+  </p>
+</div>
+
+</body>
+</html>

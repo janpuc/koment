@@ -32,6 +32,27 @@ service:
   type: ClusterIP
   port: 8080
 
+# Metrics are off unless enabled, and always on a port of their own. The
+# serving port is unauthenticated and ingress-facing; /metrics must never
+# inherit that exposure (ADR 0020).
+metrics:
+  enabled: false
+  port: 9090
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+  # A ConfigMap the Grafana sidecar discovers by label.
+  dashboard:
+    enabled: false
+    label: grafana_dashboard
+    labelValue: "1"
+
+# Anything here is passed to the container as an environment variable. Every
+# flag has a KOMENT_ equivalent, so this covers the whole surface.
+env: {}
+
 resources:
   requests:
     cpu: 10m

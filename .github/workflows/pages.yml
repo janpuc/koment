@@ -29,22 +29,36 @@ jobs:
       - name: build
         run: go build -o koment ./cmd/koment
 
-      # The demo renders demo/, whose drift is deliberate, so it is exported
-      # without a check. koment's own annotations are gated in ci.yml instead.
-      - name: export the demo
-        working-directory: demo
+      # Two repositories (ADR 0021). koment's own annotations are the
+      # persuasive half — real reasoning about real code. The fixture is the
+      # only place drifted and orphaned can be shown, because CI keeps main
+      # green and those two statuses fail the build.
+      - name: export koment
         run: |
-          ../koment export --out ../dist \
-            --banner "A fixture, not a live view. Every status below is deliberate, so the demo can show what drifted and orphaned look like — which koment's own repository never can, because CI keeps it green. Rebuilt from ${GITHUB_SHA::7}." \
+          ./koment export --out dist/koment --name koment \
+            --banner "koment's own annotations, rebuilt from ${GITHUB_SHA::7}. These are real — each was written because an edit was about to lose a real reason." \
             --banner-link "https://github.com/${GITHUB_REPOSITORY}"
 
+      - name: export the fixture
+        working-directory: demo
+        run: |
+          ../koment export --out ../dist/demo --name demo \
+            --banner "A fixture. Its drift is deliberate, so the demo can show what drifted and orphaned look like — which koment's own repository never can." \
+            --banner-link "https://github.com/${GITHUB_REPOSITORY}/tree/main/demo"
+
+      - name: landing page
+        run: cp demo/landing.html dist/index.html
+
       # A demo that silently rendered nothing would still deploy green.
-      - name: the demo shows every status
+      - name: every status is visible somewhere
         run: |
           for status in ok moved drifted orphaned; do
             grep -qr "pill $status" dist || { echo "demo is missing status: $status"; exit 1; }
           done
-          echo "all four statuses present"
+          test -f dist/index.html || { echo "no landing page"; exit 1; }
+          test -f dist/koment/index.html || { echo "koment export missing"; exit 1; }
+          test -f dist/demo/index.html || { echo "fixture export missing"; exit 1; }
+          echo "all four statuses present across both repositories"
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0

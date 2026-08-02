@@ -1,0 +1,25 @@
+version: 1
+file: internal/metrics/middleware.go
+annotations:
+  - id: 01KZ0JZWAS1PNE1774W5HEGJWK
+    scope: excerpt
+    excerpt: type recordingWriter struct {
+    excerpt_sha256: 4ec5b7ce390cc18f8e8aa5a2a1a72e137d662871d37c7607d8756b09c8bf5735
+    last_seen_line: 22
+    kind: gotcha
+    body: |-
+      net/http throws the status code away once it has been written, so the only
+      way to record it is to intercept WriteHeader. The written flag matters: a
+      handler that calls Write without WriteHeader implicitly sends 200, and a
+      handler that calls WriteHeader twice would otherwise record the second,
+      which net/http ignores.
+    created: "2026-08-02"
+    git:
+      commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+      path: internal/metrics/middleware.go
+      line: 22
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config

@@ -11,6 +11,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/janpuc/koment/internal/metrics"
+
 	"github.com/janpuc/koment/internal/anchor"
 	"github.com/janpuc/koment/internal/store"
 )
@@ -54,7 +56,7 @@ func connect(t *testing.T, annotations *store.Store) *sdk.ClientSession {
 	ctx := context.Background()
 	serverTransport, clientTransport := sdk.NewInMemoryTransports()
 
-	serverSession, err := newServer(annotations).Connect(ctx, serverTransport, nil)
+	serverSession, err := newServer(annotations, metrics.Discard{}).Connect(ctx, serverTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

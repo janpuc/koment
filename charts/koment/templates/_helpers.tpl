@@ -33,12 +33,16 @@ writable mode must not become reachable by setting a value.
 */}}
 {{- define "koment.args" -}}
 {{- $port := printf "0.0.0.0:%d" (int .Values.service.port) -}}
+{{- $metrics := list -}}
+{{- if .Values.metrics.enabled -}}
+{{- $metrics = list "--metrics" (printf "0.0.0.0:%d" (int .Values.metrics.port)) -}}
+{{- end -}}
 {{- if eq .Values.mode "ui" -}}
-["ui", "--listen", {{ $port | quote }}]
+{{ concat (list "ui" "--listen" $port) $metrics | toJson }}
 {{- else if eq .Values.mode "mcp-http" -}}
-["mcp", "--http", {{ $port | quote }}]
+{{ concat (list "mcp" "--http" $port) $metrics | toJson }}
 {{- else if eq .Values.mode "mcp-streamable" -}}
-["mcp", "--streamable-http", {{ $port | quote }}]
+{{ concat (list "mcp" "--streamable-http" $port) $metrics | toJson }}
 {{- else -}}
 {{- fail (printf "mode %q is not one of ui, mcp-http, mcp-streamable" .Values.mode) -}}
 {{- end -}}

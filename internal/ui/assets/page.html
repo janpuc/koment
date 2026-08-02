@@ -21,7 +21,7 @@
 <div class="app">
   <nav class="rail" aria-label="Annotated files">
     <div class="brand">
-      <b>koment</b>
+      <b>{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</b>
       <span>{{.Total}} annotation{{if ne .Total 1}}s{{end}}</span>
     </div>
 
