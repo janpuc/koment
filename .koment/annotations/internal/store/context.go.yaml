@@ -1,0 +1,70 @@
+version: 1
+file: internal/store/context.go
+annotations:
+  - id: 01KZ0BD2ETQ8V10YGCXT0GVB6X
+    scope: excerpt
+    excerpt: type GitContext struct {
+    excerpt_sha256: 0f524c42fc64280c0ebea2e570d083643d29c9c54d11e023921f9cb984051fd8
+    last_seen_line: 12
+    kind: invariant
+    body: |-
+      The excerpt and this context answer different questions and neither replaces
+      the other. Resolution searches on the excerpt alone; the commit hash is
+      consulted only to reconstruct history. Deleting every git block must leave
+      every status unchanged - TestProvenanceIsOptional and the anchor tests pin
+      that. If a change here makes resolution read the commit, ADR 0003 has been
+      reversed without anyone deciding to.
+    created: "2026-08-02"
+    git:
+      commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
+      path: internal/store/context.go
+      line: 12
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+  - id: 01KZ0BD2G026QVYB3BCP5QBKGJ
+    scope: excerpt
+    excerpt: var fullCommitSHA = regexp.MustCompile(`^[0-9a-f]{40}$|^[0-9a-f]{64}$`)
+    excerpt_sha256: 622e02c6fa16c7529060ff3c32785e8b5b8edfccb125e6855eeaed556498095a
+    last_seen_line: 19
+    kind: why
+    body: |-
+      A full SHA is required rather than an abbreviation. Git will happily accept
+      a 7-character prefix today and refuse it as ambiguous once the repository
+      grows, which turns a stored reference into a time bomb that only fires on
+      large histories. Storing the full hash costs 33 characters and removes the
+      failure entirely.
+    created: "2026-08-02"
+    git:
+      commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
+      path: internal/store/context.go
+      line: 19
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+  - id: 01KZ0BD2H55X6PR6VH5CTGP12S
+    scope: excerpt
+    excerpt: func (a Author) IsProven() bool { return a.Verified != "" }
+    excerpt_sha256: 93952e0403bb210e89f6b3f946ee064fa91fb5dc984525cb2ab9e54bf6943b36
+    last_seen_line: 88
+    kind: invariant
+    body: |-
+      The identity is a claim, not a proof. git config is trivially set to
+      anything, so source records where it came from and the UI must render an
+      unverified identity differently from a checked one. Rendering them
+      identically would be a lie of omission, and it is the kind that gets
+      believed because it looks like data rather than an assertion.
+    created: "2026-08-02"
+    git:
+      commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
+      path: internal/store/context.go
+      line: 88
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config

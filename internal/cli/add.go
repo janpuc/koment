@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/janpuc/koment/internal/anchor"
+	"github.com/janpuc/koment/internal/provenance"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -17,6 +18,8 @@ func runAdd(args []string, env Environment) int {
 	excerpt := flags.String("excerpt", "", "verbatim snippet to anchor to; omit to annotate the whole file")
 	kind := flags.String("kind", "", "one of why, gotcha, invariant, anti-pattern")
 	body := flags.String("body", "", "the rationale; - reads it from stdin")
+	author := flags.String("author", "", `override the git identity; "Name" or "Name <email>"`)
+	byAgent := flags.Bool("agent", false, "record this as written by an agent, not a person")
 	target, ok := onePositional("add", "a file", flags, args, env)
 	if !ok {
 		return ExitUsage
@@ -31,6 +34,9 @@ func runAdd(args []string, env Environment) int {
 	if err != nil {
 		return fail(env, err)
 	}
+	if annotation.Author, err = identity(annotations.Root(), *author, *byAgent); err != nil {
+		return misuse(env, "%v", err)
+	}
 	file, err := annotations.FromWorkingDirectory(target)
 	if err != nil {
 		return fail(env, err)
@@ -39,6 +45,8 @@ func runAdd(args []string, env Environment) int {
 	if err := anchorTo(&annotation, annotations, file, *excerpt); err != nil {
 		return fail(env, err)
 	}
+
+	annotation.Git = capture(annotations.Root(), file, annotation.LastSeenLine, env)
 
 	record, err := appendAnnotation(annotations, file, annotation)
 	if err != nil {
@@ -50,6 +58,38 @@ func runAdd(args []string, env Environment) int {
 
 	fmt.Fprintf(env.Stdout, "%s  %s %s\n", annotation.ID, annotation.Kind, location(file, annotation.LastSeenLine))
 	return ExitOK
+}
+
+func identity(root, explicit string, byAgent bool) (*store.Author, error) {
+	kind := store.AuthorHuman
+	if byAgent {
+		kind = store.AuthorAgent
+	}
+	if explicit != "" {
+		return provenance.ParseAuthor(explicit, kind)
+	}
+
+	author, err := provenance.IdentityFromGit(root)
+	if err != nil {
+		return nil, err
+	}
+	author.Kind = kind
+	return author, nil
+}
+
+// capture records the git context when git can answer, and says so when it
+// cannot. A missing context costs the historical views, never a resolution.
+func capture(root, file string, line int, env Environment) *store.GitContext {
+	context, err := provenance.Capture(root, file, line, line)
+	if err != nil {
+		fmt.Fprintf(env.Stderr, "koment: no git context recorded (%s is not committed, or this is not a repository)\n", file)
+		return nil
+	}
+	if provenance.WorktreeIsDirty(root, file) {
+		fmt.Fprintf(env.Stderr, "koment: %s has uncommitted changes, so commit %s does not describe what you annotated\n",
+			file, context.Commit[:7])
+	}
+	return context
 }
 
 func buildAnnotation(kind, body string, stdin io.Reader) (store.Annotation, error) {

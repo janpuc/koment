@@ -10,6 +10,9 @@
 
 ## Working on koment
 
+- **[Bootstrap](bootstrap.md)** — start here: what it is, the data model,
+  running it, the demo, releases
+
 - **[Development](development.md)** — layout, build, test, conventions
 - **[Decisions](decisions/)** — why koment is the way it is, and what was rejected
 - **[AGENTS.md](../AGENTS.md)** — rules for agents contributing to this repository

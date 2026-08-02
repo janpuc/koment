@@ -1,0 +1,15 @@
+koment is serving in "{{ .Values.mode }}" mode on port {{ .Values.service.port }}.
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "koment.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+
+{{ if not (or .Values.repository.existingClaim .Values.repository.clone.enabled) -}}
+WARNING: no repository is mounted. /repo is an empty directory, so koment has
+nothing to serve. Set repository.existingClaim, or repository.clone.enabled
+with a URL.
+
+{{ end -}}
+{{- if .Values.ingress.enabled -}}
+WARNING: koment has no authentication. This ingress publishes every annotation
+in the repository to anyone who can reach it. Put it behind something that
+authenticates, or keep it on a trusted network. See ADR 0011.
+{{ end -}}

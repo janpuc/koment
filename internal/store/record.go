@@ -57,14 +57,16 @@ func ParseScope(s string) (Scope, error) {
 }
 
 type Annotation struct {
-	ID            string `yaml:"id"`
-	Scope         Scope  `yaml:"scope"`
-	Excerpt       string `yaml:"excerpt,omitempty"`
-	ExcerptSHA256 string `yaml:"excerpt_sha256,omitempty"`
-	LastSeenLine  int    `yaml:"last_seen_line,omitempty"`
-	Kind          Kind   `yaml:"kind"`
-	Body          string `yaml:"body"`
-	Created       Date   `yaml:"created"`
+	ID            string      `yaml:"id"`
+	Scope         Scope       `yaml:"scope"`
+	Excerpt       string      `yaml:"excerpt,omitempty"`
+	ExcerptSHA256 string      `yaml:"excerpt_sha256,omitempty"`
+	LastSeenLine  int         `yaml:"last_seen_line,omitempty"`
+	Kind          Kind        `yaml:"kind"`
+	Body          string      `yaml:"body"`
+	Created       Date        `yaml:"created"`
+	Git           *GitContext `yaml:"git,omitempty"`
+	Author        *Author     `yaml:"author,omitempty"`
 }
 
 func ExcerptSHA256(excerpt string) string {
@@ -84,6 +86,16 @@ func (a Annotation) Validate() error {
 	}
 	if a.Created.IsZero() {
 		return fmt.Errorf("annotation %s: missing created date", a.ID)
+	}
+	if a.Git != nil {
+		if err := a.Git.Validate(); err != nil {
+			return fmt.Errorf("annotation %s: %w", a.ID, err)
+		}
+	}
+	if a.Author != nil {
+		if err := a.Author.Validate(); err != nil {
+			return fmt.Errorf("annotation %s: %w", a.ID, err)
+		}
 	}
 	return a.validateAnchor()
 }

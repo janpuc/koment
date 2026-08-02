@@ -1,0 +1,20 @@
+version: 1
+file: internal/provenance/provenance.go
+annotations:
+  - id: 01KZ0AVP5JQQKCT8G77A10QAM5
+    scope: excerpt
+    excerpt: func Capture(root, file string, line, endLine int) (*store.GitContext, error) {
+    excerpt_sha256: b4b122c7d5e0e6b155bb551b82f955647d89bf7821bae33b09d72eb70608bad3
+    last_seen_line: 20
+    kind: invariant
+    body: |-
+      Reports ErrNoGit rather than guessing. A fabricated commit reference is
+      worse than an absent one: an absent context degrades the historical view
+      honestly, a wrong one sends a reader to the wrong file state and looks
+      authoritative doing it.
+    created: "2026-08-02"
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config

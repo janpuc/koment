@@ -25,6 +25,7 @@ const usage = `koment — out-of-band code annotations
   koment list [--kind <kind>]
   koment reanchor <id> [--excerpt <text>] [--file <path>]
   koment ui [--listen <addr>]
+  koment export --out <dir>
   koment mcp
 
 check exits non-zero when an annotation is drifted or orphaned. reanchor is how
@@ -43,8 +44,9 @@ type Server func(args []string, stderr io.Writer) error
 // Servers are injected rather than imported. Adding one is a new field, not a
 // new parameter, so signatures here stop changing shape.
 type Servers struct {
-	MCP Server
-	UI  Server
+	MCP    Server
+	UI     Server
+	Export Server
 }
 
 // Run dispatches a subcommand.
@@ -73,6 +75,11 @@ func Run(args []string, env Environment, servers Servers) int {
 		return ExitOK
 	case command == "ui":
 		if err := servers.UI(rest, env.Stderr); err != nil {
+			return fail(env, err)
+		}
+		return ExitOK
+	case command == "export":
+		if err := servers.Export(rest, env.Stderr); err != nil {
 			return fail(env, err)
 		}
 		return ExitOK

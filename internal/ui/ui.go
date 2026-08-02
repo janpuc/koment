@@ -25,6 +25,7 @@ var assets embed.FS
 const (
 	defaultAddress = "127.0.0.1:0"
 	shutdownGrace  = 5 * time.Second
+	headerTimeout  = 10 * time.Second
 	filePrefix     = "/f/"
 )
 
@@ -73,17 +74,19 @@ func Serve(args []string, stderr io.Writer) error {
 	}
 	fmt.Fprintf(stderr, "koment: http://%s\n", listener.Addr())
 
-	return serve(context.Background(), store.Open(root), listener)
+	return serve(context.Background(), store.Open(root), listener, stderr)
 }
 
-func serve(ctx context.Context, annotations *store.Store, listener net.Listener) error {
-	server := &http.Server{Handler: Handler(annotations)}
+func serve(ctx context.Context, annotations *store.Store, listener net.Listener, stderr io.Writer) error {
+	server := &http.Server{Handler: Handler(annotations), ReadHeaderTimeout: headerTimeout}
 
 	go func() {
 		<-ctx.Done()
 		timeout, cancel := context.WithTimeout(context.Background(), shutdownGrace)
 		defer cancel()
-		server.Shutdown(timeout)
+		if err := server.Shutdown(timeout); err != nil {
+			fmt.Fprintf(stderr, "koment: shutting down: %v\n", err)
+		}
 	}()
 
 	if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
