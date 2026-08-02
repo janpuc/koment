@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,6 +22,8 @@ type result struct {
 
 func (r result) output() string { return r.stdout + r.stderr }
 
+// repository is a real git repository with a local identity, because add
+// records an author (ADR 0015) and a runner has no ambient git config.
 func repository(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -30,8 +33,24 @@ func repository(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte(source), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	initGit(t, root)
 	t.Chdir(root)
 	return root
+}
+
+func initGit(t *testing.T, root string) {
+	t.Helper()
+	for _, args := range [][]string{
+		{"init", "--initial-branch=main"},
+		{"config", "user.name", "Fixture Author"},
+		{"config", "user.email", "fixture@example.test"},
+	} {
+		command := exec.Command("git", args...)
+		command.Dir = root
+		if output, err := command.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, output)
+		}
+	}
 }
 
 func koment(t *testing.T, args ...string) result {
@@ -42,7 +61,7 @@ func koment(t *testing.T, args ...string) result {
 	unreachable := func(name string) Server {
 		return func([]string, io.Writer) error { t.Fatalf("%s must not be reached", name); return nil }
 	}
-	code := Run(args, env, Servers{MCP: unreachable("mcp"), UI: unreachable("ui")})
+	code := Run(args, env, Servers{MCP: unreachable("mcp"), UI: unreachable("ui"), Export: unreachable("export")})
 	return result{code: code, stdout: stdout.String(), stderr: stderr.String()}
 }
 

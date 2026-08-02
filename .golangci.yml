@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    # AGENTS.md section 5 forbids swallowing an error to keep going. A reviewer
+    # will not catch every one; this does.
+    - errcheck
+    - errorlint
+    - staticcheck
+    - govet
+    - ineffassign
+    - unused
+    - misspell
+    - unconvert
+    - bodyclose
+    - noctx
+    - copyloopvar
+    # koment ships a network listener now.
+    - gosec
+    - revive
+
+  # noctx wants a context on net.Listen, exec.Command and http.NewRequest.
+  # Every one of those here lives for the process lifetime of a CLI that exits
+  # when it is done, so the plumbing would add ceremony and cancel nothing.
+  disable:
+    - noctx
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      # `_ = f()` is a deliberate, reviewable discard. What must be caught is
+      # the accidental unchecked call, which is what errcheck flags by default.
+      check-blank: false
+      # A failed write to a terminal is not actionable and not recoverable:
+      # there is nowhere left to report it. Errors that can be acted on are
+      # checked, which is what AGENTS.md section 5 is about.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        # `if err := f(); err != nil` shadows by construction and is the
+        # idiom the whole standard library is written in.
+        - shadow
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+    gosec:
+      excludes:
+        # File paths are user-supplied by design: koment reads the files you
+        # point it at. Traversal is prevented by store.validSourcePath, which
+        # has its own tests, rather than by refusing variable paths.
+        - G304
+        # 0o644 on records and 0o755 on directories is intended; these are
+        # source files meant to be read and reviewed like any other.
+        - G301
+        - G306
+        - G302
+        # Every argument is constructed in this package; none is user input.
+        - G204
+        # Shutdown deliberately needs a context that outlives the cancelled
+        # one it is reacting to.
+        - G118
+
+  exclusions:
+    rules:
+      # Test fixtures deliberately construct invalid and hostile input.
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/janpuc/koment
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

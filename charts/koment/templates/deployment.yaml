@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "koment.fullname" . }}
+  labels: {{- include "koment.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "koment.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "koment.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and .Values.repository.clone.enabled (not .Values.repository.existingClaim) }}
+      initContainers:
+        - name: clone
+          image: {{ .Values.repository.clone.image | quote }}
+          args:
+            - clone
+            - --depth=1
+            - --branch={{ .Values.repository.clone.ref }}
+            - {{ required "repository.clone.url is required when clone is enabled" .Values.repository.clone.url | quote }}
+            - /repo
+          volumeMounts:
+            - name: repository
+              mountPath: /repo
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- end }}
+      containers:
+        - name: koment
+          image: {{ include "koment.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: {{ include "koment.args" . }}
+          workingDir: /repo
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          {{- /*
+            koment serves from files on disk with no dependencies, so liveness
+            and readiness are the same question: is the listener up.
+          */}}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: repository
+              mountPath: /repo
+              readOnly: {{ not .Values.repository.clone.enabled }}
+      volumes:
+        - name: repository
+          {{- if .Values.repository.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.repository.existingClaim | quote }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -30,7 +30,7 @@ func TestNewIDSortsByCreationTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !(earlier < later) {
+	if earlier >= later {
 		t.Errorf("want %q < %q", earlier, later)
 	}
 }

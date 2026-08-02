@@ -175,10 +175,10 @@ func writeAtomically(path string, content []byte) error {
 	if err != nil {
 		return fmt.Errorf("creating temporary file beside %s: %w", path, err)
 	}
-	defer os.Remove(temporary.Name())
+	defer func() { _ = os.Remove(temporary.Name()) }()
 
 	if _, err := temporary.Write(content); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return fmt.Errorf("writing %s: %w", temporary.Name(), err)
 	}
 	if err := temporary.Close(); err != nil {

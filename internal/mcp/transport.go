@@ -17,7 +17,10 @@ import (
 	"github.com/janpuc/koment/internal/store"
 )
 
-const shutdownGrace = 5 * time.Second
+const (
+	shutdownGrace = 5 * time.Second
+	headerTimeout = 10 * time.Second
+)
 
 const transportUsage = `koment mcp serves annotations to agents.
 
@@ -92,13 +95,15 @@ func serveHTTP(ctx context.Context, annotations *store.Store, address string, js
 	if err != nil {
 		return fmt.Errorf("listening on %s: %w", resolved, err)
 	}
-	server := &http.Server{Handler: handler}
+	server := &http.Server{Handler: handler, ReadHeaderTimeout: headerTimeout}
 
 	go func() {
 		<-ctx.Done()
 		timeout, cancel := context.WithTimeout(context.Background(), shutdownGrace)
 		defer cancel()
-		server.Shutdown(timeout)
+		if err := server.Shutdown(timeout); err != nil {
+			fmt.Fprintf(stderr, "koment: shutting down: %v\n", err)
+		}
 	}()
 
 	fmt.Fprintf(stderr, "koment: serving %d annotated files at http://%s\n", annotatedFileCount(annotations), listener.Addr())

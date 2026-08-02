@@ -70,6 +70,72 @@ annotations:
 - `kind` — `why` | `gotcha` | `invariant` | `anti-pattern`. Constrained on
   purpose; a free-form kind field becomes a junk drawer.
 - `body` — prose. The thing that would have been a comment.
+- `git` — the context at creation. Written once, never rewritten. ADR 0014.
+- `author` — who wrote it, and how much that claim is worth. ADR 0015.
+
+```yaml
+    git:
+      commit: 9f3c1a4d8e2b7c5a6f0d3e1b8c7a5f2d4e6b9c1a
+      path: internal/store/ulid.go
+      line: 18
+      end_line: 18
+    author:
+      name: Jan Pucilowski
+      email: janpuc@proton.me
+      kind: human
+      source: git-config
+```
+
+### Two jobs, two mechanisms
+
+The excerpt and the git context answer different questions, and neither
+substitutes for the other:
+
+| | question | mechanism | changes |
+|---|---|---|---|
+| anchor | does this still apply *now*? | excerpt search | every resolution |
+| git context | what was true when it was written? | commit hash | never |
+
+Resolution reads the excerpt and nothing else. Deleting the whole `git` block
+changes no status — there is a test for that. The commit hash is authoritative
+for reconstructing history; the excerpt is authoritative for applicability.
+
+## Data model
+
+A deployment may serve many repositories. The repository stays the unit of
+storage — each keeps its own `.koment/` — and the deployment indexes them
+rather than owning them. ADR 0017.
+
+```
+Deployment
+└── Repository        id, name, clone URL, default branch, config, sync state
+    └── Commit        the git context an annotation was created against
+        └── File      path at that commit
+            └── Annotation
+```
+
+Isolation is structural: a repository's annotations live in that repository, so
+there is no shared table where a missing filter leaks one project into another.
+
+### Lifecycle
+
+Annotations may be created interactively, but the repository is the record and
+the deployment store is an outbox, never a mirror. ADR 0016.
+
+```
+created ──▶ pending ──▶ materialised ──▶ settled
+            (in the deployment,          (in git, authoritative;
+             not in any clone)            the outbox keeps no copy)
+```
+
+On conflict git wins, because after materialising there is nothing left in the
+outbox to conflict with. The ULID is minted at creation and survives, so pending
+and settled are the same annotation.
+
+**Interactive creation is a write path.** ADR 0011 made its own
+no-authentication posture conditional on the surface staying read-only. Nothing
+that creates an annotation may be exposed on a network listener until
+authentication exists.
 
 ### Anchor resolution
 

@@ -1,0 +1,20 @@
+apiVersion: v2
+name: koment
+description: Out-of-band code annotations, checked against the code they describe
+type: application
+# x-release-please-start-version
+version: 0.1.0
+# x-release-please-end
+# x-release-please-start-version
+appVersion: "0.1.0"
+# x-release-please-end
+home: https://github.com/janpuc/koment
+sources:
+  - https://github.com/janpuc/koment
+keywords:
+  - annotations
+  - documentation
+  - mcp
+maintainers:
+  - name: janpuc
+    url: https://github.com/janpuc

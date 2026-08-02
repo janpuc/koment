@@ -4,6 +4,10 @@ You are working on a tool whose entire purpose is to make code understandable
 without comments. If this codebase needs comments to be understood, the project
 has failed its own thesis. Dogfood it.
 
+**New here? Read [docs/bootstrap.md](docs/bootstrap.md) first** — what this is,
+how the data model works, how to run and test it, and the rules below in
+context.
+
 Read `DESIGN.md` before writing code. Read `docs/decisions/` before changing
 anything structural.
 

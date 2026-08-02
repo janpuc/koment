@@ -14,3 +14,23 @@ annotations:
       can detect that. TestEncodeCrockfordCoversTheWholeValue pins both extremes -
       all-zero bytes must encode to 26 zeros, all-ones to "7" followed by 25 Z.
     created: "2026-07-31"
+  - id: 01KZ0AW2AGNWS4W18JRBS8CJ3Z
+    scope: excerpt
+    excerpt: func encodeCrockford(id [timestampBytes + entropyBytes]byte) string {
+    excerpt_sha256: e7e725bab60ddeac9101810df6e344dba98f2ab2188c475081bef1836fbaf43b
+    last_seen_line: 40
+    kind: why
+    body: |-
+      Encoding is generate-only: koment mints ids and compares them as strings,
+      never parses one back into a timestamp. That is why there is no decoder to
+      keep in step with this.
+    created: "2026-08-02"
+    git:
+      commit: c5d12fbd8f95821b46dda2a1cb0ffefbdf923b7c
+      path: internal/store/ulid.go
+      line: 40
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: human
+      source: git-config

@@ -152,7 +152,8 @@ lives on a server you have to keep running.
 - **[CI and pre-commit](docs/ci.md)** — wiring the drift gate
 - **[CLI reference](docs/cli.md)** — every command and flag
 
-Contributing or curious how it works? **[docs/development.md](docs/development.md)**
+Contributing or curious how it works? **[docs/bootstrap.md](docs/bootstrap.md)**
+is the fastest way in, **[docs/development.md](docs/development.md)**
 covers the internals, and **[docs/decisions/](docs/decisions/)** records why koment
 is the way it is — including the roads not taken.
 

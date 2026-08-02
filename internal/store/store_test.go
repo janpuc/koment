@@ -395,3 +395,12 @@ func TestFindRootFallsBackToGitWorkTree(t *testing.T) {
 		t.Errorf("want %s, got %s", root, got)
 	}
 }
+
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(content)
+}
