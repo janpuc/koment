@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/janpuc/koment/compare/v0.1.1...v0.1.2) (2026-08-02)
+
+
+### Features
+
+* index annotations in a database; git keeps the record ([#8](https://github.com/janpuc/koment/issues/8)) ([a28ac9d](https://github.com/janpuc/koment/commit/a28ac9dc89791a5d2a493f0fd858c933da128e7e))
+* metrics, env configuration, and a two-repository demo ([#6](https://github.com/janpuc/koment/issues/6)) ([9fbd582](https://github.com/janpuc/koment/commit/9fbd5821bb5a19a0d46dab66ec5efde0b2000de5))
+
 ## [0.1.1](https://github.com/janpuc/koment/compare/v0.1.0...v0.1.1) (2026-08-02)
 
 
