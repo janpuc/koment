@@ -1,0 +1,5 @@
+# koment:managed-start
+[mcp_servers.koment]
+command = "koment"
+args = ["mcp", "--write"]
+# koment:managed-end

@@ -61,6 +61,12 @@ jobs:
       - name: Check annotations
         run: mise run annotations
 
+      - name: Check comment policy
+        run: mise run comments
+
+      - name: Check agent adapters
+        run: mise run agent-policy
+
   go-lint:
     name: lint
     runs-on: ubuntu-24.04

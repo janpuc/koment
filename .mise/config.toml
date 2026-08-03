@@ -77,6 +77,14 @@ fi
 description = "Verify koment's annotations"
 run = "go run ./cmd/koment check"
 
+[tasks.comments]
+description = "Reject comments that bypass koment policy"
+run = "go run ./cmd/koment comments check"
+
+[tasks.agent-policy]
+description = "Reject stale or missing agent adapters"
+run = "go run ./cmd/koment agents check"
+
 [tasks.workflow-lint]
 description = "Lint and audit GitHub Actions"
 run = """

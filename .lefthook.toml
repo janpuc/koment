@@ -8,3 +8,9 @@ stage_fixed = true
 
 [pre-commit.commands.annotations]
 run = "mise run annotations"
+
+[pre-commit.commands.comments]
+run = "mise run comments"
+
+[pre-commit.commands.agent-policy]
+run = "mise run agent-policy"
