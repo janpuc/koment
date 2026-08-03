@@ -146,8 +146,9 @@ check` still reads YAML.
 
 ## site
 
-Renders one repository to static HTML — the published tier (ADR 0026). See
-[publishing](publishing.md) for the workflow to copy.
+Renders one repository to static HTML — the published tier
+([ADR 0103](decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
+See [publishing](publishing.md) for the workflow to copy.
 
 ```sh
 koment site --out dist
@@ -168,8 +169,9 @@ cannot determine one: a snapshot that does not say what it is a snapshot of is
 how a stale rendering passes for the current tree. Pass `--commit` outside git.
 
 It is a snapshot, not your working tree — use `koment ui` for that, which
-re-resolves on every request (ADR 0013). A site renders your source as well as
-your annotations.
+re-resolves on every request. The shared target behaviour is defined by
+[ADR 0102](decisions/0102-one-repository-snapshot-for-every-reader.md). A site
+renders your source as well as your annotations.
 
 Was `koment export` before 0.2; the plainer name went to the store rebuild,
 which is the more central operation.

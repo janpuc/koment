@@ -59,11 +59,10 @@ authentication; anyone who can reach this port can read every annotation in
 the repository.
 ```
 
-**There is no authentication.** The surface is read-only and the data is already
-in your git repository, which is what makes that tolerable — but put it behind
-something that authenticates before exposing it beyond a trusted network.
-[ADR 0011](../decisions/0011-serve-mcp-over-http-as-well-as-stdio.md) records
-the trade in full.
+**There is no authentication in v0.2.** Put it behind something that
+authenticates before exposing it beyond a trusted network. This is legacy
+behaviour; the approved served tier authenticates every non-loopback request
+([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
 
 ## The tools
 

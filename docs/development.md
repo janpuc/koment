@@ -48,15 +48,16 @@ is API documentation and doesn't count.
 **Rationale goes in an ADR or an annotation.** Project-wide reasoning becomes an
 ADR in `docs/decisions/`. Reasoning bound to a place in the code becomes a
 koment annotation. This repository is koment's own first user — see
-[ADR 0010](decisions/0010-dogfood-koment-on-koment.md).
+[ADR 0107](decisions/0107-dogfood-the-comment-free-thesis.md).
 
 **Every dependency needs an ADR.** Standard library first; a small
 well-understood module over a framework. The graph is currently two direct
 dependencies and the bar for a third is high.
 
-**ADRs are immutable.** Changed your mind? Write a new one that supersedes the
-old, and mark the old one. The history is the product — see
-[ADR 0001](decisions/0001-record-architecture-decisions.md).
+**Active ADRs are immutable.** Changed your mind? Write a new one that
+supersedes the old and mark the old one. The owner-authorized pre-deployment
+reset that created the 0100 series is recorded in the
+[decision index](decisions/README.md); it is not the normal workflow.
 
 **Design before code.** For anything beyond a bugfix, update `DESIGN.md` first
 and get it agreed. Don't open a large diff that also invents the design.

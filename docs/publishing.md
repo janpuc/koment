@@ -3,7 +3,8 @@
 Copy one file into your repository and everyone with access reads the reasoning
 in a browser. No server, no database, no authentication to design, no cost.
 
-This is the **published tier** ([ADR 0026](decisions/0026-three-tiers-of-adoption-and-static-is-one-of-them.md)).
+This is the **published tier**
+([ADR 0103](decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
 It sits between running the CLI on a laptop and running a served instance, and
 moving between them is not a migration — all three read the same `.koment/` in
 git.
@@ -136,9 +137,12 @@ docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
 
 You gain live resolution against the working tree, several repositories behind
 one switcher, index-backed search across them, and metrics. You take on hosting
-and an access-control decision, because the served UI has no authentication
-([ADR 0013](decisions/0013-a-local-read-only-web-ui.md)). Keeping the published
-site as well is a reasonable thing to do; they do not conflict.
+and an access-control decision, because the v0.2 served UI has no
+authentication. That is legacy behaviour: the approved served tier requires
+authentication
+([ADR 0105](decisions/0105-authenticated-outbox-settles-through-git.md)).
+Keeping the published site as well is a reasonable thing to do; they do not
+conflict.
 
 ## Not on GitHub
 

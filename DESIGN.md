@@ -1,310 +1,440 @@
-# koment — design
+# koment — target design
 
-Status: **implemented.** Change it by proposing a diff, not by diverging in
-code; the decisions behind it are in `docs/decisions/`.
+Status: **approved target; implementation in progress.**
 
-## Problem
+The v0.2 implementation remains usable while this design is built, but it is
+not the specification. The active architectural decisions start at ADR 0100 in
+`docs/decisions/`. Earlier decisions describe the pre-deployment prototype and
+remain available in Git history.
 
-Code should be readable enough not to need comments. But readable code only
-answers **what**. It cannot answer **why this and not the obvious alternative**,
-**what bit us here before**, or **what invariant will silently break if you
-"simplify" this**.
+## Thesis
 
-Multiple agents work across these codebases. An agent that cannot see why
-something was built a certain way will happily refactor the reason away.
+Code should explain what it does through names, types and structure. Inline
+comments often narrate code, drift silently and make the code harder to edit.
+Removing them creates a different need: humans and agents must still be able to
+record why a choice was made, what failed before and which invariant must
+survive a change.
 
-Inline comments are rejected: they duplicate *what*, drift from the code, and
-have no history, no confidence, and no cross-file reach.
+koment stores that local reasoning outside the source file, keeps it in Git and
+binds it to code with a deterministic anchor. The same record must be easy for
+a human or an agent to add, find and judge. A stale or ambiguous record is
+shown as such everywhere; no surface may silently turn uncertainty into fact.
+
+## Principles
+
+1. **Git is the record.** The committed YAML is authoritative. Databases,
+   static sites and in-memory search structures are disposable read models.
+2. **One fact has one representation.** An annotation is one record with one
+   stable id, regardless of which surface created or reads it.
+3. **Resolution is deterministic.** Exact text and captured context decide an
+   anchor. Lines describe movement but never choose identity.
+4. **Uncertainty fails loudly.** Drift, orphaning and ambiguity are failures.
+   Every surface carries the same status and warning.
+5. **Humans and agents are peers.** Both can read and write through first-class
+   interfaces backed by the same application service.
+6. **Repository identity is assigned.** A checkout moving on disk does not
+   create a new repository.
+7. **Remote access is authenticated.** Read-only source and rationale are still
+   confidential. Loopback is the only unauthenticated network boundary.
+8. **A published page is a snapshot.** It names its commit and never pretends to
+   be live or writable.
+9. **The implementation dogfoods the thesis.** Local rationale belongs in
+   koment, structural rationale in ADRs and inline comments are exceptional.
+10. **Operations follow konflate's standard.** Tooling, CI, containers, Helm
+    and releases use `home-operations/konflate` as their baseline unless an ADR
+    records a deliberate difference.
+
+## Implementation status
+
+This table is the honest boundary between the current v0.2 code and the target.
+
+| Capability | Current state | Target state |
+|---|---|---|
+| Git-backed annotations | implemented as record lists mirrored per source file | one record per annotation |
+| Deterministic excerpts | implemented | context disambiguation and explicit `ambiguous` failure |
+| CLI read and write | implemented | rebuilt on the common application service |
+| Local human UI | read-only | read and explicit loopback write mode |
+| Local agent MCP | read-only | read and explicit stdio write mode |
+| Static publishing | partial | atomic commit snapshot with body search and JSON |
+| Multi-repository routing | partial | assigned identity plus synchronized commit snapshots |
+| HTTP serving | separate unauthenticated UI or MCP | one authenticated human-and-agent service |
+| Database index | prototype, not used by servers | new Postgres read model for served snapshots only |
+| Remote authoring | design only | authenticated exact outbox materialized through Git |
+| Helm and release | baseline exists | konflate-aligned tests, hardening and signatures |
+
+## Annotation record
+
+Each annotation is stored at `.koment/annotations/<id>.yaml`. The filename and
+the record id must agree. Adding two annotations creates two files, so
+concurrent humans and agents do not perform a shared read-modify-write.
+
+```yaml
+version: 2
+id: 01JQ8ZK3M4N5P6R7S8T9V0W1X2
+file: internal/session/token.go
+kind: invariant
+body: |-
+  Rotation must keep the previous key until every token minted before the
+  rotation window has expired.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: "if token.Expired(now) {"
+  before: |-
+    func validate(token Token, now time.Time) error {
+  after: |-
+        return ErrExpired
+  last_seen_line: 42
+git:
+  commit: 9f3c1a4d8e2b7c5a6f0d3e1b8c7a5f2d4e6b9c1a
+  path: internal/session/token.go
+  line: 42
+  end_line: 42
+author:
+  name: Jan Pucilowski
+  kind: human
+  source: git-config
+```
+
+Required fields are `version`, `id`, `file`, `kind`, `body`, `created`,
+`anchor` and `author`. Git context is recorded when available and never affects
+resolution. Author kind is `human`, `agent` or `unknown`; new writes require the
+first two. An imported v1 annotation with no attributable author records an
+explicit `unknown` legacy identity; migration never invents a person.
+
+Kinds remain deliberately constrained:
+
+- `why` — why this approach won;
+- `gotcha` — surprising behaviour a changer must account for;
+- `invariant` — a property that must remain true;
+- `anti-pattern` — an attractive approach already found to be wrong.
+
+The YAML decoder rejects unknown fields. Record serialization is deterministic
+so a semantic no-op does not create a Git diff. ADR 0100 records the storage
+decision.
+
+## Anchors and resolution
+
+An anchor has `file` or `excerpt` scope. File scope applies to the whole file.
+Excerpt scope stores exact text plus up to three complete source lines
+immediately before and after it, captured automatically at creation or reanchor
+time. Fewer lines are stored at a file boundary. Users do not hand-maintain
+hashes or context.
+
+Resolution follows one order:
+
+1. If the file does not exist, return `orphaned`.
+2. File scope returns `ok`.
+3. Find every exact occurrence of the excerpt.
+4. No occurrence returns `drifted`.
+5. One occurrence resolves there.
+6. Several occurrences are filtered by the captured before and after context.
+7. Exactly one contextual candidate resolves there; otherwise return
+   `ambiguous`.
+8. A resolved line equal to `last_seen_line` is `ok`; another line is `moved`.
+
+| Status | Meaning | `koment check` |
+|---|---|---|
+| `ok` | the anchor resolves where it was last confirmed | pass |
+| `moved` | the anchor resolves uniquely at another line | pass |
+| `ambiguous` | more than one candidate remains | fail |
+| `drifted` | the file exists but the excerpt does not | fail |
+| `orphaned` | the file does not exist | fail |
+
+`last_seen_line` is descriptive metadata. It never selects a candidate.
+Reanchor keeps the id, author and creation date, replaces the anchor and records
+the newly confirmed line. ADR 0101 records the resolution decision.
+
+All repository reads and writes use a filesystem root that prevents a relative
+path or symlink from escaping the repository. Lexical path cleaning is not a
+security boundary.
+
+## Shared application model
+
+Storage and presentation are separated by one application model:
+
+```text
+RepositorySnapshot
+├── repository identity
+├── source commit and generation time
+└── annotated files
+    ├── source content
+    └── annotation views
+        ├── record
+        ├── current resolution and occurrence count
+        ├── author claim and verification
+        └── historical Git context
+```
+
+CLI, UI, MCP, static generation, search and metrics consume this model. They do
+not independently translate records or invent warnings. A status, author or
+provenance field visible in one read surface is visible in all applicable read
+surfaces.
+
+Local commands build a snapshot directly from the current working tree.
+`koment site` builds one immutable snapshot for the whole render. The served
+tier reads transactional snapshots from Postgres. The current bidirectional
+SQLite index and its recovery role are removed; Git alone recovers records.
+ADR 0102 records this boundary.
+
+## Product tiers
+
+The tiers share records and presentation, not false capability parity.
+
+| Tier | Source | Human read | Agent read | Write | Repository scope |
+|---|---|---|---|---|---|
+| local | current working tree | CLI and UI | stdio MCP | direct Git records | one or configured local set |
+| published | one commit snapshot | static UI | static JSON/search data | none | one repository per site |
+| served | transactional snapshots | authenticated UI | authenticated MCP | authenticated outbox | many assigned repositories |
+
+### Local
+
+The CLI remains the universal interface:
+
+```text
+koment add <file> [--excerpt <text>] --kind <kind> --body <text>
+koment show <file>
+koment list
+koment search <query>
+koment check [path...]
+koment reanchor <id> [--excerpt <text>] [--file <path>]
+koment ui [--write]
+koment mcp [--write]
+```
+
+`koment ui --write` is loopback-only, uses an unguessable session capability
+and rejects cross-origin writes. `koment mcp --write` is allowed over stdio.
+Write tools are not registered on an unauthenticated HTTP transport.
+
+The MCP surface is symmetrical with the application service:
+
+- `koment_repositories`
+- `koment_get`
+- `koment_search`
+- `koment_add` when writes are enabled
+- `koment_reanchor` when writes are enabled
+
+Every mutation records human or agent authorship honestly and returns the full
+record plus its repository-relative YAML path.
+
+### Published
+
+`koment site` writes a complete site to a staging directory and publishes it by
+replacement. Rebuilding cannot leave pages from a previous snapshot.
+
+The output contains the human UI, annotation-body search data and an
+`annotations.json` machine-readable snapshot. Every page names the repository
+and commit. Static output is read-only by nature; it may link to a configured
+writer but never presents an inert write control.
+
+### Served
+
+`koment serve` exposes one coherent service:
+
+```text
+/          human UI
+/mcp      agent MCP
+/livez    process health
+/readyz   dependency and snapshot readiness
+```
+
+Prometheus metrics remain on a separate listener. The process derives its root
+context from termination signals, bounds shutdown and treats a configured
+listener that cannot start as fatal. MCP requests and sessions have explicit
+limits.
+
+Every non-loopback request is authenticated. Human identity comes from a
+trusted OIDC boundary. Agents use scoped bearer credentials. The application
+accepts forwarded identity only from configured trusted proxies and records the
+verification mechanism with the author claim. ADR 0103 defines tier and
+surface capability; ADR 0105 defines remote writes.
+
+## Multi-repository serving
+
+A served repository is configured with an immutable id, display name,
+canonical clone URL and default branch. Local filesystem paths are deployment
+details and never identity.
+
+```yaml
+repositories:
+  - id: payments
+    name: Payments API
+    clone_url: https://github.com/example/payments
+    default_branch: main
+```
+
+An ingester synchronizes each repository outside the request path:
+
+1. Fetch and check out one commit.
+2. Read and validate every annotation record.
+3. Read only the source files that have annotations.
+4. Resolve every anchor and build the repository snapshot.
+5. Replace that repository's database generation in one transaction.
+
+Readers see the previous complete generation or the next complete generation,
+never rows assembled from different commits. Source content for annotated files
+is stored with the generation, so read replicas need no local checkout and are
+actually stateless.
+
+Search, URLs, metrics, outbox rows and database keys all carry the assigned
+repository id. Cross-repository search names the repository of every result.
+When a file path exists in several repositories, an unscoped get refuses and
+names the candidates. ADR 0104 records the multi-repository decision.
+
+## Remote authoring and Git settlement
+
+Remote creation never edits a read replica's checkout and never pushes directly
+to a default branch. An authenticated request creates an exact v2 record in an
+outbox with its stable id, repository id, base commit and author identity.
+
+```text
+created ──▶ pending ──▶ pull request ──▶ settled
+                │              │
+                └── conflict ◀─┘
+```
+
+A materializer, implemented behind a provider interface with GitHub first,
+creates or updates a branch and pull request containing the YAML record. Once a
+synced repository snapshot contains that id with the same record content, the
+outbox entry is settled and removed. A conflicting committed record stops
+materialization and remains visible as a conflict; Git wins because it is the
+record.
+
+The outbox stores exact records, not summaries or embeddings. It does not merge,
+deduplicate, demote or expire rationale. ADR 0105 records this lifecycle.
+
+## Search and read models
+
+Search has one contract and tier-specific implementations:
+
+- local processes build an in-memory index from one snapshot;
+- published sites include a generated static search dataset;
+- served deployments use Postgres full-text search scoped by repository
+  generation.
+
+Search covers bodies, file paths, kinds, authors and ids. Results return the
+same annotation view as `get`, including resolution and provenance. A read
+model can always be discarded and rebuilt from Git plus the source commit; it
+is never a recovery source for Git.
+
+## Security boundaries
+
+- Repository file access cannot escape its opened root through paths or
+  symlinks.
+- Loopback local services may be unauthenticated; non-loopback services may not.
+- Browser writes require same-origin and CSRF protection.
+- Agent credentials are scoped to repositories and read or write capability.
+- Sensitive configuration comes from secret references, never chart values
+  rendered into pod specifications.
+- Request bodies, sessions, concurrent work and graceful shutdown are bounded.
+- Static publishing replaces output atomically and cannot retain removed files.
+- Remote Git writes go through reviewable pull requests.
+
+## Operations
+
+konflate is the operational baseline, inspected at the commit recorded in ADR
+0106. koment adopts its pinned toolchain, local task runner, workflow linting,
+vulnerability scanning, Helm tests, container hardening, digest pinning and
+release signing. Differences must be deliberate:
+
+- koment retains race testing;
+- koment has no Node frontend toolchain;
+- rationale that konflate places in inline comments belongs in koment
+  annotations or ADRs here.
+
+The Helm chart deploys `koment serve`, not mutually exclusive human and agent
+modes. It provides a values schema, generated documentation, a non-token-bearing
+service account, probes, optional NetworkPolicy and disruption controls. CI
+installs the chart into Kind and runs `helm test` against the built image.
+
+Images and charts are digest-addressable and signed. Binary checksums are
+authenticated rather than downloaded unsigned beside the binary they verify.
+
+## Comment-free dogfooding
+
+Before adding a comment, contributors rename, extract, introduce a named type or
+constant, and restructure in that order. Remaining local rationale becomes a
+koment annotation; structural rationale becomes an ADR.
+
+Allowed inline comments are toolchain directives, links required to explain an
+external constraint, deprecation markers and genuine public API documentation.
+An AST-aware CI check enforces the Go rule. Other source-like files are audited
+without blindly deleting schema directives or generated documentation markers.
+ADR 0107 records why koment enforces its own thesis.
+
+## Implementation sequence
+
+### 1. Operational floor
+
+Adopt the pinned konflate-style toolchain and missing CI security checks before
+large code changes. Retain the existing race suite.
+
+### 2. Record and anchor v2
+
+Implement one-record-per-annotation storage, migrate this repository's records,
+add ambiguity and context resolution, enforce rooted filesystem access and
+remove the current index/export subsystem.
+
+### 3. Shared reads and local writes
+
+Introduce the snapshot and application services, move every reader to them,
+surface provenance consistently, add local UI and MCP writes, and rebuild static
+publishing and search.
+
+### 4. Served multi-repository system
+
+Add the unified server, authentication, Postgres generations, repository
+ingestion, exact outbox and GitHub materializer.
+
+### 5. Deployment and release
+
+Replace the prototype chart modes, add schema and E2E coverage, then sign and
+digest-pin all release artifacts.
+
+Each stage leaves tests and documentation describing only behaviour that
+exists. A capability moves from `planned` to `implemented` in this document in
+the same change that verifies it.
+
+## Definition of done
+
+vNext is complete when:
+
+1. Concurrent local agents can add and reanchor records without losing work.
+2. All five resolution statuses have real before/after fixtures and identical
+   presentation across CLI, UI, MCP and static output.
+3. No repository-controlled path or symlink can expose a file outside its root.
+4. Humans and agents can read and write locally through first-class surfaces.
+5. Static output is atomic, searchable, commit-stamped and machine-readable.
+6. One authenticated service presents UI and MCP for several assigned
+   repositories from transactional commit snapshots.
+7. Remote writes retain exact content and author identity through a reviewed Git
+   pull request.
+8. The Helm E2E test installs the built image and passes health and functional
+   probes in Kind.
+9. Vulnerability, workflow, annotation, comment-policy and race checks pass in
+   CI.
+10. koment's own source has moved non-exempt rationale out of inline comments
+    and its annotations resolve.
 
 ## Non-goals
 
-- Replacing documentation, READMEs or ADRs. koment holds **local** knowledge
-  bound to a place in the code. Project-wide decisions belong in
-  `docs/decisions/`.
-- Being a memory system. See ADR 0004 — a consolidating memory store will
-  paraphrase, merge and eventually delete annotations. koment is a **record**,
-  not a belief.
-- Line-precise annotation. See ADR 0003.
-
-## Shape
-
-An annotation store that lives **beside** the code, in git, with anchors that
-are checkable. Stale annotations are detected and reported loudly, never served
-silently.
-
-```
-repo/
-├── .koment/
-│   └── annotations/
-│       └── internal/anchor/resolve.go.yaml
-├── internal/anchor/resolve.go
-└── docs/decisions/
-```
-
-One annotation file mirrors one source file. Rationale in ADR 0002.
-
-### Record format
-
-```yaml
-version: 1
-file: internal/anchor/resolve.go
-annotations:
-  - id: 01JQ8ZK3M4N5P6R7S8T9V0W1X2
-    scope: excerpt
-    excerpt: "if a.Excerpt == \"\" {"
-    excerpt_sha256: 3f2a...
-    last_seen_line: 42
-    kind: gotcha
-    body: >
-      An empty excerpt means file-scope, not "matches everything". Treating it
-      as a wildcard made every annotation resolve to the first line.
-    created: 2026-07-31
-```
-
-- `id` — ULID. Stable across edits; never reused.
-- `scope` — `file` or `excerpt` in v1. `symbol` is deferred (ADR 0003).
-- `last_seen_line` — where the excerpt was found last time, 1-based. A **hint**,
-  never an anchor: resolution ignores it when searching and consults it only to
-  tell `ok` from `moved`. Losing it costs a status distinction, never a match.
-  ADR 0009.
-- `kind` — `why` | `gotcha` | `invariant` | `anti-pattern`. Constrained on
-  purpose; a free-form kind field becomes a junk drawer.
-- `body` — prose. The thing that would have been a comment.
-- `git` — the context at creation. Written once, never rewritten. ADR 0014.
-- `author` — who wrote it, and how much that claim is worth. ADR 0015.
-
-```yaml
-    git:
-      commit: 9f3c1a4d8e2b7c5a6f0d3e1b8c7a5f2d4e6b9c1a
-      path: internal/store/ulid.go
-      line: 18
-      end_line: 18
-    author:
-      name: Jan Pucilowski
-      email: janpuc@proton.me
-      kind: human
-      source: git-config
-```
-
-### Two jobs, two mechanisms
-
-The excerpt and the git context answer different questions, and neither
-substitutes for the other:
-
-| | question | mechanism | changes |
-|---|---|---|---|
-| anchor | does this still apply *now*? | excerpt search | every resolution |
-| git context | what was true when it was written? | commit hash | never |
-
-Resolution reads the excerpt and nothing else. Deleting the whole `git` block
-changes no status — there is a test for that. The commit hash is authoritative
-for reconstructing history; the excerpt is authoritative for applicability.
-
-### Storage: git is the record, the database does the work
-
-```
-.koment/annotations/**.yaml   record      reviewed, merged, cloned
-        ↓ rebuild (deterministic)
-        index                 derived     queried, searched, filtered
-```
-
-YAML in git stays the source of truth — reviewable in a pull request, mergeable,
-and present in every clone. A derived index (SQLite by default, Postgres for a
-stateless multi-replica deployment) holds the same annotations in queryable
-form, and every serving read path goes through it. ADR 0022.
-
-The index is never edited directly and never the only copy of anything: a
-missing, stale or corrupt index is a rebuild, not a loss. It lives in the cache
-directory and is gitignored, because it is a build artifact.
-
-Resolution stays live. The index records each file's `(mtime, size)` when it
-resolved it, and any file whose stamp has changed is re-resolved before it is
-served — so a status is never stale, and an unchanged file is never re-read.
-
-The derivation runs both ways and is exact: `.koment/` bootstraps an empty
-index, and `koment export` reconstructs `.koment/` from the index
-byte-identically. Either side can be lost without losing annotations. ADR 0023.
-
-The CLI (`add`, `check`, `reanchor`) reads YAML directly and needs no index at
-all, which is what keeps "reading a checkout never depends on a network call"
-true.
-
-## Data model
-
-A deployment may serve many repositories. The repository stays the unit of
-storage — each keeps its own `.koment/` — and the deployment indexes them
-rather than owning them. ADR 0017.
-
-```
-Deployment
-└── Repository        id, name, clone URL, default branch, config, sync state
-    └── Commit        the git context an annotation was created against
-        └── File      path at that commit
-            └── Annotation
-```
-
-Isolation is structural: a repository's annotations live in that repository, so
-there is no shared table where a missing filter leaks one project into another.
-
-### Lifecycle
-
-Annotations may be created interactively, but the repository is the record and
-the deployment store is an outbox, never a mirror. ADR 0016.
-
-```
-created ──▶ pending ──▶ materialised ──▶ settled
-            (in the deployment,          (in git, authoritative;
-             not in any clone)            the outbox keeps no copy)
-```
-
-On conflict git wins, because after materialising there is nothing left in the
-outbox to conflict with. The ULID is minted at creation and survives, so pending
-and settled are the same annotation.
-
-**Interactive creation is a write path.** ADR 0011 made its own
-no-authentication posture conditional on the surface staying read-only. Nothing
-that creates an annotation may be exposed on a network listener until
-authentication exists.
-
-### Anchor resolution
-
-Every anchor resolves to exactly one status:
-
-| status | meaning | exit |
-|---|---|---|
-| `ok` | file exists; excerpt found at `last_seen_line` | 0 |
-| `moved` | excerpt found, but at a different line | 0 |
-| `drifted` | file exists, excerpt no longer found | non-zero |
-| `orphaned` | file gone | non-zero |
-
-`drifted` and `orphaned` are **failures**, not warnings. The annotated code
-changed and nobody revisited the annotation, which is precisely how comments rot.
-Forcing a human or agent to re-confirm is the entire value proposition.
-
-## Surface
-
-```
-koment add <file> [--excerpt <text>] --kind <kind> --body <text>
-koment show <file>              # annotations for one file, resolved
-koment check [path...]          # drift gate; non-zero on drifted/orphaned
-koment list [--kind k]          # everything, for review
-koment reanchor <id> [--excerpt <text>] [--file <path>]   # fix drift; keeps the id
-koment site --out <dir>         # render one repository to static HTML
-koment mcp                      # MCP server over stdio
-koment mcp --http <addr>              # ... over HTTP, JSON responses
-koment mcp --streamable-http <addr>   # ... over HTTP, SSE responses
-koment version
-```
-
-stdio remains the default and the recommended transport. The HTTP transports
-exist for agents that cannot spawn a subprocess — a container, a remote runner —
-and bind to loopback unless told otherwise. ADR 0011.
-
-`koment mcp` is the reason this project is worth building rather than adopting a
-convention. One server, every agent — Claude Code, Hermes, opencode, Codex —
-gets the same annotations through the same interface, with no per-client
-plumbing.
-
-MCP tools exposed:
-
-- `koment_get(file, repository?)` — annotations for a path, with resolution status
-- `koment_search(query, repository?)` — full-text across bodies, every repository by default
-- `koment_repositories()` — what is served, with counts
-
-Three, not two: ADR 0025 amends ADR 0005 because discovery is a distinct
-question from retrieval, and an agent that has to guess a repository name will
-guess wrong.
-
-### `koment ui`
-
-```
-koment ui [--listen <addr>]     # local read-only web view, loopback default
-```
-
-Everything above is addressed to machines. `show` prints annotations *beside* a
-file; a person needs them *on* it. `koment ui` is two panels — a file tree
-carrying drift status, and the source with annotation cards anchored in the
-margin of the line they describe — rendered from Go templates embedded with
-`go:embed`, no node toolchain and no new dependency. ADR 0013.
-
-Every request re-reads the working tree, so what is rendered is what is on
-disk. A `drifted` annotation is shown as struck-through history and never laid
-over current code.
-
-### Three tiers, one record
-
-`koment site` renders the same view to static files, which is how a team reads
-each other's annotations without anyone hosting anything. That makes three ways
-to run koment — local, published, served — and **moving between them is not a
-migration**, because all three read `.koment/` in git. Nothing to export, import
-or back up. ADR 0026.
-
-The published tier is one repository per site by design: a static page has no
-server to resolve a repository against, and a client-side router imitating one
-would diverge in ways that are harder to reason about than a stated limit.
-Beyond that limit, live resolution, cross-repository search and metrics, the two
-tiers render from the same code and any difference is a bug.
-
-
-Prior art: [konflate](https://github.com/home-operations/konflate), a read-only
-Flux PR review tool with the same shape of thesis. koment takes its
-embed-the-frontend-in-the-binary trick and its status-first visual language, and
-declines its Svelte build.
-
-## Implementation
-
-Go. Single static binary, no runtime, trivial to ship into a container or onto a
-laptop. Consistent with the rest of this stack.
-
-```
-cmd/koment/          entrypoint, flag parsing only
-internal/cli/        the add/show/check/list/reanchor commands
-internal/store/      read/write .koment/annotations
-internal/anchor/     resolution and drift status
-internal/listen/     bind address resolution, shared by both servers
-internal/index/      derived index — SQLite and Postgres
-internal/config/     KOMENT_* environment fallback for every flag
-internal/metrics/    Prometheus instrumentation
-internal/mcp/        MCP server
-internal/ui/         local read-only web view
-```
-
-Standard library wherever possible. Every dependency needs an ADR.
-
-## Definition of done for v1
-
-1. `store` reads and writes the record format, round-trips losslessly.
-2. `anchor` resolves all four statuses, with tests per status.
-3. `koment check` exits non-zero on drift.
-4. `koment show` prints resolved annotations for a file.
-5. `koment mcp` serves `koment_get` and `koment_search` over stdio and HTTP.
-6. koment's own `.koment/` holds real annotations about koment, and every agent
-   working in this repository reaches them without being told how (ADR 0010).
-
-Point 6 is not decoration. If the tool is not useful on itself, it is not
-useful.
-
-## Deferred
-
-Do not start these until v1 is in real use:
-
-- **Symbol scope** via tree-sitter. Survives moves and reformatting; costs a
-  large dependency and per-language grammars.
-- **LLM re-anchoring** — Codetations/Magic Markup style semantic re-attachment
-  when an excerpt drifts. This is the interesting problem and the reason to
-  build the deterministic layer first: without it there is no ground truth to
-  evaluate re-anchoring against.
-- Editor integration and annotation suggestion.
-
-*(`koment reanchor` and the web UI were on this list and are now built —
-ADR 0012 and ADR 0013.)*
+- LLM-generated annotations or semantic reanchoring.
+- Consolidating, summarizing or expiring rationale as a memory system.
+- Tree-sitter or language-specific symbol anchors before deterministic v2 is in
+  real use.
+- A writable static site.
+- Direct pushes from the served tier to a default branch.
+- A full forge abstraction before the GitHub implementation proves the
+  interface.
+- An IDE plugin before the local and served application services are stable.
 
 ## Prior art
 
+- [konflate](https://github.com/home-operations/konflate) — operational and
+  deployment baseline.
 - [Codetations / Magic Markup](https://github.com/elmisback/codetations) —
-  document-external annotations with LLM re-anchoring. Research prototype;
-  validates the approach, not production-ready.
-- [Microsoft Research, *Robustly Anchoring Annotations Using Keywords*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-2001-107.pdf)
-  — the anchoring problem, 2001. Still unsolved in the general case.
-- [ADRs](https://adr.github.io/) — the right home for project-wide decisions.
-  koment is deliberately the *local* complement, not a competitor.
+  document-external annotation research.
+- [Robustly Anchoring Annotations Using Keywords](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-2001-107.pdf)
+  — deterministic anchoring prior art.
+- [Architecture Decision Records](https://adr.github.io/) — project-wide
+  decision history; koment records rationale local to code.
