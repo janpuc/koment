@@ -28,8 +28,9 @@ const usage = `koment — out-of-band code annotations
   koment reanchor <id> [--excerpt <text>] [--file <path>]
   koment ui [--listen <addr>]
   koment export [--out <dir>]        rebuild .koment from the index
-  koment site --out <dir>            render the demo site
+  koment site --out <dir>            render one repository to static HTML
   koment mcp
+  koment version
 
 check exits non-zero when an annotation is drifted or orphaned. reanchor is how
 you fix one: it recomputes the hash and the line, and keeps the id.
@@ -39,6 +40,7 @@ type Environment struct {
 	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
+	Build  Build
 }
 
 // Server runs a long-lived server, parsing its own flags.
@@ -68,6 +70,7 @@ func Run(args []string, env Environment, servers Servers) int {
 		"reanchor": runReanchor,
 		"index":    runIndex,
 		"export":   runExport,
+		"version":  runVersion,
 	}[command]
 
 	switch {

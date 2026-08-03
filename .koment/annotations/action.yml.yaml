@@ -1,0 +1,22 @@
+version: 1
+file: action.yml
+annotations:
+  - id: 01KZ2Y5SXBZ5E5JP8EDB0VGH07
+    scope: excerpt
+    excerpt: '        if [ "$KOMENT_REQUESTED" = "latest" ]; then'
+    excerpt_sha256: 320d321113779ef016dcaba56a726d144d8fe4366e0ab68e23d99929108fffba
+    last_seen_line: 54
+    kind: gotcha
+    body: |-
+      Resolving "latest" through the release redirect rather than the REST API is
+      not a style choice. The API's unauthenticated rate limit is counted per
+      source IP, which shared GitHub runners exhaust routinely; when they do, the
+      response is an error document that a naive parse turns into an empty tag and
+      a confusing download failure. The redirect needs no token, has no such
+      limit, and puts the tag in the last path segment.
+    created: "2026-08-03"
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: agent
+      source: git-config

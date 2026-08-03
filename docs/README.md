@@ -7,6 +7,7 @@
 - **[CLI reference](cli.md)** — every command and flag
 - **[Agent setup](agents/)** — per-client MCP configuration
 - **[CI and pre-commit](ci.md)** — wiring the drift gate
+- **[Publishing](publishing.md)** — the annotations on GitHub Pages, in one workflow file
 
 ## Working on koment
 
@@ -26,4 +27,6 @@ excerpt plus its SHA-256 — never a line number.
 Resolution produces exactly one of four statuses. `drifted` and `orphaned` fail
 the build, because an annotation nobody revisited is worse than none.
 
-Agents read through MCP; humans read through the CLI or `koment ui`.
+Agents read through MCP; humans read through the CLI, `koment ui`, or a static
+site published by `koment site`. Those are three tiers of the same data, and
+moving between them is not a migration — they all read `.koment/`.

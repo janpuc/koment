@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/janpuc/koment/internal/config"
+	"github.com/janpuc/koment/internal/provenance"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -19,14 +20,20 @@ const (
 	stylesheetName = "style.css"
 )
 
-const exportUsage = `koment site renders the view to static HTML.
+const exportUsage = `koment site renders one repository to static HTML.
 
   koment site --out <dir> [--banner <text>]
 
-This exists to publish the demo site (ADR 0018, 0021). It is a snapshot, not
-a view of your working tree: read your own annotations with koment ui, which
-re-reads the tree on every request. Exporting a private repository and hosting
-the result publishes your source and your annotations.
+This is the published tier (ADR 0026): everyone reads the annotations in a
+browser, with no server to run and no authentication to design. Point it at a
+directory, commit a workflow, and GitHub Pages serves it — see docs/publishing.md.
+
+It renders a snapshot of one commit rather than your working tree, and every
+page says which commit. Read your own tree with koment ui instead, which
+re-resolves on every request.
+
+A site renders your source as well as your annotations. Publishing one from a
+private repository publishes that source.
 `
 
 // Export writes the same pages koment ui serves, with relative links so the
@@ -41,7 +48,9 @@ func Site(args []string, stderr io.Writer) error {
 	out := flags.String("out", "", "directory to write into")
 	name := flags.String("name", "", "repository name shown on every page; defaults to the repository's own name")
 	named := flags.String("repository", "", "which repository to render; required when several are configured")
-	banner := flags.String("banner", "", "notice shown on every page, naming the snapshot")
+	commit := flags.String("commit", "", "commit this snapshot renders; read from git when omitted")
+	commitURL := flags.String("commit-link", "", "URL the commit links to")
+	banner := flags.String("banner", "", "notice shown on every page, beside the commit")
 	bannerHref := flags.String("banner-link", "", "URL shown beside the banner")
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -58,19 +67,46 @@ func Site(args []string, stderr io.Writer) error {
 		return err
 	}
 
+	taken := &snapshot{
+		Commit:     *commit,
+		CommitURL:  *commitURL,
+		Banner:     *banner,
+		BannerHref: *bannerHref,
+	}
+	if taken.Commit, err = commitOf(chosen.Root, *commit); err != nil {
+		return err
+	}
+
 	label := *name
 	if label == "" {
 		label = chosen.Display()
 	}
-	written, err := export(chosen.Store(), *out, *banner, *bannerHref, label)
+	written, err := export(chosen.Store(), *out, label, taken)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(stderr, "koment: wrote %d pages to %s\n", written, *out)
+	fmt.Fprintf(stderr, "koment: wrote %d pages to %s at %s\n", written, *out, taken.Commit)
 	return nil
 }
 
-func export(annotations *store.Store, out, banner, bannerHref, name string) (int, error) {
+// commitOf refuses to publish a snapshot that cannot say what it is a snapshot
+// of. An undated page is how a reader mistakes an old rendering for the current
+// one, which is the failure this project exists to prevent (ADR 0026).
+func commitOf(root, given string) (string, error) {
+	if given != "" {
+		return given, nil
+	}
+	commit, err := provenance.HeadCommit(root)
+	if err != nil {
+		return "", fmt.Errorf("cannot read the commit at %s: every published page names the commit it renders; pass --commit", root)
+	}
+	if provenance.TreeIsDirty(root) {
+		return commit + "-dirty", nil
+	}
+	return commit, nil
+}
+
+func export(annotations *store.Store, out, name string, taken *snapshot) (int, error) {
 	files, err := annotations.AnnotatedFiles()
 	if err != nil {
 		return 0, err
@@ -91,7 +127,7 @@ func export(annotations *store.Store, out, banner, bannerHref, name string) (int
 	}
 
 	for page, file := range pages {
-		rendered, err := renderPage(templates, annotations, file, exportedLinks(page), banner, bannerHref, name)
+		rendered, err := renderPage(templates, annotations, file, exportedLinks(page), name, taken)
 		if err != nil {
 			return 0, err
 		}
@@ -112,14 +148,13 @@ func exportedLinks(page string) links {
 	}
 }
 
-func renderPage(templates *template.Template, annotations *store.Store, file string, how links, banner, bannerHref, name string) ([]byte, error) {
+func renderPage(templates *template.Template, annotations *store.Store, file string, how links, name string, taken *snapshot) ([]byte, error) {
 	built, err := build(annotations, file, how)
 	if err != nil {
 		return nil, err
 	}
-	built.Banner = banner
-	built.BannerHref = bannerHref
 	built.Repository = name
+	built.Snapshot = taken
 
 	var page strings.Builder
 	if err := templates.ExecuteTemplate(&page, "page.html", built); err != nil {

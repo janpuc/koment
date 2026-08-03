@@ -178,8 +178,14 @@ turns them into a version and a changelog.
    and the changelog. `charts/koment/Chart.yaml` is bumped in the same commit,
    so the chart can never point at an image tag that does not exist.
 3. Merge that pull request. It tags the release, which triggers publishing:
+   - binaries for linux, macOS and Windows on amd64 and arm64, plus a
+     `koment_<version>_checksums.txt` the setup action verifies against
    - `ghcr.io/janpuc/koment:<version>` — multi-arch, distroless, non-root, SBOM
    - `oci://ghcr.io/janpuc/charts/koment` — the Helm chart
+
+The binaries are not optional decoration: `janpuc/koment@v0.2.0` downloads them, so
+a release that fails to attach them breaks every workflow that uses the action
+(ADR 0026).
 
 Nothing is published from an unmerged branch, and `main` requires a pull request
 with green CI, so there is no path to releasing something that did not pass.

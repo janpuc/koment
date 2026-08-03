@@ -43,8 +43,8 @@
       <span class="shows">ok · moved</span>
     </a>
 
-    <a class="repo" href="demo/">
-      <h2>demo</h2>
+    <a class="repo" href="fixture/">
+      <h2>fixture</h2>
       <p>
         A small fixture whose drift is deliberate and permanent. It exists
         because koment's own repository can never show a failing status — CI
@@ -55,9 +55,12 @@
   </div>
 
   <p class="note">
-    Both pages are static, rebuilt from source on every push, and rendered by
-    the same code that <code>koment ui</code> serves live against a working
-    tree. The demo is the tool explaining itself.
+    Both are static sites, rebuilt on every push by <code>koment site</code> —
+    the same command and the same rendering code that <code>koment ui</code>
+    serves live against a working tree. Two sites rather than one because the
+    published tier is one repository per site. You can publish your own the same
+    way: <a href="https://github.com/janpuc/koment/blob/main/docs/publishing.md">one
+    workflow file</a>.
     <br><br>
     <a href="https://github.com/janpuc/koment">Source and documentation on GitHub</a>
   </p>

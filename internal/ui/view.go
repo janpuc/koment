@@ -19,9 +19,18 @@ type view struct {
 	Empty      bool
 	NotFound   bool
 	Stylesheet string
+	Repository string
+	Snapshot   *snapshot
+}
+
+// snapshot is set only on a published page, and its presence is what makes the
+// page admit to being one. The served UI re-reads the tree per request and so
+// has nothing to confess (ADR 0026).
+type snapshot struct {
+	Commit     string
+	CommitURL  string
 	Banner     string
 	BannerHref string
-	Repository string
 }
 
 type links struct {

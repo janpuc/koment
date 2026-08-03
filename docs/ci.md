@@ -18,17 +18,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with: { go-version: stable }
-      - run: go install github.com/janpuc/koment/cmd/koment@latest
+      - uses: janpuc/koment@v0.2.0
       - run: koment check
 ```
+
+The action downloads a released binary, verifies it against the release's
+checksums and puts it on `PATH`. Pin a release with `with: { version: 0.2.0 }`;
+it defaults to the latest. Linux and macOS runners.
 
 Already have a Go job? Add one line rather than a whole workflow:
 
 ```yaml
       - run: go run github.com/janpuc/koment/cmd/koment@latest check
 ```
+
+To publish the annotations as well as check them, see
+[publishing](publishing.md) — it is the same job with four more lines.
 
 ## GitLab CI
 

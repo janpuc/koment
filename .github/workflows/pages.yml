@@ -1,4 +1,9 @@
-name: demo
+name: pages
+
+# This repository publishing itself is an instance of the documented pattern,
+# not a special case: docs/publishing.md is the same workflow with one site.
+# It builds koment from source rather than installing a release, because the
+# site has to show what is on main. Everyone else should use the action.
 
 on:
   push:
@@ -29,36 +34,40 @@ jobs:
       - name: build
         run: go build -o koment ./cmd/koment
 
-      # Two repositories (ADR 0021). koment's own annotations are the
-      # persuasive half — real reasoning about real code. The fixture is the
-      # only place drifted and orphaned can be shown, because CI keeps main
-      # green and those two statuses fail the build.
-      - name: export koment
+      # Two sites, because the published tier is one repository per site
+      # (ADR 0026). koment's own annotations are the persuasive half — real
+      # reasoning about real code. The fixture is the only place drifted and
+      # orphaned can be shown, because CI keeps main green and those two
+      # statuses fail the build (ADR 0021).
+      - name: render koment
         run: |
           ./koment site --out dist/koment --name koment \
-            --banner "koment's own annotations, rebuilt from ${GITHUB_SHA::7}. These are real — each was written because an edit was about to lose a real reason." \
-            --banner-link "https://github.com/${GITHUB_REPOSITORY}"
+            --commit-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" \
+            --banner "Real annotations about real code — each was written because an edit was about to lose a real reason."
 
-      - name: export the fixture
+      - name: render the fixture
         working-directory: demo
         run: |
-          ../koment site --out ../dist/demo --name demo \
-            --banner "A fixture. Its drift is deliberate, so the demo can show what drifted and orphaned look like — which koment's own repository never can." \
-            --banner-link "https://github.com/${GITHUB_REPOSITORY}/tree/main/demo"
+          ../koment site --out ../dist/fixture --name fixture \
+            --commit-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" \
+            --banner "A fixture whose drift is deliberate, so that drifted and orphaned are visible somewhere." \
+            --banner-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/main/demo"
 
       - name: landing page
         run: cp demo/landing.html dist/index.html
 
-      # A demo that silently rendered nothing would still deploy green.
-      - name: every status is visible somewhere
+      # A site that silently rendered nothing would still deploy green.
+      - name: every status is visible, and every page dates itself
         run: |
           for status in ok moved drifted orphaned; do
-            grep -qr "pill $status" dist || { echo "demo is missing status: $status"; exit 1; }
+            grep -qr "pill $status" dist || { echo "no page shows status: $status"; exit 1; }
           done
           test -f dist/index.html || { echo "no landing page"; exit 1; }
-          test -f dist/koment/index.html || { echo "koment export missing"; exit 1; }
-          test -f dist/demo/index.html || { echo "fixture export missing"; exit 1; }
-          echo "all four statuses present across both repositories"
+          for site in koment fixture; do
+            test -f "dist/$site/index.html" || { echo "$site render missing"; exit 1; }
+            grep -q "snapshot of" "dist/$site/index.html" || { echo "$site does not name its commit"; exit 1; }
+          done
+          echo "all four statuses present; both sites stamped with ${GITHUB_SHA::7}"
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0

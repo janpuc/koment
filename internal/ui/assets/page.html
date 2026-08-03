@@ -8,7 +8,14 @@
 </head>
 <body>
 
-{{if .Banner}}<div class="snapshot">{{.Banner}}{{if .BannerHref}} <a href="{{.BannerHref}}">{{.BannerHref}}</a>{{end}}</div>{{end}}
+{{with .Snapshot}}
+<div class="snapshot">
+  <span class="stamp">snapshot of
+    {{if .CommitURL}}<a href="{{.CommitURL}}"><code>{{.Commit}}</code></a>{{else}}<code>{{.Commit}}</code>{{end}}
+  </span>
+  {{if .Banner}}<span class="said">{{.Banner}}{{if .BannerHref}} <a href="{{.BannerHref}}">{{.BannerHref}}</a>{{end}}</span>{{end}}
+</div>
+{{end}}
 
 {{if .Empty}}
 <div class="hollow">

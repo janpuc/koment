@@ -2,6 +2,7 @@ package ui
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -10,7 +11,13 @@ import (
 func exportTo(t *testing.T) string {
 	t.Helper()
 	out := t.TempDir()
-	if _, err := export(annotatedRepository(t), out, "snapshot of commit abc1234", "https://example.test/koment", "fixture"); err != nil {
+	taken := &snapshot{
+		Commit:     "abc1234",
+		CommitURL:  "https://example.test/koment/commit/abc1234",
+		Banner:     "rebuilt nightly",
+		BannerHref: "https://example.test/koment",
+	}
+	if _, err := export(annotatedRepository(t), out, "fixture", taken); err != nil {
 		t.Fatalf("export: %v", err)
 	}
 	return out
@@ -82,21 +89,82 @@ func TestExportedPagesNameTheirRepository(t *testing.T) {
 	}
 }
 
-func TestExportedPagesCarryTheSnapshotBanner(t *testing.T) {
+// A published page is a snapshot, and a snapshot that does not name its commit
+// is how a stale rendering passes for a current one (ADR 0026).
+func TestEveryPublishedPageNamesItsCommit(t *testing.T) {
 	out := exportTo(t)
 
 	for _, page := range []string{"index.html", filepath.Join("f", "main.go.html")} {
 		content := read(t, filepath.Join(out, page))
-		if !strings.Contains(content, "snapshot of commit abc1234") {
-			t.Errorf("%s does not say it is a snapshot", page)
+		if !strings.Contains(content, "abc1234") {
+			t.Errorf("%s does not name the commit it renders", page)
 		}
+		if !strings.Contains(content, "snapshot of") {
+			t.Errorf("%s does not admit to being a snapshot", page)
+		}
+		if !strings.Contains(content, "rebuilt nightly") {
+			t.Errorf("%s dropped the publisher's banner", page)
+		}
+	}
+}
+
+func TestPublishingRefusesWithoutACommit(t *testing.T) {
+	outside := t.TempDir()
+
+	if _, err := commitOf(outside, ""); err == nil {
+		t.Fatal("want a refusal when git cannot name the commit")
+	}
+	got, err := commitOf(outside, "deadbee")
+	if err != nil || got != "deadbee" {
+		t.Errorf("an explicit --commit should be taken as given, got %q %v", got, err)
+	}
+}
+
+// A site rendered from a modified tree is not the commit it sits on, and saying
+// so plainly is cheaper than a reader discovering it later.
+func TestASiteRenderedFromAModifiedTreeSaysSo(t *testing.T) {
+	root := t.TempDir()
+	run := func(args ...string) {
+		t.Helper()
+		command := exec.Command("git", args...)
+		command.Dir = root
+		if out, err := command.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+	}
+	run("init", "-q")
+	run("config", "user.email", "test@example.test")
+	run("config", "user.name", "test")
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	run("add", "main.go")
+	run("commit", "-qm", "first")
+
+	clean, err := commitOf(root, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.HasSuffix(clean, "-dirty") {
+		t.Fatalf("a clean tree should name its commit plainly, got %q", clean)
+	}
+
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package main // edited\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dirty, err := commitOf(root, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(dirty, "-dirty") {
+		t.Errorf("a modified tree must not claim to be its commit, got %q", dirty)
 	}
 }
 
 func TestExportRendersTheSameContentAsTheServer(t *testing.T) {
 	annotations := annotatedRepository(t)
 	out := t.TempDir()
-	if _, err := export(annotations, out, "", "", "fixture"); err != nil {
+	if _, err := export(annotations, out, "fixture", &snapshot{Commit: "abc1234"}); err != nil {
 		t.Fatal(err)
 	}
 
