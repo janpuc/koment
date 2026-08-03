@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/janpuc/koment/main/schema/policy.schema.json",
+  "title": "koment repository policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "comments", "agents"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "comments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "intrinsic"],
+      "properties": {
+        "mode": {
+          "const": "strict"
+        },
+        "intrinsic": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["toolchain-directive", "generated-marker", "upstream-link", "deprecated", "public-api"]
+          }
+        },
+        "generated_paths": {
+          "$ref": "#/$defs/pathGlobs"
+        },
+        "vendored_paths": {
+          "$ref": "#/$defs/pathGlobs"
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapters"],
+      "properties": {
+        "adapters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["agents", "claude", "copilot", "cursor", "codex"]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pathGlobs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "allOf": [
+          {
+            "not": {
+              "pattern": "^/"
+            }
+          },
+          {
+            "not": {
+              "pattern": "(^|/)\\.\\.(/|$)"
+            }
+          },
+          {
+            "not": {
+              "pattern": "\\\\"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

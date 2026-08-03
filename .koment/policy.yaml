@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/policy.schema.json
+version: 1
+comments:
+  mode: strict
+  intrinsic:
+    - toolchain-directive
+    - generated-marker
+    - upstream-link
+    - deprecated
+    - public-api
+  generated_paths:
+    - '**/*.gen.go'
+    - '**/*.generated.go'
+  vendored_paths:
+    - vendor/**
+agents:
+  adapters:
+    - agents
+    - claude
+    - copilot
+    - cursor
+    - codex

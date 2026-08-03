@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/janpuc/koment/internal/application"
 )
 
 func runReanchor(args []string, env Environment) int {
@@ -19,38 +19,20 @@ func runReanchor(args []string, env Environment) int {
 		return misuse(env, "reanchor needs --excerpt, --file, or both")
 	}
 
-	annotations, err := openStore()
+	service, annotations, err := openApplication()
 	if err != nil {
 		return fail(env, err)
 	}
-	record, err := annotations.FindByID(id)
-	if err != nil {
-		return fail(env, err)
-	}
-
-	target := record.File
+	target := ""
 	if *destination != "" {
 		if target, err = annotations.FromWorkingDirectory(*destination); err != nil {
 			return fail(env, err)
 		}
 	}
-
-	moved := *record
-	if err := reanchorTo(&moved, annotations, target, *excerpt); err != nil {
+	mutation, err := service.Reanchor(application.ReanchorInput{ID: id, File: target, Excerpt: *excerpt})
+	if err != nil {
 		return fail(env, err)
 	}
-	moved.File = target
-	if err := annotations.Save(&moved); err != nil {
-		return fail(env, err)
-	}
-
-	fmt.Fprintf(env.Stdout, "%s  %s %s\n", moved.ID, moved.Kind, location(target, moved.Anchor.LastSeenLine))
+	fmt.Fprintf(env.Stdout, "%s  %s %s\n", mutation.Record.ID, mutation.Record.Kind, location(mutation.Record.File, mutation.Record.Anchor.LastSeenLine))
 	return ExitOK
-}
-
-func reanchorTo(annotation *store.Annotation, annotations *store.Store, file, excerpt string) error {
-	if excerpt == "" && annotation.Anchor.Scope == store.ScopeExcerpt {
-		excerpt = annotation.Anchor.Excerpt
-	}
-	return anchorTo(annotation, annotations, file, excerpt)
 }

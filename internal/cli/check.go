@@ -12,11 +12,11 @@ func runCheck(args []string, env Environment) int {
 		return ExitUsage
 	}
 
-	annotations, err := openStore()
+	service, annotations, err := openApplication()
 	if err != nil {
 		return fail(env, err)
 	}
-	resolved, err := resolveEverything(annotations, flags.Args())
+	resolved, err := resolveEverything(service, annotations, flags.Args())
 	if err != nil {
 		return fail(env, err)
 	}

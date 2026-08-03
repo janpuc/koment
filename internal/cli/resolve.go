@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/janpuc/koment/internal/anchor"
+	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -13,27 +14,28 @@ type fileResolutions struct {
 	resolutions []anchor.Resolution
 }
 
-func resolveEverything(annotations *store.Store, under []string) ([]fileResolutions, error) {
-	files, err := annotations.AnnotatedFiles()
+func resolveEverything(service *application.Service, annotations *store.Store, under []string) ([]fileResolutions, error) {
+	snapshot, err := service.Snapshot()
 	if err != nil {
 		return nil, err
 	}
-
 	prefixes, err := relativePrefixes(annotations, under)
 	if err != nil {
 		return nil, err
 	}
 
 	var resolved []fileResolutions
-	for _, file := range files {
-		if !covers(prefixes, file) {
+	for _, file := range snapshot.Files {
+		if !covers(prefixes, file.Path) {
 			continue
 		}
-		resolutions, err := anchor.ResolveStored(annotations, file)
-		if err != nil {
-			return nil, err
+		resolutions := make([]anchor.Resolution, 0, len(file.Annotations))
+		for _, view := range file.Annotations {
+			resolutions = append(resolutions, anchor.Resolution{
+				Annotation: view.Record, Status: view.Status, Line: view.Line, Occurrences: view.Occurrences,
+			})
 		}
-		resolved = append(resolved, fileResolutions{file: file, resolutions: resolutions})
+		resolved = append(resolved, fileResolutions{file: file.Path, resolutions: resolutions})
 	}
 	return resolved, nil
 }

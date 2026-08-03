@@ -22,8 +22,6 @@ type result struct {
 
 func (r result) output() string { return r.stdout + r.stderr }
 
-// repository is a real git repository with a local identity, because add
-// records an author (ADR 0015) and a runner has no ambient git config.
 func repository(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -256,6 +254,28 @@ func TestListFiltersByKind(t *testing.T) {
 	}
 	if strings.Contains(filtered.stdout, "signalled") {
 		t.Errorf("the invariant should have been filtered out:\n%s", filtered.stdout)
+	}
+}
+
+func TestSearchUsesRecordContentAndReportsMatches(t *testing.T) {
+	repository(t)
+	if got := addServeAnnotation(t); got.code != ExitOK {
+		t.Fatalf("add exited %d: %s", got.code, got.output())
+	}
+
+	matched := koment(t, "search", "blocks until")
+	if matched.code != ExitOK {
+		t.Fatalf("search exited %d: %s", matched.code, matched.output())
+	}
+	for _, want := range []string{"main.go:4", "invariant", "blocks until", `1 annotations matched "blocks until"`} {
+		if !strings.Contains(matched.stdout, want) {
+			t.Errorf("search output missing %q:\n%s", want, matched.stdout)
+		}
+	}
+
+	missing := koment(t, "search", "not present")
+	if missing.code != ExitOK || !strings.Contains(missing.stdout, `0 annotations matched "not present"`) {
+		t.Fatalf("empty search result = %d, %q", missing.code, missing.output())
 	}
 }
 

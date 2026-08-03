@@ -351,6 +351,43 @@ func TestReadSourceAllowsOnlySymlinksThatStayInsideTheRoot(t *testing.T) {
 	}
 }
 
+func TestWriteSourceIsAtomicRootedAndPreservesPermissions(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "script.go")
+	if err := os.WriteFile(file, []byte("before"), 0o744); err != nil {
+		t.Fatal(err)
+	}
+	annotations := Open(root)
+	if err := annotations.WriteSource("script.go", []byte("after")); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "after" {
+		t.Fatalf("content = %q", content)
+	}
+	information, err := os.Stat(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if information.Mode().Perm() != 0o744 {
+		t.Fatalf("mode = %o", information.Mode().Perm())
+	}
+
+	outside := filepath.Join(t.TempDir(), "outside.go")
+	if err := os.WriteFile(outside, []byte("outside"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "escape.go")); err != nil {
+		t.Fatal(err)
+	}
+	if err := annotations.WriteSource("escape.go", []byte("escaped")); err == nil {
+		t.Fatal("write followed a symlink outside the repository root")
+	}
+}
+
 func TestSaveCannotFollowAnAnnotationDirectoryOutsideTheRoot(t *testing.T) {
 	annotations := newTestStore(t)
 	outside := t.TempDir()

@@ -13,7 +13,7 @@ func runShow(args []string, env Environment) int {
 		return ExitUsage
 	}
 
-	annotations, err := openStore()
+	service, annotations, err := openApplication()
 	if err != nil {
 		return fail(env, err)
 	}
@@ -22,9 +22,18 @@ func runShow(args []string, env Environment) int {
 		return fail(env, err)
 	}
 
-	resolutions, err := anchor.ResolveStored(annotations, file)
+	snapshot, err := service.Snapshot()
 	if err != nil {
 		return fail(env, err)
+	}
+	fileSnapshot, found := snapshot.File(file)
+	resolutions := make([]anchor.Resolution, 0, len(fileSnapshot.Annotations))
+	if found {
+		for _, view := range fileSnapshot.Annotations {
+			resolutions = append(resolutions, anchor.Resolution{
+				Annotation: view.Record, Status: view.Status, Line: view.Line, Occurrences: view.Occurrences,
+			})
+		}
 	}
 	if len(resolutions) == 0 {
 		fmt.Fprintf(env.Stdout, "%s has no annotations\n", file)

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
 version: 1
 id: 01KYW1ETDYF6V8Q9JR83DFNSZ1
-file: internal/mcp/mcp.go
+file: internal/application/snapshot.go
 kind: invariant
 body: |-
   ADR 0005 requires that a drifted annotation is never served to an agent as
@@ -13,10 +13,13 @@ body: |-
 created: "2026-07-31"
 anchor:
   scope: excerpt
-  excerpt: func warningFor(status anchor.Status) string {
-  before: "\t}\n}\n"
-  after: "\tswitch status {\n\tcase anchor.StatusAmbiguous:\n\t\treturn \"STALE: the excerpt matches several places and its context does not identify one. \" +"
-  last_seen_line: 286
+  excerpt: func WarningFor(status anchor.Status) string {
+  before: |-
+    }
+
+    // WarningFor is the single stale-record warning policy for every surface.
+  after: "\tswitch status {\n\tcase anchor.StatusAmbiguous:\n\t\treturn \"STALE: the excerpt matches several places and its context does not identify one. Treat it as history until someone explicitly reanchors it.\""
+  last_seen_line: 109
 author:
   name: Legacy import
   kind: unknown
