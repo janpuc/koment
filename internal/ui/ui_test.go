@@ -265,6 +265,22 @@ func TestStylesheetIsServedFromTheBinary(t *testing.T) {
 	}
 }
 
+func TestBrandAssetsAreServedFromTheBinary(t *testing.T) {
+	configured := setOf(annotatedRepository(t))
+	for _, asset := range []string{"/assets/koment-logo.svg", "/assets/koment-logo.png"} {
+		code, _ := request(t, configured, asset)
+		if code != http.StatusOK {
+			t.Errorf("%s: want 200, got %d", asset, code)
+		}
+	}
+
+	_, page := get(t, annotatedRepository(t), "/")
+	if !strings.Contains(page, `src="/assets/koment-logo.svg"`) ||
+		!strings.Contains(page, `href="/assets/koment-logo.png"`) {
+		t.Error("page does not link the logo and PNG favicon")
+	}
+}
+
 func TestEveryStatusHasAColour(t *testing.T) {
 	_, css := request(t, setOf(annotatedRepository(t)), "/assets/style.css")
 	for _, status := range []string{"ok", "moved", "drifted", "orphaned"} {

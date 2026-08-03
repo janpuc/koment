@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{if .File}}{{.File.Path}} — {{end}}{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</title>
+<link rel="icon" type="image/svg+xml" href="{{.LogoSVG}}">
+<link rel="icon" type="image/png" sizes="128x128" href="{{.LogoPNG}}">
 <link rel="stylesheet" href="{{.Stylesheet}}">
 </head>
 <body>
@@ -30,7 +32,10 @@
 
   <nav class="rail" aria-label="Annotated files">
     <div class="brand">
-      <a class="mark" href="{{.Home}}">{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</a>
+      <a class="mark" href="{{.Home}}">
+        <img class="brand-mark" src="{{.LogoSVG}}" alt="">
+        <span class="brand-label">{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</span>
+      </a>
       <span class="tally-count">{{.Total}} annotation{{if ne .Total 1}}s{{end}}</span>
     </div>
 

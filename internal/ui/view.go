@@ -22,6 +22,8 @@ type view struct {
 	Home         string
 	Stylesheet   string
 	Script       string
+	LogoSVG      string
+	LogoPNG      string
 	Snapshot     *snapshot
 }
 
@@ -46,6 +48,8 @@ type links struct {
 	home       string
 	stylesheet string
 	script     string
+	logoSVG    string
+	logoPNG    string
 }
 
 func servedLinks(repositoryID string) links {
@@ -55,6 +59,8 @@ func servedLinks(repositoryID string) links {
 		home:       base,
 		stylesheet: "/assets/style.css",
 		script:     "/assets/koment.js",
+		logoSVG:    "/assets/koment-logo.svg",
+		logoPNG:    "/assets/koment-logo.png",
 	}
 }
 
@@ -108,7 +114,10 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		return nil, err
 	}
 	if len(files) == 0 {
-		return &view{Empty: true, Stylesheet: how.stylesheet, Script: how.script, Home: how.home}, nil
+		return &view{
+			Empty: true, Stylesheet: how.stylesheet, Script: how.script,
+			Home: how.home, LogoSVG: how.logoSVG, LogoPNG: how.logoPNG,
+		}, nil
 	}
 
 	current := requested
@@ -121,6 +130,8 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		Home:       how.home,
 		Stylesheet: how.stylesheet,
 		Script:     how.script,
+		LogoSVG:    how.logoSVG,
+		LogoPNG:    how.logoPNG,
 	}
 	counts := map[anchor.Status]int{}
 	listed := make([]entry, 0, len(files))

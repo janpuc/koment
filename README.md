@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="internal/ui/assets/koment-logo.svg" alt="koment comment bubble" width="104">
+
 # koment
 
 **Keep the _why_ next to your code — checked, so it can't quietly rot.**
