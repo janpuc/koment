@@ -1,6 +1,7 @@
 # CI and pre-commit
 
-`koment check` exits non-zero when any annotation is `drifted` or `orphaned`.
+`koment check` exits non-zero when any annotation is `ambiguous`, `drifted` or
+`orphaned`.
 That is the whole integration.
 
 ## GitHub Actions

@@ -41,8 +41,9 @@ func (g GitContext) Validate() error {
 type AuthorKind string
 
 const (
-	AuthorHuman AuthorKind = "human"
-	AuthorAgent AuthorKind = "agent"
+	AuthorHuman   AuthorKind = "human"
+	AuthorAgent   AuthorKind = "agent"
+	AuthorUnknown AuthorKind = "unknown"
 )
 
 // IdentitySource records how much an identity is worth. Git config asserts an
@@ -50,9 +51,12 @@ const (
 type IdentitySource string
 
 const (
-	FromGitConfig IdentitySource = "git-config"
-	FromSession   IdentitySource = "session"
-	FromExplicit  IdentitySource = "explicit"
+	FromGitConfig   IdentitySource = "git-config"
+	FromSession     IdentitySource = "session"
+	FromExplicit    IdentitySource = "explicit"
+	FromMigration   IdentitySource = "migration"
+	FromOIDCProxy   IdentitySource = "oidc-proxy"
+	FromScopedAgent IdentitySource = "bearer-credential"
 )
 
 // Author is a claim, not a proof, unless Verified says otherwise. ADR 0015.
@@ -70,15 +74,20 @@ func (a Author) Validate() error {
 		return fmt.Errorf("author has no name")
 	}
 	switch a.Kind {
-	case AuthorHuman, AuthorAgent:
+	case AuthorHuman, AuthorAgent, AuthorUnknown:
 	default:
-		return fmt.Errorf("author kind %q, want %s or %s", a.Kind, AuthorHuman, AuthorAgent)
+		return fmt.Errorf("author kind %q, want one of %s, %s, %s", a.Kind, AuthorHuman, AuthorAgent, AuthorUnknown)
 	}
 	switch a.Source {
-	case FromGitConfig, FromSession, FromExplicit:
+	case FromGitConfig, FromSession, FromExplicit, FromMigration, FromOIDCProxy, FromScopedAgent:
 	default:
-		return fmt.Errorf("author source %q, want one of %s, %s, %s",
-			a.Source, FromGitConfig, FromSession, FromExplicit)
+		return fmt.Errorf("author source %q is unknown", a.Source)
+	}
+	if a.Kind == AuthorUnknown && a.Source != FromMigration {
+		return fmt.Errorf("unknown author must have migration as its source")
+	}
+	if a.Kind != AuthorUnknown && a.Source == FromMigration {
+		return fmt.Errorf("migration source requires an unknown author")
 	}
 	return nil
 }

@@ -6,10 +6,8 @@ koment show <file>
 koment check [path...]
 koment list [--kind <kind>] [path...]
 koment reanchor <id> [--excerpt <text>] [--file <path>]
-koment index [--rebuild] [--database-url <url>]
-koment export [--database-url <url>]     # rebuild .koment from the index
 koment ui [--listen <addr>]
-koment site --out <dir>                  # render one repository to static HTML
+koment site --out <dir>                  # render a repository snapshot to static HTML
 koment mcp [--http <addr> | --streamable-http <addr>]
 koment version
 ```
@@ -50,12 +48,13 @@ Annotations for one file, resolved against what is on disk now.
 koment show internal/auth/token.go
 ```
 
-Exits `1` if any annotation for that file is drifted or orphaned. A file with no
-annotations says so and exits `0`.
+Exits `1` if any annotation for that file is ambiguous, drifted or orphaned. A
+file with no annotations says so and exits `0`.
 
 ## check
 
-The drift gate. Resolves everything and fails on `drifted` or `orphaned`.
+The drift gate. Resolves everything and fails on `ambiguous`, `drifted` or
+`orphaned`.
 
 ```sh
 koment check
@@ -76,7 +75,7 @@ koment list --kind invariant
 koment list internal/store
 ```
 
-Exits `1` if anything shown is drifted or orphaned.
+Exits `1` if anything shown is ambiguous, drifted or orphaned.
 
 ## reanchor
 
@@ -93,60 +92,13 @@ koment reanchor 01KYW1ETE3CVB6S0ND70GGZVWM --file internal/auth/session.go
 | `--excerpt <text>` | new snippet, in the target file |
 | `--file <path>` | move to another file; keeps the existing excerpt unless `--excerpt` is also given |
 
-At least one is required. The SHA-256 and line are recomputed, never typed. The
-new excerpt is validated exactly as `add` validates one. Ids come from `check`
-output, ready to paste.
-
-## index
-
-Builds or refreshes the derived index that the serving read paths query.
-
-```sh
-koment index              # refresh: re-resolve only files that changed
-koment index --rebuild    # discard and rebuild from YAML
-```
-
-| flag | |
-|---|---|
-| `--rebuild` | throw the index away and rebuild it |
-| `--database-url <url>` | use Postgres instead of SQLite |
-| `--index <path>` | SQLite file; defaults to a per-repository file in the cache directory |
-| `--name <name>` | repository name recorded in the index |
-
-You rarely need to run this by hand — the servers keep the index current. It
-exists for a cold start, for a Postgres deployment, and for when you want to see
-what the index thinks.
-
-The index is **derived**. Deleting it costs a rebuild and nothing else; the
-annotations themselves are the YAML in git. It is gitignored for that reason.
-
-## export
-
-Rebuilds `.koment/` from the index. The inverse of `index`, and exact — a record
-read in and written back out is byte-identical.
-
-```sh
-koment export
-```
-
-This is the recovery path. If `.koment/` is lost or damaged and the index
-survives, the annotations are still there:
-
-```sh
-rm -rf .koment/annotations   # disaster
-koment export                # recovered, byte-identical
-```
-
-It refuses rather than writing an empty store if the index holds nothing for the
-repository, because an empty export achieves nothing and reporting success would
-be a lie.
-
-Git remains the record; this does not make the index authoritative. `koment
-check` still reads YAML.
+At least one is required. The surrounding context and last seen line are
+recaptured from source, never typed. The new excerpt is validated exactly as
+`add` validates one. Ids come from `check` output, ready to paste.
 
 ## site
 
-Renders one repository to static HTML — the published tier
+Renders a repository snapshot to static HTML — the published tier
 ([ADR 0103](decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
 See [publishing](publishing.md) for the workflow to copy.
 
@@ -163,6 +115,7 @@ koment site --out dist --name myrepo --commit-link "$url/commit/$sha"
 | `--commit-link <url>` | make the commit clickable |
 | `--banner <text>` · `--banner-link <url>` | a notice on every page |
 | `--repository <id>` | which repository, when several are configured |
+| `--repository-links <name=URL,...>` | contextual switcher entries for a grouped publication |
 
 Every page names its commit, and `koment site` **refuses to render** when it
 cannot determine one: a snapshot that does not say what it is a snapshot of is
@@ -172,9 +125,6 @@ It is a snapshot, not your working tree — use `koment ui` for that, which
 re-resolves on every request. The shared target behaviour is defined by
 [ADR 0102](decisions/0102-one-repository-snapshot-for-every-reader.md). A site
 renders your source as well as your annotations.
-
-Was `koment export` before 0.2; the plainer name went to the store rebuild,
-which is the more central operation.
 
 ## ui
 
@@ -209,28 +159,34 @@ the candidates instead of picking one.
 
 ## Record format
 
-`.koment/annotations/<mirrored source path>.yaml`:
+`.koment/annotations/<id>.yaml`:
 
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
 version: 1
+id: 01KYW1ETE3CVB6S0ND70GGZVWM
 file: internal/store/ulid.go
-annotations:
-  - id: 01KYW1ETE3CVB6S0ND70GGZVWM
-    scope: excerpt
-    excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(...)"
-    excerpt_sha256: b3f62f10e117b769...
-    last_seen_line: 18
-    kind: gotcha
-    body: |-
-      26 Crockford characters carry 130 bits but a ULID holds 128, so the
-      value is left-padded by two.
-    created: "2026-07-31"
+kind: gotcha
+body: |-
+  26 Crockford characters carry 130 bits but a ULID holds 128, so the
+  value is left-padded by two.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(...)"
+  before: const (
+  after: )
+  last_seen_line: 18
+author:
+  name: Jan Pucilowski
+  kind: human
+  source: git-config
 ```
 
-Hand-editing works, and `reanchor` exists so you rarely need to. If you do edit
-by hand, `excerpt_sha256` must match the excerpt or koment refuses to load the
-record rather than trusting a stale hash.
+Hand-editing works, with schema completion in editors that support YAML schemas.
+Unknown fields and a filename that differs from `id` are rejected. `reanchor`
+exists so context is normally captured from source rather than typed.
 
-`last_seen_line` is a hint, never an anchor: resolution searches on the excerpt
-alone and reads the line only to tell `ok` from `moved`. Delete it and nothing
-stops resolving.
+`last_seen_line` is descriptive, never an anchor: exact text and the captured
+`before` and `after` context choose identity. The line only distinguishes `ok`
+from `moved` after one candidate remains.

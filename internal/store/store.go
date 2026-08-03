@@ -1,9 +1,14 @@
 package store
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -19,33 +24,41 @@ const (
 	yamlIndent     = 2
 )
 
+const schemaDirective = "# yaml-language-server: $schema=" + SchemaURL + "\n"
+
 type Store struct{ root string }
 
 func Open(root string) *Store { return &Store{root: root} }
 
 func (s *Store) Root() string { return s.root }
 
+func closeRepositoryRoot(root *os.Root, returnedError *error) {
+	if err := root.Close(); err != nil {
+		*returnedError = errors.Join(*returnedError, fmt.Errorf("closing repository root: %w", err))
+	}
+}
+
 // FindRoot walks up from start for the directory that owns the annotations,
 // preferring an existing .koment over the enclosing git work tree.
 func FindRoot(start string) (string, error) {
-	dir, err := filepath.Abs(start)
+	directory, err := filepath.Abs(start)
 	if err != nil {
 		return "", fmt.Errorf("resolving %s: %w", start, err)
 	}
 
 	gitRoot := ""
 	for {
-		if isDir(filepath.Join(dir, DirName)) {
-			return dir, nil
+		if isDir(filepath.Join(directory, DirName)) {
+			return directory, nil
 		}
-		if gitRoot == "" && exists(filepath.Join(dir, ".git")) {
-			gitRoot = dir
+		if gitRoot == "" && exists(filepath.Join(directory, ".git")) {
+			gitRoot = directory
 		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
+		parent := filepath.Dir(directory)
+		if parent == directory {
 			break
 		}
-		dir = parent
+		directory = parent
 	}
 
 	if gitRoot != "" {
@@ -70,7 +83,7 @@ func (s *Store) FromRoot(path string) (string, error) {
 	if filepath.IsAbs(path) {
 		return s.fromAbsolute(path, path)
 	}
-	return validSourcePath(filepath.ToSlash(path))
+	return validSourcePath(filepath.ToSlash(filepath.Clean(path)))
 }
 
 func (s *Store) fromAbsolute(absolute, original string) (string, error) {
@@ -81,178 +94,248 @@ func (s *Store) fromAbsolute(absolute, original string) (string, error) {
 	return validSourcePath(filepath.ToSlash(relative))
 }
 
-func validSourcePath(path string) (string, error) {
-	clean := filepath.ToSlash(filepath.Clean(path))
+func validSourcePath(value string) (string, error) {
+	if strings.Contains(value, `\`) {
+		return "", fmt.Errorf("source path %s must use forward slashes", value)
+	}
+	clean := path.Clean(value)
 	switch {
 	case clean == "" || clean == ".":
 		return "", fmt.Errorf("empty source path")
-	case filepath.IsAbs(clean) || strings.HasPrefix(clean, "/"):
-		return "", fmt.Errorf("source path %s must be relative to the repository root", path)
+	case clean != value:
+		return "", fmt.Errorf("source path %s is not canonical; use %s", value, clean)
+	case path.IsAbs(clean) || hasDrivePrefix(clean):
+		return "", fmt.Errorf("source path %s must be relative to the repository root", value)
 	case clean == ".." || strings.HasPrefix(clean, "../"):
-		return "", fmt.Errorf("source path %s escapes the repository root", path)
+		return "", fmt.Errorf("source path %s escapes the repository root", value)
 	}
 	return clean, nil
 }
 
-func (s *Store) SourcePath(file string) (string, error) {
-	clean, err := validSourcePath(file)
-	if err != nil {
-		return "", err
+func hasDrivePrefix(value string) bool {
+	if len(value) < 2 || value[1] != ':' {
+		return false
 	}
-	return filepath.Join(s.root, filepath.FromSlash(clean)), nil
+	letter := value[0]
+	return letter >= 'A' && letter <= 'Z' || letter >= 'a' && letter <= 'z'
 }
 
-func (s *Store) RecordPath(file string) (string, error) {
+func (s *Store) ReadSource(file string) (_ []byte, returnedError error) {
 	clean, err := validSourcePath(file)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(s.annotationsRoot(), filepath.FromSlash(clean)+recordSuffix), nil
-}
-
-func (s *Store) annotationsRoot() string {
-	return filepath.Join(s.root, DirName, annotationsDir)
-}
-
-// Load reads the record for one source file. A file with no annotations
-// reports fs.ErrNotExist rather than an empty record.
-func (s *Store) Load(file string) (*Record, error) {
-	path, err := s.RecordPath(file)
 	if err != nil {
 		return nil, err
 	}
-	content, err := os.ReadFile(path)
+	root, err := os.OpenRoot(s.root)
+	if err != nil {
+		return nil, fmt.Errorf("opening repository root %s: %w", s.root, err)
+	}
+	defer closeRepositoryRoot(root, &returnedError)
+	content, err := root.ReadFile(filepath.FromSlash(clean))
+	if err != nil {
+		return nil, fmt.Errorf("reading source %s: %w", clean, err)
+	}
+	return content, nil
+}
+
+func (s *Store) RecordPath(id string) (string, error) {
+	name, err := recordName(id)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(s.root, name), nil
+}
+
+func recordName(id string) (string, error) {
+	if !ValidID(id) {
+		return "", fmt.Errorf("annotation id %q is not a canonical ULID", id)
+	}
+	return filepath.Join(DirName, annotationsDir, id+recordSuffix), nil
+}
+
+func (s *Store) Load(id string) (_ *Annotation, returnedError error) {
+	name, err := recordName(id)
+	if err != nil {
+		return nil, err
+	}
+	root, err := os.OpenRoot(s.root)
+	if err != nil {
+		return nil, fmt.Errorf("opening repository root %s: %w", s.root, err)
+	}
+	defer closeRepositoryRoot(root, &returnedError)
+	content, err := root.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}
 
-	var record Record
+	var annotation Annotation
 	decoder := yaml.NewDecoder(strings.NewReader(string(content)))
 	decoder.KnownFields(true)
-	if err := decoder.Decode(&record); err != nil {
-		return nil, fmt.Errorf("parsing %s: %w", path, err)
+	if err := decoder.Decode(&annotation); err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", name, err)
 	}
-	if err := record.Validate(); err != nil {
-		return nil, fmt.Errorf("in %s: %w", path, err)
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return nil, fmt.Errorf("parsing %s: multiple YAML documents are not allowed", name)
+		}
+		return nil, fmt.Errorf("parsing %s after the annotation: %w", name, err)
 	}
-
-	clean, err := validSourcePath(file)
-	if err != nil {
-		return nil, err
+	if err := annotation.Validate(); err != nil {
+		return nil, fmt.Errorf("in %s: %w", name, err)
 	}
-	if record.File != clean {
-		return nil, fmt.Errorf("in %s: record claims file %s but is stored for %s", path, record.File, clean)
+	if annotation.ID != id {
+		return nil, fmt.Errorf("in %s: record claims id %s but filename claims %s", name, annotation.ID, id)
 	}
-	return &record, nil
+	return &annotation, nil
 }
 
-func (s *Store) Save(record *Record) error {
-	if err := record.Validate(); err != nil {
+func (s *Store) Save(annotation *Annotation) (returnedError error) {
+	if err := annotation.Validate(); err != nil {
 		return err
 	}
-	path, err := s.RecordPath(record.File)
+	name, err := recordName(annotation.ID)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return fmt.Errorf("creating %s: %w", filepath.Dir(path), err)
+	root, err := os.OpenRoot(s.root)
+	if err != nil {
+		return fmt.Errorf("opening repository root %s: %w", s.root, err)
+	}
+	defer closeRepositoryRoot(root, &returnedError)
+	if err := root.MkdirAll(filepath.Join(DirName, annotationsDir), 0o755); err != nil {
+		return fmt.Errorf("creating %s: %w", filepath.Join(DirName, annotationsDir), err)
 	}
 
 	var encoded strings.Builder
+	encoded.WriteString(schemaDirective)
 	encoder := yaml.NewEncoder(&encoded)
 	encoder.SetIndent(yamlIndent)
-	if err := encoder.Encode(record); err != nil {
-		return fmt.Errorf("encoding record for %s: %w", record.File, err)
+	if err := encoder.Encode(annotation); err != nil {
+		return fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
 	}
 	if err := encoder.Close(); err != nil {
-		return fmt.Errorf("encoding record for %s: %w", record.File, err)
+		return fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
 	}
-	return writeAtomically(path, []byte(encoded.String()))
+	return writeAtomically(root, name, []byte(encoded.String()))
 }
 
-func writeAtomically(path string, content []byte) error {
-	temporary, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*")
-	if err != nil {
-		return fmt.Errorf("creating temporary file beside %s: %w", path, err)
+func writeAtomically(root *os.Root, name string, content []byte) error {
+	var entropy [8]byte
+	if _, err := rand.Read(entropy[:]); err != nil {
+		return fmt.Errorf("creating temporary name for %s: %w", name, err)
 	}
-	defer func() { _ = os.Remove(temporary.Name()) }()
+	temporaryName := name + "." + hex.EncodeToString(entropy[:])
+	temporary, err := root.OpenFile(temporaryName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	if err != nil {
+		return fmt.Errorf("creating temporary file beside %s: %w", name, err)
+	}
+	defer func() { _ = root.Remove(temporaryName) }()
 
 	if _, err := temporary.Write(content); err != nil {
 		_ = temporary.Close()
-		return fmt.Errorf("writing %s: %w", temporary.Name(), err)
+		return fmt.Errorf("writing %s: %w", temporaryName, err)
 	}
 	if err := temporary.Close(); err != nil {
-		return fmt.Errorf("closing %s: %w", temporary.Name(), err)
+		return fmt.Errorf("closing %s: %w", temporaryName, err)
 	}
-	if err := os.Chmod(temporary.Name(), 0o644); err != nil {
-		return fmt.Errorf("setting permissions on %s: %w", temporary.Name(), err)
-	}
-	if err := os.Rename(temporary.Name(), path); err != nil {
-		return fmt.Errorf("replacing %s: %w", path, err)
+	if err := root.Rename(temporaryName, name); err != nil {
+		return fmt.Errorf("replacing %s: %w", name, err)
 	}
 	return nil
 }
 
-// FindByID locates one annotation across every record, by its stable id.
-func (s *Store) FindByID(id string) (*Record, int, error) {
-	files, err := s.AnnotatedFiles()
-	if err != nil {
-		return nil, 0, err
+func (s *Store) FindByID(id string) (*Annotation, error) {
+	annotation, err := s.Load(id)
+	if errorsIsNotExist(err) {
+		return nil, fmt.Errorf("no annotation with id %s", id)
 	}
-
-	for _, file := range files {
-		record, err := s.Load(file)
-		if err != nil {
-			return nil, 0, err
-		}
-		for i, annotation := range record.Annotations {
-			if annotation.ID == id {
-				return record, i, nil
-			}
-		}
-	}
-	return nil, 0, fmt.Errorf("no annotation with id %s", id)
+	return annotation, err
 }
 
-// Remove deletes a file's record entirely, for when its last annotation moved
-// elsewhere. An empty record file would fail validation on the next load.
-func (s *Store) Remove(file string) error {
-	path, err := s.RecordPath(file)
+func errorsIsNotExist(err error) bool {
+	return err != nil && os.IsNotExist(err)
+}
+
+func (s *Store) Remove(id string) (returnedError error) {
+	name, err := recordName(id)
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("removing %s: %w", path, err)
+	root, err := os.OpenRoot(s.root)
+	if err != nil {
+		return fmt.Errorf("opening repository root %s: %w", s.root, err)
+	}
+	defer closeRepositoryRoot(root, &returnedError)
+	if err := root.Remove(name); err != nil {
+		return fmt.Errorf("removing %s: %w", name, err)
 	}
 	return nil
 }
 
-// AnnotatedFiles lists every source path that has a record, sorted.
-func (s *Store) AnnotatedFiles() ([]string, error) {
-	root := s.annotationsRoot()
-	var files []string
-
-	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() || !strings.HasSuffix(path, recordSuffix) {
-			return nil
-		}
-		relative, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-		files = append(files, filepath.ToSlash(strings.TrimSuffix(relative, recordSuffix)))
-		return nil
-	})
-	if os.IsNotExist(err) {
+func (s *Store) All() (_ []Annotation, returnedError error) {
+	root, err := os.OpenRoot(s.root)
+	if err != nil {
+		return nil, fmt.Errorf("opening repository root %s: %w", s.root, err)
+	}
+	defer closeRepositoryRoot(root, &returnedError)
+	directory := path.Join(DirName, annotationsDir)
+	entries, err := fs.ReadDir(root.FS(), directory)
+	if errorsIsNotExist(err) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("walking %s: %w", root, err)
+		return nil, fmt.Errorf("reading %s: %w", directory, err)
 	}
 
+	annotations := make([]Annotation, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			return nil, fmt.Errorf("unexpected directory %s in flat annotation store", path.Join(directory, entry.Name()))
+		}
+		if !strings.HasSuffix(entry.Name(), recordSuffix) {
+			continue
+		}
+		id := strings.TrimSuffix(entry.Name(), recordSuffix)
+		annotation, err := s.Load(id)
+		if err != nil {
+			return nil, err
+		}
+		annotations = append(annotations, *annotation)
+	}
+	return annotations, nil
+}
+
+func (s *Store) ForFile(file string) ([]Annotation, error) {
+	clean, err := validSourcePath(file)
+	if err != nil {
+		return nil, err
+	}
+	all, err := s.All()
+	if err != nil {
+		return nil, err
+	}
+	annotations := make([]Annotation, 0)
+	for _, annotation := range all {
+		if annotation.File == clean {
+			annotations = append(annotations, annotation)
+		}
+	}
+	return annotations, nil
+}
+
+func (s *Store) AnnotatedFiles() ([]string, error) {
+	annotations, err := s.All()
+	if err != nil {
+		return nil, err
+	}
+	unique := make(map[string]struct{}, len(annotations))
+	for _, annotation := range annotations {
+		unique[annotation.File] = struct{}{}
+	}
+	files := make([]string, 0, len(unique))
+	for file := range unique {
+		files = append(files, file)
+	}
 	sort.Strings(files)
 	return files, nil
 }

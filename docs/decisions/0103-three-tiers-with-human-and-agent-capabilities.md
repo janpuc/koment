@@ -22,8 +22,9 @@ Support three explicit tiers over the shared snapshot and application service:
 
 - **Local:** CLI and UI for humans, stdio MCP for agents, with direct Git-record
   writes when an explicit write mode is enabled.
-- **Published:** commit-stamped static UI plus body search and a stable
-  `annotations.json`; always read-only and one repository per site.
+- **Published:** commit-stamped static UI plus body search and stable
+  `annotations.json` snapshots; always read-only, with one repository or a
+  configured set whose commits remain independently visible.
 - **Served:** one authenticated `koment serve` process exposing human UI and MCP
   for many repositories, with remote writes delegated to the outbox.
 
@@ -42,6 +43,8 @@ bounded shutdown and fatal startup errors.
   mutation service.
 - The published tier exposes machine-readable data but cannot claim write
   parity.
+- A multi-repository publication needs an explicit default repository and
+  preserves a commit stamp for every repository it includes.
 - The prototype's mutually exclusive Helm modes and independent HTTP servers
   are removed.
 - Local write mode requires browser security tests even though it binds only to

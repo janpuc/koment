@@ -49,7 +49,7 @@ func TestReanchorFixesDriftAndKeepsTheID(t *testing.T) {
 	}
 }
 
-func TestReanchorRecomputesTheHashRatherThanTrustingIt(t *testing.T) {
+func TestReanchorRecapturesTheExcerptAndLine(t *testing.T) {
 	root := repository(t)
 	added := addServeAnnotation(t)
 	id := annotationID(t, added.stdout)
@@ -62,7 +62,7 @@ func TestReanchorRecomputesTheHashRatherThanTrustingIt(t *testing.T) {
 		t.Fatalf("reanchor exited %d: %s", fixed.code, fixed.output())
 	}
 
-	record, err := os.ReadFile(filepath.Join(root, ".koment", "annotations", "main.go.yaml"))
+	record, err := os.ReadFile(filepath.Join(root, ".koment", "annotations", id+".yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,8 +109,12 @@ func TestReanchorMovesAnOrphanToItsNewFile(t *testing.T) {
 	if !strings.Contains(green.stdout, "across 1 files") {
 		t.Errorf("the old record should be gone:\n%s", green.stdout)
 	}
-	if _, err := os.Stat(filepath.Join(root, ".koment", "annotations", "main.go.yaml")); !os.IsNotExist(err) {
-		t.Error("the emptied record file should have been removed")
+	record, err := os.ReadFile(filepath.Join(root, ".koment", "annotations", id+".yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(record), "file: internal/serve.go") {
+		t.Errorf("the one authoritative record did not move to the new source path:\n%s", record)
 	}
 }
 

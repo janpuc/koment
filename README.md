@@ -40,10 +40,11 @@ copy](docs/publishing.md).
 
 ## How it works
 
-1. You annotate a snippet. koment records the prose, the excerpt and its
-   SHA-256, the commit you were on, and who you are.
-2. The record lands in `.koment/annotations/<mirrored path>.yaml`, one file per
-   annotated source file. It is YAML, it is in git, and it diffs line by line.
+1. You annotate a snippet. koment records the prose, exact excerpt, surrounding
+   source context, the commit you were on, and who you are.
+2. The record lands in `.koment/annotations/<id>.yaml`, one file per
+   annotation. Concurrent agents create independent files instead of replacing
+   one shared list.
 3. Resolution searches the current file for that excerpt and produces exactly
    one status:
 
@@ -51,14 +52,15 @@ copy](docs/publishing.md).
    |---|---|---|
    | `ok` | found where it was last seen | passes |
    | `moved` | still there, different line | passes |
+   | `ambiguous` | several contextual candidates remain | **fails** |
    | `drifted` | file exists, the annotated code is gone | **fails** |
    | `orphaned` | the file is gone | **fails** |
 
-4. `koment check` exits non-zero on `drifted` or `orphaned`. That is the whole
-   mechanism: an annotation nobody revisited is worse than no annotation, so it
-   has to be impossible to ignore.
+4. `koment check` exits non-zero on `ambiguous`, `drifted` or `orphaned`. That
+   is the whole mechanism: uncertain rationale is worse than no annotation, so
+   it has to be impossible to ignore.
 5. When it fails, `koment reanchor <id> --excerpt '<new text>'` repoints it —
-   keeping its id and creation date, recomputing the hash and line for you.
+   keeping its id and creation date, recapturing context and the line for you.
    Nothing re-attaches automatically; a person confirms the reasoning still holds.
 
 Anchoring is by **excerpt**, never by line number — line numbers rot on the next
@@ -119,7 +121,7 @@ docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
 ## Several repositories
 
 One deployment serves many. Identity is assigned, so a repository that moves
-keeps its annotations and its index
+keeps its annotations and snapshot identity
 ([ADR 0104](docs/decisions/0104-transactional-multi-repository-snapshots.md)):
 
 ```yaml
@@ -178,13 +180,12 @@ wins.
 | `KOMENT_HTTP` | address for `koment mcp --http` |
 | `KOMENT_STREAMABLE_HTTP` | address for `koment mcp --streamable-http` |
 | `KOMENT_METRICS` | address for the metrics listener; off unless set |
-| `KOMENT_OUT` | output directory for `koment export` |
-| `KOMENT_INDEX` | SQLite index file; defaults to the cache directory |
-| `KOMENT_DATABASE_URL` | use Postgres for the index, which makes the service stateless |
+| `KOMENT_OUT` | output directory for `koment site` |
+| `KOMENT_REPOSITORY_LINKS` | contextual repository switcher for a grouped static publication |
 
-`.koment/` bootstraps the index when it is empty, and `koment export` rebuilds
-`.koment/` from the index — byte-identically. Either can be lost without losing
-annotations.
+Git is the only authoritative record. Local reads resolve the YAML directly
+against the working tree; disposable read models cannot restore or overwrite
+Git.
 
 `koment <command> --help` lists every flag alongside its variable.
 

@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYWG17GJZTM91CZ23D8B1RK8
+file: internal/ui/view.go
+kind: invariant
+body: |-
+  A drifted or orphaned annotation is deliberately rendered away from the
+  code: its excerpt is shown struck through and labelled as no longer present,
+  never laid over the current source. Anchoring a stale note to whatever now
+  occupies that line would assert something false, which is worse than showing
+  nothing. ADR 0005 requires this in the MCP payload; this is the same
+  guarantee expressed visually.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func describe(resolution anchor.Resolution) note {
+  before: |2-
+
+    // describe renders a drifted annotation as history: its excerpt is shown as
+    // what used to be there, never laid over the current source (ADR 0005).
+  after: "\tstale := resolution.Status.IsFailure()\n\treturn note{\n\t\tID:      resolution.Annotation.ID,"
+  last_seen_line: 236
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

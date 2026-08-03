@@ -1,10 +1,5 @@
 name: pages
 
-# This repository publishing itself is an instance of the documented pattern,
-# not a special case: docs/publishing.md is the same workflow with one site.
-# It builds koment from source rather than installing a release, because the
-# site has to show what is on main. Everyone else should use the action.
-
 on:
   push:
     branches: [main]
@@ -33,40 +28,40 @@ jobs:
       - name: build
         run: go build -o koment ./cmd/koment
 
-      # Two sites, because the published tier is one repository per site
-      # (ADR 0026). koment's own annotations are the persuasive half — real
-      # reasoning about real code. The fixture is the only place drifted and
-      # orphaned can be shown, because CI keeps main green and those two
-      # statuses fail the build (ADR 0021).
+      - name: check koment
+        run: ./koment check
+
       - name: render koment
         run: |
-          ./koment site --out dist/koment --name koment \
+          ./koment site --out dist --name koment \
+            --commit "${GITHUB_SHA}" \
             --commit-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" \
-            --banner "Real annotations about real code — each was written because an edit was about to lose a real reason."
+            --repository-links "koment=index.html,workspace=r/workspace/index.html" \
+            --banner "Annotations about the code that implements koment."
 
-      - name: render the fixture
-        working-directory: demo
+      - name: check maintained workspace
+        working-directory: workspace
+        run: ../koment check
+
+      - name: render maintained workspace
+        working-directory: workspace
         run: |
-          ../koment site --out ../dist/fixture --name fixture \
+          ../koment site --out ../dist/r/workspace --name workspace \
+            --commit "${GITHUB_SHA}" \
             --commit-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" \
-            --banner "A fixture whose drift is deliberate, so that drifted and orphaned are visible somewhere." \
-            --banner-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/main/demo"
+            --repository-links "koment=../../index.html,workspace=index.html" \
+            --banner "A maintained session package used to verify koment end to end." \
+            --banner-link "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/main/workspace"
 
-      - name: landing page
-        run: cp demo/landing.html dist/index.html
-
-      # A site that silently rendered nothing would still deploy green.
-      - name: every status is visible, and every page dates itself
+      - name: verify publication
         run: |
-          for status in ok moved drifted orphaned; do
-            grep -qr "pill $status" dist || { echo "no page shows status: $status"; exit 1; }
-          done
-          test -f dist/index.html || { echo "no landing page"; exit 1; }
-          for site in koment fixture; do
-            test -f "dist/$site/index.html" || { echo "$site render missing"; exit 1; }
-            grep -q "snapshot of" "dist/$site/index.html" || { echo "$site does not name its commit"; exit 1; }
-          done
-          echo "all four statuses present; both sites stamped with ${GITHUB_SHA::7}"
+          test -f dist/index.html
+          test -f dist/r/workspace/index.html
+          grep -q "snapshot of" dist/index.html
+          grep -q "snapshot of" dist/r/workspace/index.html
+          grep -q "r/workspace/index.html" dist/index.html
+          grep -q "../../index.html" dist/r/workspace/index.html
+          echo "default and maintained repositories are stamped with ${GITHUB_SHA::7}"
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0

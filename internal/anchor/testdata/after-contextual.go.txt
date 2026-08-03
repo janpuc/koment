@@ -1,0 +1,21 @@
+package fixture
+
+func primary() {
+	prepareOne()
+	prepareTwo()
+	prepareThree()
+	target()
+	finishOne()
+	finishTwo()
+	finishThree()
+}
+
+func secondary() {
+	otherOne()
+	otherTwo()
+	otherThree()
+	target()
+	doneOne()
+	doneTwo()
+	doneThree()
+}

@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Y5C8TR83JB1VV644K03B0
+file: internal/ui/export.go
+kind: invariant
+body: |-
+  Refusing here rather than rendering an unstamped page is deliberate. A
+  static site is the one tier that cannot re-resolve, so the only thing
+  bounding its staleness is the commit printed on every page. A site that
+  silently omitted it would look exactly like a current one, which is the
+  failure koment exists to prevent — so the absence of a commit is an error,
+  not a missing decoration.
+
+  The -dirty suffix matters for the same reason: `koment site` renders the
+  working tree, so a modified tree is not the commit it sits on and must not
+  claim to be.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: func commitOf(root, given string) (string, error) {
+  before: |-
+    // commitOf refuses to publish a snapshot that cannot say what it is a snapshot
+    // of. An undated page is how a reader mistakes an old rendering for the current
+    // one, which is the failure this project exists to prevent (ADR 0026).
+  after: "\tif given != \"\" {\n\t\treturn given, nil\n\t}"
+  last_seen_line: 108
+git:
+  commit: 5655d1b23479e361e9cc9d0358f0d0b0cbfb0249
+  path: internal/ui/export.go
+  line: 95
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

@@ -77,6 +77,26 @@
           "not": {
             "pattern": "(^|/)\\.\\.(/|$)"
           }
+        },
+        {
+          "not": {
+            "pattern": "(^|/)\\.(/|$)"
+          }
+        },
+        {
+          "not": {
+            "pattern": "//|/$"
+          }
+        },
+        {
+          "not": {
+            "pattern": "\\\\"
+          }
+        },
+        {
+          "not": {
+            "pattern": "^[A-Za-z]:"
+          }
         }
       ]
     },
@@ -183,6 +203,15 @@
             "properties": {
               "source": {
                 "const": "migration"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "source": {
+                "not": {
+                  "const": "migration"
+                }
               }
             }
           }

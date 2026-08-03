@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1TRASR4YZ5NEE0YEV0SD8
+file: internal/mcp/transport.go
+kind: why
+body: |-
+  The mcp subcommand parses its own flags here rather than in package cli, so
+  that cli never imports this package and therefore never links the MCP SDK.
+  ADR 0007 accepted eight transitive modules only on the condition that they
+  stay confined to internal/mcp, and this split is what keeps that true.
+  Moving these flags into cli would spend the escape hatch without anyone
+  noticing.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func Serve(args []string, stderr io.Writer) error {
+  before: |2-
+
+    // Serve parses the mcp subcommand's own flags, so that package cli never links
+    // the MCP SDK.
+  after: "\tflags := flag.NewFlagSet(\"mcp\", flag.ContinueOnError)\n\tflags.SetOutput(stderr)\n\tflags.Usage = func() {"
+  last_seen_line: 41
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

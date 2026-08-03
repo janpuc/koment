@@ -21,10 +21,11 @@ type node struct {
 
 // severity orders statuses so a directory can advertise the worst one beneath it.
 var severity = map[anchor.Status]int{
-	anchor.StatusOK:       0,
-	anchor.StatusMoved:    1,
-	anchor.StatusDrifted:  2,
-	anchor.StatusOrphaned: 3,
+	anchor.StatusOK:        0,
+	anchor.StatusMoved:     1,
+	anchor.StatusAmbiguous: 2,
+	anchor.StatusDrifted:   3,
+	anchor.StatusOrphaned:  4,
 }
 
 // treeOf builds the directory tree, returning the nested directories and the

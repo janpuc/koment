@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ0JZWD1PHB528YETDFT4F6R
+file: internal/repository/repository.go
+kind: gotcha
+body: |-
+  KOMENT_REPO is checked before the working directory because in a container
+  the working directory is a mount point, not somewhere a person navigated to.
+  Without it, running the image with the repository mounted anywhere other
+  than the image's WORKDIR silently serves nothing, and the failure looks like
+  an empty store rather than a misconfiguration.
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: "\tif root := os.Getenv(EnvRepo); root != \"\" {"
+  before: "\tif list := os.Getenv(EnvRepos); list != \"\" {\n\t\treturn loadList(list)\n\t}"
+  after: "\t\treturn discover(root)\n\t}\n\treturn discover(workingDirectory)"
+  last_seen_line: 60
+git:
+  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+  path: internal/ui/ui.go
+  line: 93
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

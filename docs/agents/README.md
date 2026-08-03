@@ -17,17 +17,19 @@ client. Pick yours:
 
 ## What your agent gets
 
-Two tools, deliberately. Every MCP tool costs context in every request, so the
+Three tools, deliberately. Every MCP tool costs context in every request, so the
 surface stays small.
 
 - **`koment_get(file)`** — annotations for a file, each with its resolution
   status. The one to call before editing something unfamiliar.
 - **`koment_search(query)`** — full-text across annotation bodies, for when you
   know the topic but not the file.
+- **`koment_repositories()`** — the assigned repositories and their resolution
+  counts, for an intentional cross-repository operation.
 
-Every annotation carries its status, and a `drifted` or `orphaned` one arrives
-with an explicit warning that it describes code which has since changed. A stale
-annotation is never presented as though it were current.
+Every annotation carries its status. `ambiguous`, `drifted` and `orphaned`
+records arrive with an explicit warning and must be treated as history. An
+uncertain annotation is never presented as though it were current.
 
 ## The one gotcha, whichever client you use
 
@@ -39,17 +41,28 @@ workspace, which is what you want. If yours doesn't — or if you run the server
 yourself over HTTP — start it from inside the repository, or the annotations it
 serves will belong to a different project or none at all.
 
-## Telling the agent to actually use it
+## Give the agent a strict contract
 
 Wiring up the server makes the tools *available*. It does not make an agent
-*reach for them*. Add a line to whatever instruction file your client reads —
-`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, a system prompt:
+*reach for them*. Put this contract in the repository instruction surface your
+client reads:
 
 ```markdown
-Before editing any file, call `koment_get` on it and read the annotations.
-They hold reasoning that is deliberately not in the comments. An annotation
-whose status is `drifted` or `orphaned` describes code that has since changed:
-treat it as history, and say so rather than acting on it.
+Before editing an existing file, call `koment_get` for it. Search koment before
+changing a non-obvious decision. Treat ambiguous, drifted and orphaned records
+as history, never current fact. Do not add an explanatory inline comment:
+rename, extract, introduce a named type or constant, restructure, then create a
+koment annotation with honest agent authorship. Run `koment check` before
+finishing, and do not report success while it fails.
 ```
 
 koment's own repository does exactly this — see [AGENTS.md](../../AGENTS.md).
+
+Repository instructions and client hooks are early guardrails, not a security
+boundary: an agent client can decline trust, disable instructions or write
+through an unhooked process. Today `koment check` enforces annotation resolution,
+not the absence of explanatory comments. The target enforceable outcome is a
+required `koment comments check` status on a protected branch, paired with
+`koment check`. [ADR 0108](../decisions/0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md)
+defines the version-1 policy and generated adapters that will remove the manual
+copy step once local agent writes and comment-intent conversion exist.

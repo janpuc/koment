@@ -1,7 +1,8 @@
 package ui
 
 import (
-	"os"
+	"errors"
+	"io/fs"
 	"strings"
 
 	"github.com/janpuc/koment/internal/anchor"
@@ -105,7 +106,7 @@ type note struct {
 }
 
 var statusOrder = []anchor.Status{
-	anchor.StatusOK, anchor.StatusMoved, anchor.StatusDrifted, anchor.StatusOrphaned,
+	anchor.StatusOK, anchor.StatusMoved, anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned,
 }
 
 func build(annotations *store.Store, requested string, how links) (*view, error) {
@@ -197,12 +198,8 @@ func tallyOf(counts map[anchor.Status]int) []tallyEntry {
 func buildFile(annotations *store.Store, file string, resolutions []anchor.Resolution) (*fileView, error) {
 	built := &fileView{Path: file}
 
-	sourcePath, err := annotations.SourcePath(file)
-	if err != nil {
-		return nil, err
-	}
-	content, err := os.ReadFile(sourcePath)
-	if os.IsNotExist(err) {
+	content, err := annotations.ReadSource(file)
+	if errors.Is(err, fs.ErrNotExist) {
 		built.Missing = true
 		for _, resolution := range resolutions {
 			built.Detached = append(built.Detached, describe(resolution))
@@ -245,7 +242,7 @@ func describe(resolution anchor.Resolution) note {
 		Line:    resolution.Line,
 		Body:    store.Paragraphs(resolution.Annotation.Body),
 		Created: resolution.Annotation.Created.Format("2006-01-02"),
-		Excerpt: resolution.Annotation.Excerpt,
+		Excerpt: resolution.Annotation.Anchor.Excerpt,
 		Stale:   stale,
 		Warning: warningFor(resolution.Status),
 	}
@@ -253,6 +250,8 @@ func describe(resolution anchor.Resolution) note {
 
 func warningFor(status anchor.Status) string {
 	switch status {
+	case anchor.StatusAmbiguous:
+		return "The excerpt now matches several places and its context identifies none uniquely. Treat this note as history until it is reanchored."
 	case anchor.StatusDrifted:
 		return "The annotated code changed and nobody revisited this note. Treat it as history, not as a description of the code as it stands."
 	case anchor.StatusOrphaned:

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Z6ZW9V7QDBH14TBCD2ADK
+file: internal/ui/assets/koment.js
+kind: invariant
+body: |-
+  Everything in this file is an enhancement, and it has to stay that way. The
+  published tier serves these same files with no server behind them (ADR
+  0026), so a reader with scripting off must still get a complete page: the
+  tree is <details>, the notes sit in a column beside the code carrying their
+  line number, and every control is a real link or form element.
+
+  Nothing here may become the only way to reach something.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: (function () {
+  after: |2-
+      "use strict";
+
+      var switcher = document.querySelector("[data-switcher]");
+  last_seen_line: 1
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

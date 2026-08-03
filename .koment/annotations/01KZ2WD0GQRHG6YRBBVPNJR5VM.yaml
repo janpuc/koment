@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2WD0GQRHG6YRBBVPNJR5VM
+file: internal/mcp/mcp.go
+kind: invariant
+body: |-
+  An ambiguous path fails and lists the candidates rather than choosing one.
+  Answering from whichever repository the server happens to sit in is a
+  confident wrong answer, which is the failure this whole project exists to
+  prevent. Search behaves differently on purpose: searching everything and
+  naming where each hit came from is useful, where refusing would not be. ADR
+  0025.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: func forGet(repositories *repository.Set, named, file string) (repository.Repository, error) {
+  before: |-
+    // forGet picks the repository a path belongs to. With several candidates it
+    // refuses and names them rather than guessing, because answering an ambiguous
+    // question silently is the failure koment exists to prevent (ADR 0025).
+  after: "\tif named != \"\" {\n\t\tchosen, found := repositories.Resolve(named)\n\t\tif !found {"
+  last_seen_line: 47
+git:
+  commit: 891a943c595ce0526139604cdd723ae6c63bf57b
+  path: internal/mcp/mcp.go
+  line: 48
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

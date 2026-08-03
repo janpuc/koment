@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ0BD2ETQ8V10YGCXT0GVB6X
+file: internal/store/context.go
+kind: invariant
+body: |-
+  The excerpt and this context answer different questions and neither replaces
+  the other. Resolution searches on the excerpt alone; the commit hash is
+  consulted only to reconstruct history. Deleting every git block must leave
+  every status unchanged - TestProvenanceIsOptional and the anchor tests pin
+  that. If a change here makes resolution read the commit, ADR 0003 has been
+  reversed without anyone deciding to.
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: type GitContext struct {
+  before: |-
+    // GitContext is what was true when an annotation was written. It is written
+    // once and never rewritten: reanchor changes where an annotation aims, not
+    // what it witnessed. ADR 0014.
+  after: "\tCommit  string `yaml:\"commit\"`\n\tPath    string `yaml:\"path\"`\n\tLine    int    `yaml:\"line,omitempty\"`"
+  last_seen_line: 12
+git:
+  commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
+  path: internal/store/context.go
+  line: 12
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW39J5GTD9HB75C35DGWC6S
+file: internal/cli/reanchor.go
+kind: why
+body: |-
+  Re-anchoring keeps the annotation's ULID and its created date on purpose.
+  The annotation is the same annotation; only where it points changed.
+  Deleting and re-adding would be simpler code but would mint a new id and a
+  new date, so the record would claim to be younger than the thinking in it,
+  and would sever it from its own git history. ADR 0012.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: "\tmoved := *record"
+  before: "\t\t}\n\t}\n"
+  after: "\tif err := reanchorTo(&moved, annotations, target, *excerpt); err != nil {\n\t\treturn fail(env, err)\n\t}"
+  last_seen_line: 38
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

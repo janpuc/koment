@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -35,6 +36,18 @@ func NewID(at time.Time) (string, error) {
 		return "", fmt.Errorf("reading ULID entropy: %w", err)
 	}
 	return encodeCrockford(id), nil
+}
+
+func ValidID(id string) bool {
+	if len(id) != ulidLength || id[0] > '7' {
+		return false
+	}
+	for _, character := range id {
+		if !strings.ContainsRune(crockfordAlphabet, character) {
+			return false
+		}
+	}
+	return true
 }
 
 func encodeCrockford(id [timestampBytes + entropyBytes]byte) string {

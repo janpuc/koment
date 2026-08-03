@@ -48,6 +48,11 @@ func TestAuthorRequiresNameKindAndSource(t *testing.T) {
 		"unknown source": func(a *Author) { a.Source = "vibes" },
 		"missing kind":   func(a *Author) { a.Kind = "" },
 		"missing source": func(a *Author) { a.Source = "" },
+		"unknown without migration": func(a *Author) {
+			a.Kind = AuthorUnknown
+			a.Source = FromExplicit
+		},
+		"migration for human": func(a *Author) { a.Source = FromMigration },
 	}
 	for name, corrupt := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -72,62 +77,58 @@ func TestUnverifiedIdentityIsNotProven(t *testing.T) {
 
 func TestProvenanceRoundTrips(t *testing.T) {
 	s := newTestStore(t)
-	want := &Record{
+	want := &Annotation{
 		Version: RecordVersion,
+		ID:      firstID,
 		File:    "a.go",
-		Annotations: []Annotation{{
-			ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-			Scope:   ScopeFile,
-			Kind:    KindWhy,
-			Body:    "Entry point only.",
-			Created: Date{time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)},
-			Git:     &GitContext{Commit: validCommit, Path: "a.go", Line: 12, EndLine: 18},
-			Author: &Author{
-				Name: "Jan Pucilowski", Email: "janpuc@proton.me",
-				Kind: AuthorHuman, Source: FromGitConfig,
-			},
-		}},
+		Anchor:  Anchor{Scope: ScopeFile},
+		Kind:    KindWhy,
+		Body:    "Entry point only.",
+		Created: Date{time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)},
+		Git:     &GitContext{Commit: validCommit, Path: "a.go", Line: 12, EndLine: 18},
+		Author: Author{
+			Name: "Jan Pucilowski", Email: "janpuc@proton.me",
+			Kind: AuthorHuman, Source: FromGitConfig,
+		},
 	}
 	if err := s.Save(want); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := s.Load("a.go")
+	got, err := s.Load(want.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	recorded := got.Annotations[0]
-	if recorded.Git == nil || recorded.Git.Commit != validCommit || recorded.Git.EndLine != 18 {
-		t.Errorf("git context did not round trip: %+v", recorded.Git)
+	if got.Git == nil || got.Git.Commit != validCommit || got.Git.EndLine != 18 {
+		t.Errorf("git context did not round trip: %+v", got.Git)
 	}
-	if recorded.Author == nil || recorded.Author.Email != "janpuc@proton.me" {
-		t.Errorf("author did not round trip: %+v", recorded.Author)
+	if got.Author.Email != "janpuc@proton.me" {
+		t.Errorf("author did not round trip: %+v", got.Author)
 	}
 }
 
-func TestProvenanceIsOptional(t *testing.T) {
+func TestGitContextIsOptionalButAuthorIsRequired(t *testing.T) {
 	s := newTestStore(t)
-	record := &Record{
+	record := &Annotation{
 		Version: RecordVersion,
+		ID:      firstID,
 		File:    "a.go",
-		Annotations: []Annotation{{
-			ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-			Scope:   ScopeFile,
-			Kind:    KindWhy,
-			Body:    "Written before koment recorded provenance.",
-			Created: Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		}},
+		Anchor:  Anchor{Scope: ScopeFile},
+		Kind:    KindWhy,
+		Body:    "Written before koment recorded provenance.",
+		Created: Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
+		Author:  Author{Name: "Legacy import", Kind: AuthorUnknown, Source: FromMigration},
 	}
 	if err := s.Save(record); err != nil {
 		t.Fatalf("an annotation without provenance must still be valid: %v", err)
 	}
 
-	path, err := s.RecordPath("a.go")
+	path, err := s.RecordPath(record.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	content := readFile(t, path)
-	if strings.Contains(content, "git:") || strings.Contains(content, "author:") {
-		t.Errorf("absent provenance must not be written as empty keys:\n%s", content)
+	if strings.Contains(content, "git:") || !strings.Contains(content, "author:") {
+		t.Errorf("git may be absent but author must be present:\n%s", content)
 	}
 }

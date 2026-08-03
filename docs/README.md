@@ -12,7 +12,7 @@
 ## Working on koment
 
 - **[Bootstrap](bootstrap.md)** — start here: what it is, the data model,
-  running it, the demo, releases
+  running it, the maintained workspace, releases
 
 - **[Development](development.md)** — layout, build, test, conventions
 - **[Decisions](decisions/)** — why koment is the way it is, and what was rejected
@@ -20,12 +20,12 @@
 
 ## The short version
 
-Annotations live in `.koment/annotations/`, mirroring your source tree, one file
-per annotated source file, committed to git. Each is anchored to a verbatim
-excerpt plus its SHA-256 — never a line number.
+Annotations live in `.koment/annotations/<id>.yaml`, one Git record per stable
+annotation id. Each excerpt anchor stores verbatim source plus captured context;
+the last seen line describes movement but never chooses identity.
 
-Resolution produces exactly one of four statuses. `drifted` and `orphaned` fail
-the build, because an annotation nobody revisited is worse than none.
+Resolution produces exactly one of five statuses. `ambiguous`, `drifted` and
+`orphaned` fail the build, because uncertain rationale is worse than none.
 
 Agents read through MCP; humans read through the CLI, `koment ui`, or a static
 site published by `koment site`. Those are three tiers of the same data, and

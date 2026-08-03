@@ -45,9 +45,10 @@ Restart Claude Code, then:
 /mcp
 ```
 
-`koment` should be listed with `koment_get` and `koment_search`. Ask it
-something concrete — *"what does koment say about internal/store/ulid.go?"* —
-and check the answer matches `koment show internal/store/ulid.go`.
+`koment` should be listed with `koment_get`, `koment_search` and
+`koment_repositories`. Ask it something concrete — *"what does koment say about
+internal/store/ulid.go?"* — and check the answer matches `koment show
+internal/store/ulid.go`.
 
 ## Make it read them
 
@@ -56,7 +57,10 @@ Availability is not use. Add this to `CLAUDE.md` or `AGENTS.md`:
 ```markdown
 Before editing any file, call `koment_get` on it and read the annotations.
 They hold reasoning that is deliberately not in the comments. Treat a
-`drifted` or `orphaned` annotation as history, not as current fact.
+`ambiguous`, `drifted` or `orphaned` annotation as history, not as current fact.
+Search koment before changing a non-obvious decision. Do not add an explanatory
+inline comment; record local rationale with koment and project-wide rationale in
+an ADR.
 ```
 
 Claude Code reads `CLAUDE.md` automatically. If you already keep rules in

@@ -114,6 +114,10 @@
             "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }]
           },
           {
+            "matcher": { "id": "byName", "options": "ambiguous" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }]
+          },
+          {
             "matcher": { "id": "byName", "options": "drifted" },
             "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
           },
@@ -132,7 +136,7 @@
     {
       "type": "timeseries",
       "title": "Stale annotations served to agents",
-      "description": "An agent being handed a drifted or orphaned annotation is the failure mode happening in production rather than in CI.",
+      "description": "An agent being handed an ambiguous, drifted or orphaned annotation is the failure mode happening in production rather than in CI.",
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
       "targets": [

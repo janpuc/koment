@@ -33,6 +33,7 @@ the approved destination.
 - [0105 — Authenticate remote access and settle writes through Git](0105-authenticated-outbox-settles-through-git.md)
 - [0106 — Use konflate as the operational baseline](0106-konflate-is-the-operational-baseline.md)
 - [0107 — Enforce the comment-free thesis on koment itself](0107-dogfood-the-comment-free-thesis.md)
+- [0108 — Layer agent guidance behind an authoritative policy gate](0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

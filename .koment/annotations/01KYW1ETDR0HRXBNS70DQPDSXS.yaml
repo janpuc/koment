@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETDR0HRXBNS70DQPDSXS
+file: internal/anchor/anchor.go
+kind: invariant
+body: |-
+  LastSeenLine is a hint, never an anchor (ADR 0009). It is consulted only
+  after the excerpt has already been located, and only to choose between ok
+  and moved. Corrupting or deleting it must never change whether an annotation
+  resolves at all. If a change here makes the search itself consult the line,
+  the anchor has stopped being excerpt-based and ADR 0003 has been silently
+  reversed.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func resolved(annotation store.Annotation, found occurrence, count int) Resolution {
+  before: "\treturn resolved(annotation, contextual[0], len(found))\n}\n"
+  after: "\tstatus := StatusMoved\n\tif found.line == annotation.Anchor.LastSeenLine {\n\t\tstatus = StatusOK"
+  last_seen_line: 65
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

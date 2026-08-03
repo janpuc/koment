@@ -35,7 +35,7 @@ No koment binary on `PATH`:
 
 ## Verify
 
-**Settings → MCP**. `koment` should show as connected with two tools. If it
+**Settings → MCP**. `koment` should show as connected with three tools. If it
 shows an error, the usual cause is `koment` not being on the `PATH` Cursor
 inherits — a GUI app launched from the Dock does not get your shell's `PATH`. An
 absolute path in `command` settles it:
@@ -51,7 +51,10 @@ Add a rule in `.cursor/rules/` (or `.cursorrules`):
 ```markdown
 Before editing any file, call `koment_get` on it and read the annotations.
 They hold reasoning that is deliberately not in the comments. Treat a
-`drifted` or `orphaned` annotation as history, not as current fact.
+`ambiguous`, `drifted` or `orphaned` annotation as history, not as current fact.
+Search koment before changing a non-obvious decision. Do not add an explanatory
+inline comment; record local rationale with koment and project-wide rationale in
+an ADR.
 ```
 
 ## Notes

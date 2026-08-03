@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 
 	"github.com/janpuc/koment/internal/anchor"
 )
@@ -25,12 +23,12 @@ func runShow(args []string, env Environment) int {
 	}
 
 	resolutions, err := anchor.ResolveStored(annotations, file)
-	if errors.Is(err, fs.ErrNotExist) {
-		fmt.Fprintf(env.Stdout, "%s has no annotations\n", file)
-		return ExitOK
-	}
 	if err != nil {
 		return fail(env, err)
+	}
+	if len(resolutions) == 0 {
+		fmt.Fprintf(env.Stdout, "%s has no annotations\n", file)
+		return ExitOK
 	}
 
 	fmt.Fprintf(env.Stdout, "%s\n", file)

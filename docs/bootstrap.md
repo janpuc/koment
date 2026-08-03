@@ -1,7 +1,7 @@
 # Bootstrap
 
-> **Transition note:** this page explains the runnable v0.2 tree. The approved
-> breaking vNext architecture and implementation status are in
+> **Transition note:** this page explains the runnable tree while the approved
+> breaking architecture is implemented in stages. The full target and status are in
 > [DESIGN.md](../DESIGN.md). Active decisions begin at
 > [ADR 0100](decisions/README.md).
 
@@ -36,33 +36,35 @@ Deployment
             └── Annotation
 ```
 
-A single-repository checkout — the only shape implemented today — is this model
-with one repository, discovered by walking up from the working directory for
-`.koment/`, then `.git/`.
+A local checkout discovers its repository by walking up from the working
+directory for `.koment/`, then `.git/`. Configured UI and MCP processes can
+serve several assigned local roots.
 
 An annotation on disk:
 
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
 version: 1
+id: 01KYW1ETE3CVB6S0ND70GGZVWM
 file: internal/store/ulid.go
-annotations:
-  - id: 01KYW1ETE3CVB6S0ND70GGZVWM   # ULID, stable forever, never reused
-    scope: excerpt                    # or `file`
-    excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(...)"
-    excerpt_sha256: b3f62f10e117b769...
-    last_seen_line: 18                # a hint, never an anchor
-    kind: gotcha                      # why | gotcha | invariant | anti-pattern
-    body: |-
-      26 Crockford characters carry 130 bits but a ULID holds 128 …
-    created: "2026-08-02"
-    git:                              # what was true at creation; never rewritten
-      commit: 9f3c1a4d8e2b7c5a...
-      path: internal/store/ulid.go
-      line: 18
-    author:
-      name: Jan Pucilowski
-      kind: human                     # or `agent`
-      source: git-config              # how much the identity is worth
+kind: gotcha
+body: |-
+  26 Crockford characters carry 130 bits but a ULID holds 128 …
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: paddingBits = ulidLength*bitsPerChar - 8*(...)
+  before: const (
+  after: )
+  last_seen_line: 18
+git:
+  commit: 9f3c1a4d8e2b7c5a...
+  path: internal/store/ulid.go
+  line: 18
+author:
+  name: Jan Pucilowski
+  kind: human
+  source: git-config
 ```
 
 **The one idea to internalise.** Two fields look like they do the same job and
@@ -79,36 +81,20 @@ authoritative for reconstructing history; the excerpt is authoritative for
 applicability. [ADR 0100](decisions/0100-one-git-record-per-annotation.md)
 preserves that separation in the vNext record.
 
-Resolution produces one of four statuses. `drifted` and `orphaned` exit
-non-zero; `ok` and `moved` do not.
+Resolution produces one of five statuses. `ambiguous`, `drifted` and `orphaned`
+exit non-zero; `ok` and `moved` do not.
 
 ### Where the data lives
 
-Two things, and it matters which is which:
+One authoritative thing:
 
 | | is | lives in |
 |---|---|---|
-| `.koment/annotations/**.yaml` | **the record** — reviewed, merged, cloned | git |
-| the index | **derived** — queried, searched, filtered | cache dir, or Postgres |
+| `.koment/annotations/<id>.yaml` | **the record** — reviewed, merged, cloned | git |
 
-The index is rebuilt from YAML and is never authoritative. Delete it and run
-`koment index --rebuild`; nothing is lost. It is gitignored because it is a
-build artifact, and a database file in git would be unreviewable and unmergeable
-This is v0.2 behaviour. [ADR 0102](decisions/0102-one-repository-snapshot-for-every-reader.md)
-removes the local database rather than carrying its invalidation model forward.
-
-Resolution stays live: the index stamps each file with `(mtime, size)` and
-re-resolves anything that changed before serving a status.
-
-The v0.2 derivation runs both ways:
-
-```sh
-koment index      # .koment  ->  index   (automatic when the index is empty)
-koment export     # index    ->  .koment (byte-identical)
-```
-
-The vNext design deliberately removes the reverse recovery claim: Git is the
-only authoritative recovery source.
+Local readers build current resolution directly from these records and source.
+Static and served read models are disposable projections; neither can restore
+or overwrite Git. ADR 0102 records that boundary.
 
 ## Run and test it locally
 
@@ -146,13 +132,12 @@ internal/store/      records, ULIDs, prose wrapping, git context, authorship
 internal/anchor/     resolution and drift status
 internal/provenance/ captures git context and author identity
 internal/listen/     bind address resolution, shared by both servers
-internal/index/      derived index — SQLite and Postgres
 internal/config/     KOMENT_* environment fallback for every flag
 internal/metrics/    Prometheus instrumentation
 internal/mcp/        MCP server — stdio and HTTP
 internal/ui/         web view and static export
 charts/koment/       Helm chart
-demo/                the fixture behind the published demo
+workspace/           maintained session package and independent koment store
 ```
 
 Dependencies point one way: `store` depends on nothing internal, `anchor` on
@@ -162,25 +147,24 @@ SDK out of the CLI's link graph. The rationale for this v0.2 boundary remains
 in the [pre-reset decision history](decisions/README.md); vNext readers consume
 the shared application model defined by ADR 0102.
 
-## Regenerate the demo
+## Verify the maintained workspace
 
-`demo/` is a fixture, not a real project. Its annotations are deliberately in
-every state, including `drifted` and `orphaned`, so the published demo can show
-what koment's own green repository never will.
-
-It has **its own store** at `demo/.koment/`, so its intentional drift is
-invisible to `koment check` at the root.
+`workspace/` is a tested session package with current rationale. It has its own
+store so local and published multi-repository behavior exercise the same
+boundary as unrelated repositories without keeping deliberately broken product
+content.
 
 ```sh
-cd demo
-../koment list                 # 1 ok, 2 moved, 1 drifted, 1 orphaned
-../koment site --out /tmp/demo
-open /tmp/demo/index.html
+go test ./workspace/...
+cd workspace
+../koment check
+../koment site --out /tmp/koment-workspace
 ```
 
-CI does the same on every push to `main` and deploys to Pages, failing if any of
-the four statuses stops appearing. Changing `demo/` means checking that all four
-survive — that assertion is the point of the fixture.
+CI does the same on every push to `main`. Pages opens koment itself at the root
+and exposes the workspace through the normal repository switcher. Failing
+resolution states live in `internal/anchor/testdata`, where each has a real
+before and after source pair and cannot be mistaken for maintained rationale.
 
 ## Publish a release
 

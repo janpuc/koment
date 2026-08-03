@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Z7JT3AAJ33Y891ZC3ZVC0
+file: internal/ui/assets/style.css
+kind: why
+body: |-
+  Two columns, and the notes are not in the code grid. Previously each line
+  was a grid row with the note in a third cell, so the row grew to the tallest
+  cell and a long note pushed the surrounding code apart — ten annotations
+  turned a five-line const block into about thirty-five rendered lines.
+
+  Keeping code and notes in separate columns is what makes line heights
+  uniform regardless of how much prose is attached to any one line.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: '  grid-template-columns: minmax(0, 1fr) var(--gloss);'
+  before: |2-
+
+    .reading {
+      display: grid;
+  after: |2-
+      align-items: start;
+      gap: 0 1.5rem;
+      padding: 1.1rem 1.5rem 6rem 0;
+  last_seen_line: 351
+git:
+  commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
+  path: internal/ui/assets/style.css
+  line: 340
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

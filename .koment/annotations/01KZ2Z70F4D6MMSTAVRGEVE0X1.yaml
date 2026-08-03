@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Z70F4D6MMSTAVRGEVE0X1
+file: internal/ui/assets/koment.js
+kind: invariant
+body: |-
+  The floor only ever moves down, which is what guarantees the property this
+  layout exists for: when two notes would overlap, the note moves and the code
+  never does. Placing a note at max(wanted, floor) can leave it below its
+  line, and that is the intended trade — a note slightly out of line is
+  readable, code pushed apart by a tall note is not.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: '        floor = placed + note.offsetHeight + 12;'
+  before: |2-
+            var placed = Math.max(wanted, floor);
+
+            note.style.transform = "translateY(" + (placed - resting) + "px)";
+  after: |2-
+          });
+
+          gloss.classList.add("aligned");
+  last_seen_line: 81
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config
