@@ -17,9 +17,9 @@ func twoRepositories(t *testing.T) *repository.Set {
 	t.Helper()
 	base := t.TempDir()
 
-	for _, fixture := range []struct{ id, body string }{
-		{"api", "serve is last in the API: it blocks until signalled."},
-		{"web", "the web handler must not block; it returns before the render finishes."},
+	for _, fixture := range []struct{ id, recordID, body string }{
+		{"api", "01JQ8ZK3M4N5P6R7S8T9V0W1X2", "serve is last in the API: it blocks until signalled."},
+		{"web", "01JQ8ZK3M4N5P6R7S8T9V0W1X3", "the web handler must not block; it returns before the render finishes."},
 	} {
 		root := filepath.Join(base, fixture.id)
 		if err := os.MkdirAll(filepath.Join(root, store.DirName), 0o755); err != nil {
@@ -31,19 +31,19 @@ func twoRepositories(t *testing.T) *repository.Set {
 
 		annotations := store.Open(root)
 		excerpt := "\tserve()"
-		if err := annotations.Save(&store.Record{
+		if err := annotations.Save(&store.Annotation{
 			Version: store.RecordVersion,
+			ID:      fixture.recordID,
 			File:    "main.go",
-			Annotations: []store.Annotation{{
-				ID:            "01JQ8ZK3M4N5P6R7S8T9V0W1X" + strings.ToUpper(fixture.id[:1]),
-				Scope:         store.ScopeExcerpt,
-				Excerpt:       excerpt,
-				ExcerptSHA256: store.ExcerptSHA256(excerpt),
-				LastSeenLine:  4,
-				Kind:          store.KindInvariant,
-				Body:          store.WrapProse(fixture.body),
-				Created:       store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-			}},
+			Anchor: store.Anchor{
+				Scope:        store.ScopeExcerpt,
+				Excerpt:      excerpt,
+				LastSeenLine: 4,
+			},
+			Kind:    store.KindInvariant,
+			Body:    store.WrapProse(fixture.body),
+			Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
+			Author:  store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
 		}); err != nil {
 			t.Fatal(err)
 		}

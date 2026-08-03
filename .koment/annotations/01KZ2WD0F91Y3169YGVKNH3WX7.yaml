@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2WD0F91Y3169YGVKNH3WX7
+file: internal/repository/repository.go
+kind: invariant
+body: |-
+  Identity is assigned, never computed from the path. Hashing the root meant
+  that moving a checkout from /repos/api to /srv/api silently produced a
+  different repository - new id, orphaned index, no error. ADR 0017 named that
+  failure and shipped it anyway pending a registry; ADR 0024 is the registry.
+  A configured id may not change: changing it is a rename, and koment cannot
+  tell the difference, so the docs say so rather than pretending.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: func identifier(root string) string {
+  before: |-
+    // identifier names an unconfigured repository after its directory, falling back
+    // to a hash only when that is not usable as an id. A configured repository
+    // never reaches here — its id is assigned (ADR 0024).
+  after: "\tbase := strings.ToLower(filepath.Base(root))\n\tcleaned := strings.Map(func(r rune) rune {\n\t\tswitch {"
+  last_seen_line: 137
+git:
+  commit: 891a943c595ce0526139604cdd723ae6c63bf57b
+  path: internal/repository/repository.go
+  line: 137
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

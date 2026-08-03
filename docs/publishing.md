@@ -82,9 +82,11 @@ repository does, and [its own workflows](../.github/workflows/) show the form.
 non-zero, so a build that would publish drift fails instead. Running it on pull
 requests too is the point of koment; publishing is the smaller half.
 
-**`koment site` renders one repository.** It writes an `index.html`, a page per
-annotated file and a stylesheet, all linked relatively so the result works under
-a project subpath, from a `file://` path, and behind any prefix.
+**`koment site` renders one repository snapshot.** It writes an `index.html`, a
+page per annotated file and static assets, all linked relatively so the result
+works under a project subpath, from a `file://` path, and behind any prefix. A
+grouped publication renders each snapshot separately and connects them through
+the same contextual repository switcher.
 
 **Every page names the commit it was rendered from.** A snapshot that does not
 say what it is a snapshot of is how a stale rendering passes for a current one.
@@ -107,24 +109,29 @@ repository.
 | `--banner <text>` | a notice on every page, beside the commit. |
 | `--banner-link <url>` | a URL shown beside the banner. |
 | `--repository <id>` | which repository to render, when several are configured. |
+| `--repository-links <name=URL,...>` | repository switcher entries, relative to this snapshot root. |
 
 Every flag is also an environment variable — `--commit-link` is
 `KOMENT_COMMIT_LINK`.
 
 ## Publishing more than one repository
 
-A static site has no server to resolve a repository against, so the published
-tier is **one repository per site** by design. Publishing several means running
-`koment site` once per repository into separate directories:
+A static publication keeps one immutable snapshot per repository. Render the
+default repository at the publication root and the others beneath it, passing
+the links each snapshot needs to reach the same destinations:
 
 ```yaml
 - run: |
-    koment site --out dist/payments --repository payments
-    koment site --out dist/web      --repository web
+    koment site --out dist --repository payments --name payments \
+      --repository-links "payments=index.html,web=r/web/index.html"
+    koment site --out dist/r/web --repository web --name web \
+      --repository-links "payments=../../index.html,web=index.html"
 ```
 
-Add your own `dist/index.html` linking to each. If you want one address, a
-switcher and search across all of them, that is the served tier.
+The publication opens `payments` immediately. The repository switcher appears
+inside the ordinary application rail, so discovery never becomes a selector
+landing page. Each page still names the commit of the repository snapshot it
+shows. Cross-repository search remains a served-tier capability.
 
 ## Moving to a served instance later
 
@@ -136,7 +143,7 @@ docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
 ```
 
 You gain live resolution against the working tree, several repositories behind
-one switcher, index-backed search across them, and metrics. You take on hosting
+one switcher, cross-repository search and metrics. You take on hosting
 and an access-control decision, because the v0.2 served UI has no
 authentication. That is legacy behaviour: the approved served tier requires
 authentication

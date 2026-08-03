@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ0JZABHW296ZPV7DM3D11N4
+file: internal/metrics/metrics.go
+kind: invariant
+body: |-
+  Metrics get their own listener and are never mounted on the serving mux. The
+  serving port is unauthenticated by design and expected to sit behind an
+  ingress; /metrics leaks repository shape through label values and would
+  inherit that exposure the moment it shared a port. ADR 0020. If you are
+  tempted to add /metrics to the UI handler to save a flag, that is the thing
+  this prevents.
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: func (m *Metrics) Serve(ctx context.Context, address string, stderr io.Writer) error {
+  before: |2-
+
+    // Serve runs the metrics endpoint on its own listener. It is never mounted on
+    // the serving listener, which is unauthenticated and ingress-facing (ADR 0020).
+  after: "\tresolved, err := listen.Address(address)\n\tif err != nil {\n\t\treturn err"
+  last_seen_line: 164
+git:
+  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+  path: internal/metrics/metrics.go
+  line: 164
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

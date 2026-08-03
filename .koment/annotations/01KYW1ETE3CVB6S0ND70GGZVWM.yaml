@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETE3CVB6S0ND70GGZVWM
+file: internal/store/ulid.go
+kind: gotcha
+body: |-
+  26 Crockford characters carry 130 bits but a ULID holds 128, so the value is
+  left-padded by two. Drop the padding and every character shifts: the ids are
+  still 26 characters of valid alphabet, and still wrong. Nothing downstream
+  can detect that. TestEncodeCrockfordCoversTheWholeValue pins both extremes -
+  all-zero bytes must encode to 26 zeros, all-ones to "7" followed by 25 Z.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(timestampBytes+entropyBytes)"
+  before: "\ttimestampBytes = 6\n\tentropyBytes   = 10\n"
+  after: |-
+    )
+
+    // NewID returns a ULID: a 48-bit millisecond timestamp followed by 80 random
+  last_seen_line: 19
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

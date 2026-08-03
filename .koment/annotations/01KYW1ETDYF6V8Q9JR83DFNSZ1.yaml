@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETDYF6V8Q9JR83DFNSZ1
+file: internal/mcp/mcp.go
+kind: invariant
+body: |-
+  ADR 0005 requires that a drifted annotation is never served to an agent as
+  though it described the current code. The status field alone does not
+  achieve that - an agent has no reason to know what "drifted" costs it. Every
+  failing status must carry prose that spells out the consequence. A new
+  status added to internal/anchor needs a case here, or it will be served
+  silently and confidently wrong.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func warningFor(status anchor.Status) string {
+  before: "\t}\n}\n"
+  after: "\tswitch status {\n\tcase anchor.StatusAmbiguous:\n\t\treturn \"STALE: the excerpt matches several places and its context does not identify one. \" +"
+  last_seen_line: 286
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETDBHG5PX4SRR8D69J5W
+file: internal/cli/cli.go
+kind: why
+body: |-
+  The servers are injected as function values rather than imported, so that
+  package cli links neither the MCP SDK nor the UI templates. ADR 0007
+  accepts eight transitive modules only on the condition that they stay
+  confined to internal/mcp, and these fields are what actually enforce it.
+  Importing internal/mcp or internal/ui here would quietly spend the escape
+  hatch the ADR was bought with, and nothing would fail to warn you.
+
+  This is a struct rather than parameters on Run because it was parameters,
+  and Run's signature changed every time a server was added — drifting this
+  annotation three times in one session. A new server is now a new field.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: type Servers struct {
+  before: |2-
+
+    // Servers are injected rather than imported. Adding one is a new field, not a
+    // new parameter, so signatures here stop changing shape.
+  after: "\tMCP  Server\n\tUI   Server\n\tSite Server"
+  last_seen_line: 48
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

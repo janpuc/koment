@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETEKHMQP92D0W6GWY27H
+file: internal/store/store.go
+kind: why
+body: |-
+  Records are written to a temporary file and renamed into place. A crash
+  during a plain write leaves a truncated record, which is indistinguishable
+  from a corrupt one and fails to parse on next load - losing every annotation
+  for that file. ADR 0004 rejected a memory store on the grounds that koment
+  owns its durability guarantees; this is one of the guarantees it owes in
+  exchange.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func writeAtomically(root *os.Root, name string, content []byte) error {
+  before: "\treturn writeAtomically(root, name, []byte(encoded.String()))\n}\n"
+  after: "\tvar entropy [8]byte\n\tif _, err := rand.Read(entropy[:]); err != nil {\n\t\treturn fmt.Errorf(\"creating temporary name for %s: %w\", name, err)"
+  last_seen_line: 222
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

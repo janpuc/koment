@@ -13,6 +13,8 @@
   --ok-bg: #D3EDE4;
   --moved: #35609E;
   --moved-bg: #D6E3F4;
+  --ambiguous: #6B4FA1;
+  --ambiguous-bg: #E6DCF4;
   --drifted: #A85708;
   --drifted-bg: #F7E3C9;
   --orphaned: #B03429;
@@ -42,6 +44,8 @@
     --ok-bg: #10312A;
     --moved: #7FAAEE;
     --moved-bg: #16243A;
+    --ambiguous: #BA94E8;
+    --ambiguous-bg: #2B1D3D;
     --drifted: #EDA34C;
     --drifted-bg: #34240F;
     --orphaned: #F0796F;
@@ -63,6 +67,8 @@
   --ok-bg: #10312A;
   --moved: #7FAAEE;
   --moved-bg: #16243A;
+  --ambiguous: #BA94E8;
+  --ambiguous-bg: #2B1D3D;
   --drifted: #EDA34C;
   --drifted-bg: #34240F;
   --orphaned: #F0796F;
@@ -83,6 +89,8 @@
   --ok-bg: #D3EDE4;
   --moved: #35609E;
   --moved-bg: #D6E3F4;
+  --ambiguous: #6B4FA1;
+  --ambiguous-bg: #E6DCF4;
   --drifted: #A85708;
   --drifted-bg: #F7E3C9;
   --orphaned: #B03429;
@@ -209,6 +217,7 @@ body {
 }
 .pill.ok { background: var(--ok-bg); color: var(--ok); }
 .pill.moved { background: var(--moved-bg); color: var(--moved); }
+.pill.ambiguous { background: var(--ambiguous-bg); color: var(--ambiguous); }
 .pill.drifted { background: var(--drifted-bg); color: var(--drifted); }
 .pill.orphaned { background: var(--orphaned-bg); color: var(--orphaned); }
 
@@ -291,6 +300,7 @@ body {
 .dot { width: .45rem; height: .45rem; border-radius: 50%; flex: none; }
 .dot.ok { background: var(--ok); }
 .dot.moved { background: var(--moved); }
+.dot.ambiguous { background: var(--ambiguous); }
 .dot.drifted { background: var(--drifted); }
 .dot.orphaned { background: var(--orphaned); }
 
@@ -357,6 +367,7 @@ body {
 .row.marked { background: color-mix(in srgb, var(--accent) 5%, transparent); }
 .row.marked.ok { --marker: var(--ok); }
 .row.marked.moved { --marker: var(--moved); }
+.row.marked.ambiguous { --marker: var(--ambiguous); }
 .row.marked.drifted { --marker: var(--drifted); }
 .row.marked.orphaned { --marker: var(--orphaned); }
 .row.lit, .row:target { background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -419,6 +430,7 @@ body {
 .gloss.aligned .note { position: absolute; width: 100%; }
 .note.ok { --note-marker: var(--ok); }
 .note.moved { --note-marker: var(--moved); }
+.note.ambiguous { --note-marker: var(--ambiguous); }
 .note.drifted { --note-marker: var(--drifted); }
 .note.orphaned { --note-marker: var(--orphaned); }
 .note.lit { border-color: var(--accent); border-left-color: var(--note-marker); }

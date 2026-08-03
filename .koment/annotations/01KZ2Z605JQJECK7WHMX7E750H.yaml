@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Z605JQJECK7WHMX7E750H
+file: internal/ui/tree.go
+kind: why
+body: |-
+  A directory whose only content is one more directory is scaffolding, not
+  structure. Rendering each as its own row spends the rail's width on names
+  nobody navigates by: a Go layout came out as four rows to reach one file.
+  Folding the chain gives one row reading internal/ui/assets.
+
+  The loop stops as soon as a directory has files of its own, because at that
+  point the directory is a real place a reader might want to collapse
+  independently of its child.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: "\tfor len(at.Files) == 0 && len(at.Dirs) == 1 {"
+  before: "\tif at.Path == \"\" {\n\t\treturn\n\t}"
+  after: "\t\tonly := at.Dirs[0]\n\t\tat.Name = at.Name + \"/\" + only.Name\n\t\tat.Path = only.Path"
+  last_seen_line: 78
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

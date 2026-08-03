@@ -13,6 +13,9 @@ guarantee that every replica resolves and renders the same commit.
 
 A served multi-repository product needs to say which revision every answer
 describes and replace a repository coherently when that revision changes.
+It also needs to feel like one working product. A repository-selection landing
+page makes the normal read path look like a fixture chooser and forces agents
+to discover identity before they can use their current workspace.
 
 ## Decision
 
@@ -34,6 +37,14 @@ An unscoped get that matches several repositories refuses and lists the
 candidates. An unscoped search may span repositories because every result names
 its repository.
 
+Configure one default repository for each published or served repository set.
+The human root opens that repository's normal view immediately. A persistent
+header switcher changes repository context without becoming a separate landing
+page, and direct links include the repository id. Agents derive their default
+from the local workspace or authenticated served session; they provide a
+repository id only when switching context or using a cross-repository
+operation. Repository discovery remains available but is never a startup gate.
+
 ## Consequences
 
 - Read replicas are genuinely stateless and agree on source and resolution.
@@ -44,6 +55,8 @@ its repository.
   become explicit operational responsibilities.
 - A bad new commit leaves the previous valid generation available and surfaces
   ingestion failure instead of publishing a partial result.
+- The configuration must reject a repository set with no default or more than
+  one default.
 
 ## Alternatives rejected
 
@@ -56,3 +69,8 @@ its repository.
   adds network latency, rate limits and a new partial-failure mode to every read.
 - **Deploy one service per repository.** Strong isolation, but loses
   cross-repository discovery and search and multiplies operational overhead.
+- **Start on a repository selector.** Makes repository identity explicit, but
+  adds a mandatory navigation step and makes maintained content resemble a
+  collection of demos.
+- **Guess the repository from an unscoped path.** Convenient when paths are
+  unique, but becomes nondeterministic as soon as two repositories share one.

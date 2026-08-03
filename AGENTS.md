@@ -17,12 +17,13 @@ so an MCP-capable client already has the tools:
 
 - `koment_get(file)` — annotations for the file you are about to touch
 - `koment_search(query)` — find recorded rationale by topic
+- `koment_repositories()` — repository names when the server has more than one
 
 Without MCP, use the CLI: `go run ./cmd/koment show <file>`.
 
-An annotation whose status is `drifted` or `orphaned` describes code that has
-since changed. Read it as history and say so; never act on it as if it were
-current.
+An annotation whose status is `ambiguous`, `drifted` or `orphaned` describes
+code that cannot be resolved reliably. Read it as history and say so; never act
+on it as if it were current.
 
 ---
 

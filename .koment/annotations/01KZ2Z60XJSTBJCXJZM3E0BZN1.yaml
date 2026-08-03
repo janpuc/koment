@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Z60XJSTBJCXJZM3E0BZN1
+file: internal/ui/view.go
+kind: gotcha
+body: |-
+  The absence check is load-bearing. severity[ok] is 0 and severity[missing
+  key] is also 0, so a comparison alone never fires for the first annotation
+  on a line and the marker would be dropped. The same zero-value trap already
+  cost this project a bug in the file listing's worst-status roll-up.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: "\t\tworst, seen := marked[resolution.Line]"
+  before: "\t\t\tcontinue\n\t\t}\n\t\tbuilt.Notes = append(built.Notes, described)"
+  after: "\t\tif !seen || severity[resolution.Status] > severity[worst] {\n\t\t\tmarked[resolution.Line] = resolution.Status\n\t\t}"
+  last_seen_line: 221
+git:
+  commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
+  path: internal/ui/view.go
+  line: 213
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

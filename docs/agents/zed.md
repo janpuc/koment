@@ -36,7 +36,10 @@ Zed reads `AGENTS.md` from the worktree root:
 
 ```markdown
 Before editing any file, call `koment_get` on it and read the annotations.
-Treat a `drifted` or `orphaned` annotation as history, not as current fact.
+Treat an `ambiguous`, `drifted` or `orphaned` annotation as history, not as
+current fact. Search koment before changing a non-obvious decision. Do not add
+an explanatory inline comment; record local rationale with koment and
+project-wide rationale in an ADR.
 ```
 
 ## Notes

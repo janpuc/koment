@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -27,13 +25,12 @@ const usage = `koment — out-of-band code annotations
   koment list [--kind <kind>]
   koment reanchor <id> [--excerpt <text>] [--file <path>]
   koment ui [--listen <addr>]
-  koment export [--out <dir>]        rebuild .koment from the index
   koment site --out <dir>            render one repository to static HTML
   koment mcp
   koment version
 
-check exits non-zero when an annotation is drifted or orphaned. reanchor is how
-you fix one: it recomputes the hash and the line, and keeps the id.
+check exits non-zero when an annotation is ambiguous, drifted or orphaned.
+reanchor is how you fix one while keeping its id.
 `
 
 type Environment struct {
@@ -68,8 +65,6 @@ func Run(args []string, env Environment, servers Servers) int {
 		"check":    runCheck,
 		"list":     runList,
 		"reanchor": runReanchor,
-		"index":    runIndex,
-		"export":   runExport,
 		"version":  runVersion,
 	}[command]
 
@@ -142,17 +137,6 @@ func leadingNonFlag(args []string) (string, []string) {
 		return args[0], args[1:]
 	}
 	return "", args
-}
-
-func environmentDefaults(flags *flag.FlagSet) error {
-	return config.FromEnvironment(flags)
-}
-
-func repositoryName(given, root string) string {
-	if given != "" {
-		return given
-	}
-	return filepath.Base(root)
 }
 
 func openStore() (*store.Store, error) {

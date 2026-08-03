@@ -76,7 +76,9 @@ generated documentation markers are not mistaken for ordinary commentary.
 
 koment's own annotations must pass `koment check` in CI. An agent-created
 annotation records agent authorship and never inherits a human identity
-silently.
+silently. ADR 0108 defines how repository-owned agent guidance, MCP
+instructions, client hooks and the authoritative CI policy compose without
+pretending any prompt can control an arbitrary process.
 
 ## Consequences
 

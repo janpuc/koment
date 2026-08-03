@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ2Z60KXQ5Y1CDA9H7DQYX5W
+file: internal/ui/tree.go
+kind: gotcha
+body: |-
+  Root-level files come back separately rather than inside a node. The root is
+  not a row anyone should have to expand, and giving it one would file
+  README.md under a directory that does not exist. An earlier version returned
+  only root.Dirs and silently dropped every file at the top level.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: "\treturn root.Dirs, root.Files"
+  before: "\n\tcollapse(root)\n\tsummarise(root, current)"
+  after: |-
+    }
+
+    // directoryOf finds or creates the node for a slash-separated directory,
+  last_seen_line: 42
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

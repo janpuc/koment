@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETD1M4B3BQEVKZBG8EPZ
+file: internal/cli/cli.go
+kind: gotcha
+body: |-
+  flag.FlagSet.Parse stops at the first argument that is not a flag, so
+  "koment add main.go --kind why --body x" parses zero flags and reports the
+  rest as six stray arguments. The file has to come off the front before Parse
+  sees the slice. DESIGN.md documents the file-first order, so the parser
+  bends rather than the interface. The CLI tests caught this, not review.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func leadingNonFlag(args []string) (string, []string) {
+  before: "\treturn value, true\n}\n"
+  after: "\tif len(args) > 0 && !strings.HasPrefix(args[0], \"-\") {\n\t\treturn args[0], args[1:]\n\t}"
+  last_seen_line: 135
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

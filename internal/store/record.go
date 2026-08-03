@@ -2,14 +2,17 @@
 package store
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
+
+	yaml "go.yaml.in/yaml/v3"
 )
 
 const RecordVersion = 1
+
+const SchemaURL = "https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json"
 
 type Kind string
 
@@ -22,19 +25,19 @@ const (
 
 var Kinds = []Kind{KindWhy, KindGotcha, KindInvariant, KindAntiPattern}
 
-func ParseKind(s string) (Kind, error) {
-	for _, k := range Kinds {
-		if Kind(s) == k {
-			return k, nil
+func ParseKind(text string) (Kind, error) {
+	for _, kind := range Kinds {
+		if Kind(text) == kind {
+			return kind, nil
 		}
 	}
-	return "", fmt.Errorf("unknown kind %q, want one of %s", s, joinKinds())
+	return "", fmt.Errorf("unknown kind %q, want one of %s", text, joinKinds())
 }
 
 func joinKinds() string {
 	names := make([]string, len(Kinds))
-	for i, k := range Kinds {
-		names[i] = string(k)
+	for index, kind := range Kinds {
+		names[index] = string(kind)
 	}
 	return strings.Join(names, ", ")
 }
@@ -46,37 +49,132 @@ const (
 	ScopeExcerpt Scope = "excerpt"
 )
 
-func ParseScope(s string) (Scope, error) {
-	switch Scope(s) {
+func ParseScope(text string) (Scope, error) {
+	switch Scope(text) {
 	case ScopeFile:
 		return ScopeFile, nil
 	case ScopeExcerpt:
 		return ScopeExcerpt, nil
 	}
-	return "", fmt.Errorf("unknown scope %q, want one of %s, %s", s, ScopeFile, ScopeExcerpt)
+	return "", fmt.Errorf("unknown scope %q, want one of %s, %s", text, ScopeFile, ScopeExcerpt)
+}
+
+type Anchor struct {
+	Scope        Scope  `yaml:"scope"`
+	Excerpt      string `yaml:"excerpt,omitempty"`
+	Before       string `yaml:"before,omitempty"`
+	After        string `yaml:"after,omitempty"`
+	LastSeenLine int    `yaml:"last_seen_line,omitempty"`
+}
+
+func (a Anchor) MarshalYAML() (any, error) {
+	node := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+	appendScalar := func(key, value, tag string, style yaml.Style) {
+		node.Content = append(node.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: tag, Value: value, Style: style},
+		)
+	}
+	appendScalar("scope", string(a.Scope), "!!str", 0)
+	if a.Excerpt != "" {
+		appendScalar("excerpt", a.Excerpt, "!!str", safeStringStyle(a.Excerpt))
+	}
+	if a.Before != "" {
+		appendScalar("before", a.Before, "!!str", safeStringStyle(a.Before))
+	}
+	if a.After != "" {
+		appendScalar("after", a.After, "!!str", safeStringStyle(a.After))
+	}
+	if a.LastSeenLine != 0 {
+		appendScalar("last_seen_line", strconv.Itoa(a.LastSeenLine), "!!int", 0)
+	}
+	return node, nil
+}
+
+func safeStringStyle(value string) yaml.Style {
+	if strings.Contains(value, "\t") {
+		return yaml.DoubleQuotedStyle
+	}
+	if strings.Contains(value, "\n") {
+		return yaml.LiteralStyle
+	}
+	return 0
+}
+
+func (a Anchor) Validate(id string) error {
+	switch a.Scope {
+	case ScopeFile:
+		if a.Excerpt != "" || a.Before != "" || a.After != "" || a.LastSeenLine != 0 {
+			return fmt.Errorf("annotation %s: file anchor must not carry excerpt context or a line", id)
+		}
+		return nil
+	case ScopeExcerpt:
+		if a.Excerpt == "" {
+			return fmt.Errorf("annotation %s: excerpt anchor requires a non-empty excerpt", id)
+		}
+		if a.LastSeenLine < 1 {
+			return fmt.Errorf("annotation %s: last_seen_line %d is not a positive line number", id, a.LastSeenLine)
+		}
+		if err := validateContext("before", a.Before); err != nil {
+			return fmt.Errorf("annotation %s: %w", id, err)
+		}
+		if err := validateContext("after", a.After); err != nil {
+			return fmt.Errorf("annotation %s: %w", id, err)
+		}
+		return nil
+	default:
+		_, err := ParseScope(string(a.Scope))
+		return fmt.Errorf("annotation %s: %w", id, err)
+	}
+}
+
+func validateContext(name, context string) error {
+	if context == "" {
+		return nil
+	}
+	if strings.Count(strings.TrimSuffix(context, "\n"), "\n") >= 3 {
+		return fmt.Errorf("anchor.%s contains more than three lines", name)
+	}
+	return nil
+}
+
+type Policy struct {
+	Exception    string `yaml:"exception"`
+	Acknowledged bool   `yaml:"acknowledged"`
+}
+
+func (p Policy) Validate(annotation Annotation) error {
+	if p.Exception != "inline-comment" || !p.Acknowledged {
+		return fmt.Errorf("annotation %s: policy must explicitly acknowledge an inline-comment exception", annotation.ID)
+	}
+	if annotation.Kind != KindWhy || annotation.Anchor.Scope != ScopeExcerpt {
+		return fmt.Errorf("annotation %s: inline-comment policy requires a why annotation with an excerpt anchor", annotation.ID)
+	}
+	return nil
 }
 
 type Annotation struct {
-	ID            string      `yaml:"id"`
-	Scope         Scope       `yaml:"scope"`
-	Excerpt       string      `yaml:"excerpt,omitempty"`
-	ExcerptSHA256 string      `yaml:"excerpt_sha256,omitempty"`
-	LastSeenLine  int         `yaml:"last_seen_line,omitempty"`
-	Kind          Kind        `yaml:"kind"`
-	Body          string      `yaml:"body"`
-	Created       Date        `yaml:"created"`
-	Git           *GitContext `yaml:"git,omitempty"`
-	Author        *Author     `yaml:"author,omitempty"`
-}
-
-func ExcerptSHA256(excerpt string) string {
-	sum := sha256.Sum256([]byte(excerpt))
-	return hex.EncodeToString(sum[:])
+	Version int         `yaml:"version"`
+	ID      string      `yaml:"id"`
+	File    string      `yaml:"file"`
+	Kind    Kind        `yaml:"kind"`
+	Body    string      `yaml:"body"`
+	Created Date        `yaml:"created"`
+	Anchor  Anchor      `yaml:"anchor"`
+	Git     *GitContext `yaml:"git,omitempty"`
+	Author  Author      `yaml:"author"`
+	Policy  *Policy     `yaml:"policy,omitempty"`
 }
 
 func (a Annotation) Validate() error {
-	if a.ID == "" {
-		return fmt.Errorf("annotation has no id")
+	if a.Version != RecordVersion {
+		return fmt.Errorf("annotation %s has version %d, want %d", a.ID, a.Version, RecordVersion)
+	}
+	if !ValidID(a.ID) {
+		return fmt.Errorf("annotation id %q is not a canonical ULID", a.ID)
+	}
+	if _, err := validSourcePath(a.File); err != nil {
+		return fmt.Errorf("annotation %s file: %w", a.ID, err)
 	}
 	if _, err := ParseKind(string(a.Kind)); err != nil {
 		return fmt.Errorf("annotation %s: %w", a.ID, err)
@@ -87,71 +185,21 @@ func (a Annotation) Validate() error {
 	if a.Created.IsZero() {
 		return fmt.Errorf("annotation %s: missing created date", a.ID)
 	}
+	if err := a.Anchor.Validate(a.ID); err != nil {
+		return err
+	}
 	if a.Git != nil {
 		if err := a.Git.Validate(); err != nil {
 			return fmt.Errorf("annotation %s: %w", a.ID, err)
 		}
 	}
-	if a.Author != nil {
-		if err := a.Author.Validate(); err != nil {
-			return fmt.Errorf("annotation %s: %w", a.ID, err)
-		}
+	if err := a.Author.Validate(); err != nil {
+		return fmt.Errorf("annotation %s: %w", a.ID, err)
 	}
-	return a.validateAnchor()
-}
-
-func (a Annotation) validateAnchor() error {
-	switch a.Scope {
-	case ScopeFile:
-		if a.Excerpt != "" || a.ExcerptSHA256 != "" {
-			return fmt.Errorf("annotation %s: scope %s must not carry an excerpt", a.ID, ScopeFile)
+	if a.Policy != nil {
+		if err := a.Policy.Validate(a); err != nil {
+			return err
 		}
-		if a.LastSeenLine != 0 {
-			return fmt.Errorf("annotation %s: scope %s has nothing to locate, so last_seen_line is meaningless", a.ID, ScopeFile)
-		}
-		return nil
-	case ScopeExcerpt:
-		if a.Excerpt == "" {
-			return fmt.Errorf("annotation %s: scope %s requires a non-empty excerpt", a.ID, ScopeExcerpt)
-		}
-		if a.LastSeenLine < 0 {
-			return fmt.Errorf("annotation %s: last_seen_line %d is not a line number", a.ID, a.LastSeenLine)
-		}
-		if want := ExcerptSHA256(a.Excerpt); a.ExcerptSHA256 != want {
-			return fmt.Errorf("annotation %s: excerpt_sha256 is %s but the stored excerpt hashes to %s",
-				a.ID, a.ExcerptSHA256, want)
-		}
-		return nil
-	}
-	_, err := ParseScope(string(a.Scope))
-	return fmt.Errorf("annotation %s: %w", a.ID, err)
-}
-
-type Record struct {
-	Version     int          `yaml:"version"`
-	File        string       `yaml:"file"`
-	Annotations []Annotation `yaml:"annotations"`
-}
-
-func (r Record) Validate() error {
-	if r.Version != RecordVersion {
-		return fmt.Errorf("record for %s has version %d, want %d", r.File, r.Version, RecordVersion)
-	}
-	if r.File == "" {
-		return fmt.Errorf("record has no file path")
-	}
-	if len(r.Annotations) == 0 {
-		return fmt.Errorf("record for %s has no annotations", r.File)
-	}
-	seen := make(map[string]struct{}, len(r.Annotations))
-	for _, a := range r.Annotations {
-		if err := a.Validate(); err != nil {
-			return fmt.Errorf("record for %s: %w", r.File, err)
-		}
-		if _, duplicate := seen[a.ID]; duplicate {
-			return fmt.Errorf("record for %s: duplicate annotation id %s", r.File, a.ID)
-		}
-		seen[a.ID] = struct{}{}
 	}
 	return nil
 }

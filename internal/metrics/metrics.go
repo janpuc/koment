@@ -133,7 +133,7 @@ func New() *Metrics {
 // fixed look like a scrape gap rather than a return to zero.
 func (m *Metrics) ObserveRepository(resolved map[anchor.Status]int, files int, took time.Duration) {
 	for _, status := range []anchor.Status{
-		anchor.StatusOK, anchor.StatusMoved, anchor.StatusDrifted, anchor.StatusOrphaned,
+		anchor.StatusOK, anchor.StatusMoved, anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned,
 	} {
 		m.annotations.WithLabelValues(string(status)).Set(float64(resolved[status]))
 	}

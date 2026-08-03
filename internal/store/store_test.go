@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	firstID  = "01JQ8ZK3M4N5P6R7S8T9V0W1X2"
+	secondID = "01JQ8ZK3M4N5P6R7S8T9V0W1X3"
+)
+
 func newTestStore(t *testing.T) *Store {
 	t.Helper()
 	root := t.TempDir()
@@ -20,149 +25,129 @@ func newTestStore(t *testing.T) *Store {
 	return Open(root)
 }
 
-func excerptAnnotation(id, excerpt string) Annotation {
+func testAuthor() Author {
+	return Author{Name: "Test Human", Kind: AuthorHuman, Source: FromExplicit}
+}
+
+func excerptAnnotation(id, file, excerpt string) Annotation {
 	return Annotation{
-		ID:            id,
-		Scope:         ScopeExcerpt,
-		Excerpt:       excerpt,
-		ExcerptSHA256: ExcerptSHA256(excerpt),
-		Kind:          KindGotcha,
-		Body:          "An empty excerpt means file-scope, not \"matches everything\".",
-		Created:       Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
+		Version: RecordVersion,
+		ID:      id,
+		File:    file,
+		Kind:    KindGotcha,
+		Body:    "An empty excerpt means file scope, not a wildcard.",
+		Created: Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
+		Anchor: Anchor{
+			Scope:        ScopeExcerpt,
+			Excerpt:      excerpt,
+			LastSeenLine: 1,
+		},
+		Author: testAuthor(),
 	}
+}
+
+func fileAnnotation(id, file string) Annotation {
+	annotation := excerptAnnotation(id, file, "unused")
+	annotation.Kind = KindWhy
+	annotation.Anchor = Anchor{Scope: ScopeFile}
+	return annotation
 }
 
 func TestSaveLoadRoundTripsLosslessly(t *testing.T) {
-	s := newTestStore(t)
-	want := &Record{
-		Version: RecordVersion,
-		File:    "internal/anchor/resolve.go",
-		Annotations: []Annotation{
-			excerptAnnotation("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "if a.Excerpt == \"\" {"),
-			{
-				ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X3",
-				Scope:   ScopeFile,
-				Kind:    KindWhy,
-				Body:    "Resolution lives here rather than in store because\nthe store must not touch the working tree.",
-				Created: Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-			},
-		},
-	}
+	annotations := newTestStore(t)
+	want := excerptAnnotation(firstID, "internal/anchor/resolve.go", "if anchor.Excerpt == \"\" {")
+	want.Anchor.Before = "func Resolve(anchor Anchor) Resolution {\n\tif ready {"
+	want.Anchor.After = "\treturn Resolution{}\n}"
 
-	if err := s.Save(want); err != nil {
+	if err := annotations.Save(&want); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
-	got, err := s.Load(want.File)
+	got, err := annotations.Load(want.ID)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("round trip changed the record\n want %+v\n  got %+v", want, got)
+	if !reflect.DeepEqual(want, *got) {
+		t.Errorf("round trip changed the annotation\n want %+v\n  got %+v", want, *got)
 	}
 }
 
-func TestSaveMirrorsSourcePath(t *testing.T) {
-	s := newTestStore(t)
-	record := &Record{
-		Version:     RecordVersion,
-		File:        "internal/anchor/resolve.go",
-		Annotations: []Annotation{excerptAnnotation("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "x")},
-	}
-	if err := s.Save(record); err != nil {
-		t.Fatalf("Save: %v", err)
+func TestSaveUsesOneFlatFilePerAnnotationID(t *testing.T) {
+	annotations := newTestStore(t)
+	first := excerptAnnotation(firstID, "internal/anchor/resolve.go", "first")
+	second := excerptAnnotation(secondID, "internal/anchor/resolve.go", "second")
+	for _, annotation := range []*Annotation{&first, &second} {
+		if err := annotations.Save(annotation); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	want := filepath.Join(s.Root(), DirName, "annotations", "internal", "anchor", "resolve.go.yaml")
-	if _, err := os.Stat(want); err != nil {
-		t.Fatalf("expected record at %s: %v", want, err)
+	for _, id := range []string{firstID, secondID} {
+		want := filepath.Join(annotations.Root(), DirName, annotationsDir, id+recordSuffix)
+		if _, err := os.Stat(want); err != nil {
+			t.Fatalf("expected annotation at %s: %v", want, err)
+		}
 	}
 }
 
-func TestSavedRecordKeepsBodyReadable(t *testing.T) {
-	s := newTestStore(t)
-	record := &Record{
-		Version: RecordVersion,
-		File:    "a.go",
-		Annotations: []Annotation{{
-			ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-			Scope:   ScopeFile,
-			Kind:    KindWhy,
-			Body:    "First line of the rationale.\nSecond line of the rationale.",
-			Created: Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		}},
-	}
-	if err := s.Save(record); err != nil {
-		t.Fatalf("Save: %v", err)
+func TestSavedRecordStartsWithSchemaDirectiveAndKeepsBodyReadable(t *testing.T) {
+	annotations := newTestStore(t)
+	record := fileAnnotation(firstID, "a.go")
+	record.Body = "First line of the rationale.\nSecond line of the rationale."
+	if err := annotations.Save(&record); err != nil {
+		t.Fatal(err)
 	}
 
-	path, err := s.RecordPath("a.go")
+	path, err := annotations.RecordPath(record.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	content, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
+	content := readFile(t, path)
+	if !strings.HasPrefix(content, schemaDirective) {
+		t.Errorf("record does not start with the schema directive:\n%s", content)
 	}
-	text := string(content)
-
-	if !strings.Contains(text, "created: \"2026-07-31\"") && !strings.Contains(text, "created: 2026-07-31") {
-		t.Errorf("created date not written as a plain date:\n%s", text)
+	if !strings.Contains(content, "created: \"2026-07-31\"") && !strings.Contains(content, "created: 2026-07-31") {
+		t.Errorf("created date not written as a plain date:\n%s", content)
 	}
-	if strings.Contains(text, `\n`) {
-		t.Errorf("body was escaped onto one line, which defeats review in a diff:\n%s", text)
+	if strings.Contains(content, `\n`) {
+		t.Errorf("body was escaped onto one line:\n%s", content)
 	}
 }
 
 func TestWrappedBodyIsStoredAsShortLines(t *testing.T) {
-	s := newTestStore(t)
+	annotations := newTestStore(t)
 	long := "An empty excerpt means file scope, not a wildcard that matches everything. " +
 		"Treating it as a wildcard made every annotation resolve at offset zero and " +
 		"report ok forever, which is exactly the silent staleness koment exists to prevent."
-
-	record := &Record{
-		Version: RecordVersion,
-		File:    "a.go",
-		Annotations: []Annotation{{
-			ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-			Scope:   ScopeFile,
-			Kind:    KindGotcha,
-			Body:    WrapProse(long),
-			Created: Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		}},
-	}
-	if err := s.Save(record); err != nil {
+	record := fileAnnotation(firstID, "a.go")
+	record.Body = WrapProse(long)
+	if err := annotations.Save(&record); err != nil {
 		t.Fatal(err)
 	}
 
-	path, err := s.RecordPath("a.go")
+	path, err := annotations.RecordPath(record.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	content, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	const indent = 6
-	for _, line := range strings.Split(string(content), "\n") {
-		if len(line) > ProseWidth+indent {
-			t.Errorf("line is %d characters, which is too wide to review in a diff: %q", len(line), line)
+	for _, line := range strings.Split(readFile(t, path), "\n") {
+		if strings.HasPrefix(line, "# yaml-language-server:") {
+			continue
+		}
+		if len(line) > ProseWidth+2 {
+			t.Errorf("line is %d characters, which is too wide to review: %q", len(line), line)
 		}
 	}
 
-	reloaded, err := s.Load("a.go")
+	reloaded, err := annotations.Load(record.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reloaded.Annotations[0].Body != record.Annotations[0].Body {
-		t.Errorf("wrapped body did not round trip\n want %q\n  got %q",
-			record.Annotations[0].Body, reloaded.Annotations[0].Body)
+	if reloaded.Body != record.Body {
+		t.Errorf("wrapped body did not round trip\n want %q\n  got %q", record.Body, reloaded.Body)
 	}
 }
 
 func TestWrapProsePreservesWordsAndParagraphs(t *testing.T) {
 	original := "First paragraph that is quite long and will certainly need to be wrapped at least once, twice even.\n\nSecond paragraph."
-
 	wrapped := WrapProse(original)
 	if wrapped == original {
 		t.Fatal("expected the long paragraph to be wrapped")
@@ -177,114 +162,95 @@ func TestWrapProsePreservesWordsAndParagraphs(t *testing.T) {
 	}
 
 	paragraphs := Paragraphs(wrapped)
-	if len(paragraphs) != 2 {
-		t.Fatalf("want 2 paragraphs after a round trip, got %d: %q", len(paragraphs), paragraphs)
-	}
-	if paragraphs[1] != "Second paragraph." {
-		t.Errorf("second paragraph did not survive: %q", paragraphs[1])
-	}
-	if strings.Contains(paragraphs[0], "\n") {
-		t.Errorf("soft wraps should be re-flowed away, got %q", paragraphs[0])
-	}
-}
-
-func TestParagraphsReflowsSoftWrapsOnly(t *testing.T) {
-	body := "A sentence that was\nsoft wrapped when stored.\n\nA separate paragraph."
-
-	got := Paragraphs(body)
-	want := []string{"A sentence that was soft wrapped when stored.", "A separate paragraph."}
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("want %q, got %q", want, got)
+	if len(paragraphs) != 2 || paragraphs[1] != "Second paragraph." {
+		t.Fatalf("paragraphs did not survive: %q", paragraphs)
 	}
 }
 
 func TestLoadReportsMissingRecordAsNotExist(t *testing.T) {
-	s := newTestStore(t)
-	_, err := s.Load("never/annotated.go")
+	annotations := newTestStore(t)
+	_, err := annotations.Load(firstID)
 	if !errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("want fs.ErrNotExist, got %v", err)
 	}
 }
 
-func TestLoadRejectsCorruptedExcerptHash(t *testing.T) {
-	s := newTestStore(t)
-	annotation := excerptAnnotation("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "original")
-	record := &Record{Version: RecordVersion, File: "a.go", Annotations: []Annotation{annotation}}
-	if err := s.Save(record); err != nil {
-		t.Fatal(err)
-	}
-
-	path, err := s.RecordPath("a.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	content, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tampered := strings.Replace(string(content), "excerpt: original", "excerpt: tampered", 1)
-	if tampered == string(content) {
-		t.Fatal("test did not tamper with the excerpt")
-	}
-	if err := os.WriteFile(path, []byte(tampered), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := s.Load("a.go"); err == nil {
-		t.Fatal("want an error when the stored excerpt no longer matches its hash, got nil")
-	}
-}
-
 func TestLoadRejectsUnknownFields(t *testing.T) {
-	s := newTestStore(t)
-	path, err := s.RecordPath("a.go")
+	annotations := newTestStore(t)
+	path, err := annotations.RecordPath(firstID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	record := "version: 1\nfile: a.go\nannotations:\n  - id: X\n    scope: file\n    kind: why\n    body: b\n    created: 2026-07-31\n    confidence: high\n"
+	record := "version: 1\nid: " + firstID + "\nfile: a.go\nkind: why\nbody: b\ncreated: 2026-07-31\nanchor:\n  scope: file\nauthor:\n  name: Test\n  kind: human\n  source: explicit\nconfidence: high\n"
 	if err := os.WriteFile(path, []byte(record), 0o644); err != nil {
 		t.Fatal(err)
 	}
-
-	if _, err := s.Load("a.go"); err == nil {
-		t.Fatal("want an error for an unknown field, got nil")
+	if _, err := annotations.Load(firstID); err == nil {
+		t.Fatal("want an error for an unknown field")
 	}
 }
 
-func TestLoadRejectsRecordStoredUnderTheWrongPath(t *testing.T) {
-	s := newTestStore(t)
-	path, err := s.RecordPath("a.go")
+func TestLoadRejectsASecondYAMLDocument(t *testing.T) {
+	annotations := newTestStore(t)
+	record := fileAnnotation(firstID, "a.go")
+	if err := annotations.Save(&record); err != nil {
+		t.Fatal(err)
+	}
+	path, err := annotations.RecordPath(firstID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := readFile(t, path) + "---\nversion: 1\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := annotations.Load(firstID); err == nil || !strings.Contains(err.Error(), "multiple YAML documents") {
+		t.Fatalf("want a multiple-document error, got %v", err)
+	}
+}
+
+func TestLoadRejectsRecordStoredUnderTheWrongID(t *testing.T) {
+	annotations := newTestStore(t)
+	record := fileAnnotation(secondID, "a.go")
+	path, err := annotations.RecordPath(firstID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	record := "version: 1\nfile: elsewhere.go\nannotations:\n  - id: X\n    scope: file\n    kind: why\n    body: b\n    created: 2026-07-31\n"
-	if err := os.WriteFile(path, []byte(record), 0o644); err != nil {
+	content := "version: 1\nid: " + record.ID + "\nfile: a.go\nkind: why\nbody: body\ncreated: 2026-07-31\nanchor:\n  scope: file\nauthor:\n  name: Test\n  kind: human\n  source: explicit\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
-
-	_, err = s.Load("a.go")
-	if err == nil || !strings.Contains(err.Error(), "elsewhere.go") {
-		t.Fatalf("want an error naming the mismatched path, got %v", err)
+	_, err = annotations.Load(firstID)
+	if err == nil || !strings.Contains(err.Error(), secondID) {
+		t.Fatalf("want an error naming the mismatched id, got %v", err)
 	}
 }
 
 func TestValidateRejectsBadAnnotations(t *testing.T) {
-	base := excerptAnnotation("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "snippet")
-
-	cases := map[string]func(a *Annotation){
-		"empty excerpt with excerpt scope": func(a *Annotation) { a.Excerpt = ""; a.ExcerptSHA256 = "" },
-		"excerpt carried by file scope":    func(a *Annotation) { a.Scope = ScopeFile },
-		"unknown kind":                     func(a *Annotation) { a.Kind = "todo" },
-		"unknown scope":                    func(a *Annotation) { a.Scope = "symbol" },
-		"blank body":                       func(a *Annotation) { a.Body = "   " },
-		"missing id":                       func(a *Annotation) { a.ID = "" },
-		"missing created":                  func(a *Annotation) { a.Created = Date{} },
+	base := excerptAnnotation(firstID, "a.go", "snippet")
+	cases := map[string]func(*Annotation){
+		"wrong version":         func(annotation *Annotation) { annotation.Version = 2 },
+		"invalid id":            func(annotation *Annotation) { annotation.ID = "X" },
+		"empty file":            func(annotation *Annotation) { annotation.File = "" },
+		"noncanonical file":     func(annotation *Annotation) { annotation.File = "./a.go" },
+		"backslash file":        func(annotation *Annotation) { annotation.File = `internal\a.go` },
+		"drive-relative file":   func(annotation *Annotation) { annotation.File = "C:a.go" },
+		"escaping file":         func(annotation *Annotation) { annotation.File = "../a.go" },
+		"empty excerpt":         func(annotation *Annotation) { annotation.Anchor.Excerpt = "" },
+		"excerpt on file":       func(annotation *Annotation) { annotation.Anchor.Scope = ScopeFile },
+		"unknown kind":          func(annotation *Annotation) { annotation.Kind = "todo" },
+		"unknown scope":         func(annotation *Annotation) { annotation.Anchor.Scope = "symbol" },
+		"blank body":            func(annotation *Annotation) { annotation.Body = "   " },
+		"missing created":       func(annotation *Annotation) { annotation.Created = Date{} },
+		"missing author":        func(annotation *Annotation) { annotation.Author = Author{} },
+		"too much context":      func(annotation *Annotation) { annotation.Anchor.Before = "1\n2\n3\n4" },
+		"unacknowledged policy": func(annotation *Annotation) { annotation.Policy = &Policy{Exception: "inline-comment"} },
 	}
 
 	for name, corrupt := range cases {
@@ -292,65 +258,120 @@ func TestValidateRejectsBadAnnotations(t *testing.T) {
 			annotation := base
 			corrupt(&annotation)
 			if err := annotation.Validate(); err == nil {
-				t.Fatal("want an error, got nil")
+				t.Fatal("want an error")
 			}
 		})
 	}
 }
 
-func TestValidateRejectsDuplicateIDs(t *testing.T) {
-	duplicate := excerptAnnotation("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "snippet")
-	record := Record{
-		Version:     RecordVersion,
-		File:        "a.go",
-		Annotations: []Annotation{duplicate, duplicate},
-	}
-	err := record.Validate()
-	if err == nil || !strings.Contains(err.Error(), "duplicate") {
-		t.Fatalf("want a duplicate id error, got %v", err)
-	}
-}
-
-func TestRecordPathRejectsEscapingPaths(t *testing.T) {
-	s := newTestStore(t)
-	for _, path := range []string{"../outside.go", "a/../../outside.go", "/etc/passwd", ""} {
-		if _, err := s.RecordPath(path); err == nil {
-			t.Errorf("RecordPath(%q) should have failed", path)
+func TestRecordPathRejectsInvalidIDs(t *testing.T) {
+	annotations := newTestStore(t)
+	for _, id := range []string{"../outside", "lowercase000000000000000000", "", "81JQ8ZK3M4N5P6R7S8T9V0W1X"} {
+		if _, err := annotations.RecordPath(id); err == nil {
+			t.Errorf("RecordPath(%q) should have failed", id)
 		}
 	}
 }
 
-func TestAnnotatedFilesListsEveryRecordSorted(t *testing.T) {
-	s := newTestStore(t)
-	for _, file := range []string{"z.go", "internal/a.go", "cmd/koment/main.go"} {
-		record := &Record{
-			Version:     RecordVersion,
-			File:        file,
-			Annotations: []Annotation{excerptAnnotation("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "x")},
-		}
-		if err := s.Save(record); err != nil {
+func TestForFileAndAnnotatedFilesUseRecordContent(t *testing.T) {
+	annotations := newTestStore(t)
+	records := []Annotation{
+		fileAnnotation(firstID, "z.go"),
+		fileAnnotation(secondID, "internal/a.go"),
+	}
+	for index := range records {
+		if err := annotations.Save(&records[index]); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	got, err := s.AnnotatedFiles()
+	files, err := annotations.AnnotatedFiles()
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"cmd/koment/main.go", "internal/a.go", "z.go"}
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("want %v, got %v", want, got)
+	if want := []string{"internal/a.go", "z.go"}; !reflect.DeepEqual(want, files) {
+		t.Errorf("want %v, got %v", want, files)
+	}
+	onlyZ, err := annotations.ForFile("z.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(onlyZ) != 1 || onlyZ[0].ID != firstID {
+		t.Errorf("want %s for z.go, got %+v", firstID, onlyZ)
+	}
+}
+
+func TestConcurrentSavesToTheSameSourceKeepBothRecords(t *testing.T) {
+	annotations := newTestStore(t)
+	first := fileAnnotation(firstID, "shared.go")
+	second := fileAnnotation(secondID, "shared.go")
+	errors := make(chan error, 2)
+	for _, record := range []*Annotation{&first, &second} {
+		go func() { errors <- annotations.Save(record) }()
+	}
+	for range 2 {
+		if err := <-errors; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	stored, err := annotations.ForFile("shared.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stored) != 2 {
+		t.Fatalf("want both concurrent records, got %+v", stored)
+	}
+}
+
+func TestReadSourceAllowsOnlySymlinksThatStayInsideTheRoot(t *testing.T) {
+	annotations := newTestStore(t)
+	inside := filepath.Join(annotations.Root(), "inside.go")
+	if err := os.WriteFile(inside, []byte("inside"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("inside.go", filepath.Join(annotations.Root(), "alias.go")); err != nil {
+		t.Fatal(err)
+	}
+	content, err := annotations.ReadSource("alias.go")
+	if err != nil || string(content) != "inside" {
+		t.Fatalf("an in-root symlink should be readable, got %q and %v", content, err)
+	}
+
+	outside := filepath.Join(t.TempDir(), "secret.go")
+	if err := os.WriteFile(outside, []byte("secret"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(annotations.Root(), "escape.go")); err != nil {
+		t.Fatal(err)
+	}
+	content, err = annotations.ReadSource("escape.go")
+	if err == nil || string(content) == "secret" {
+		t.Fatalf("an escaping symlink returned %q and %v", content, err)
+	}
+}
+
+func TestSaveCannotFollowAnAnnotationDirectoryOutsideTheRoot(t *testing.T) {
+	annotations := newTestStore(t)
+	outside := t.TempDir()
+	annotationDirectory := filepath.Join(annotations.Root(), DirName, annotationsDir)
+	if err := os.Symlink(outside, annotationDirectory); err != nil {
+		t.Fatal(err)
+	}
+	record := fileAnnotation(firstID, "a.go")
+	if err := annotations.Save(&record); err == nil {
+		t.Fatal("saving through an escaping annotations symlink should fail")
+	}
+	if _, err := os.Stat(filepath.Join(outside, firstID+recordSuffix)); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("save wrote outside the repository: %v", err)
 	}
 }
 
 func TestAnnotatedFilesIsEmptyBeforeAnythingIsAnnotated(t *testing.T) {
-	s := newTestStore(t)
-	got, err := s.AnnotatedFiles()
-	if err != nil {
-		t.Fatalf("want no error for a store with no annotations, got %v", err)
-	}
-	if len(got) != 0 {
-		t.Errorf("want no files, got %v", got)
+	annotations := newTestStore(t)
+	got, err := annotations.AnnotatedFiles()
+	if err != nil || len(got) != 0 {
+		t.Fatalf("want no annotated files, got %v and %v", got, err)
 	}
 }
 

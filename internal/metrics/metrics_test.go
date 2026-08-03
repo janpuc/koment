@@ -25,7 +25,7 @@ func TestEveryStatusIsReportedIncludingZero(t *testing.T) {
 	m.ObserveRepository(map[anchor.Status]int{anchor.StatusOK: 3}, 2, time.Millisecond)
 
 	body := scrape(t, m)
-	for _, status := range []string{"ok", "moved", "drifted", "orphaned"} {
+	for _, status := range []string{"ok", "moved", "ambiguous", "drifted", "orphaned"} {
 		want := `koment_annotations{status="` + status + `"}`
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %s — a status that drops out looks like a scrape gap, not a return to zero", want)
@@ -128,19 +128,19 @@ func TestSweepCountsTheRepository(t *testing.T) {
 
 	annotations := store.Open(root)
 	excerpt := "func main() {}"
-	if err := annotations.Save(&store.Record{
+	if err := annotations.Save(&store.Annotation{
 		Version: store.RecordVersion,
+		ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
 		File:    "main.go",
-		Annotations: []store.Annotation{{
-			ID:            "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-			Scope:         store.ScopeExcerpt,
-			Excerpt:       excerpt,
-			ExcerptSHA256: store.ExcerptSHA256(excerpt),
-			LastSeenLine:  3,
-			Kind:          store.KindWhy,
-			Body:          "Entry point only.",
-			Created:       store.Date{Time: time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)},
-		}},
+		Anchor: store.Anchor{
+			Scope:        store.ScopeExcerpt,
+			Excerpt:      excerpt,
+			LastSeenLine: 3,
+		},
+		Kind:    store.KindWhy,
+		Body:    "Entry point only.",
+		Created: store.Date{Time: time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)},
+		Author:  store.Author{Name: "Test", Kind: store.AuthorHuman, Source: store.FromExplicit},
 	}); err != nil {
 		t.Fatal(err)
 	}

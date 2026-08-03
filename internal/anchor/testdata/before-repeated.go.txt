@@ -1,0 +1,11 @@
+package fixture
+
+func primary() {
+	prepareOne()
+	prepareTwo()
+	prepareThree()
+	target()
+	finishOne()
+	finishTwo()
+	finishThree()
+}

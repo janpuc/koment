@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW39J5RCPKYCH1865WPHG82
+file: internal/cli/reanchor.go
+kind: gotcha
+body: |-
+  An annotation that only changes file keeps its existing excerpt rather than
+  requiring it to be retyped. This is the renamed-file case, which is the
+  common one: the code did not change, its path did. Passing --excerpt as well
+  is still allowed, for a rename that also edited the annotated lines.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func reanchorTo(annotation *store.Annotation, annotations *store.Store, file, excerpt string) error {
+  before: "\treturn ExitOK\n}\n"
+  after: "\tif excerpt == \"\" && annotation.Anchor.Scope == store.ScopeExcerpt {\n\t\texcerpt = annotation.Anchor.Excerpt\n\t}"
+  last_seen_line: 51
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

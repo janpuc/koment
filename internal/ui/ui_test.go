@@ -29,19 +29,19 @@ func annotatedRepository(t *testing.T) *store.Store {
 
 	annotations := store.Open(root)
 	excerpt := "\tserve()"
-	record := &store.Record{
+	record := &store.Annotation{
 		Version: store.RecordVersion,
+		ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
 		File:    "main.go",
-		Annotations: []store.Annotation{{
-			ID:            "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-			Scope:         store.ScopeExcerpt,
-			Excerpt:       excerpt,
-			ExcerptSHA256: store.ExcerptSHA256(excerpt),
-			LastSeenLine:  4,
-			Kind:          store.KindInvariant,
-			Body:          store.WrapProse(rationale),
-			Created:       store.Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		}},
+		Anchor: store.Anchor{
+			Scope:        store.ScopeExcerpt,
+			Excerpt:      excerpt,
+			LastSeenLine: 4,
+		},
+		Kind:    store.KindInvariant,
+		Body:    store.WrapProse(rationale),
+		Created: store.Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
+		Author:  store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
 	}
 	if err := annotations.Save(record); err != nil {
 		t.Fatal(err)
@@ -132,25 +132,29 @@ func TestManyAnnotationsOnOneLineDoNotStretchTheCode(t *testing.T) {
 
 func crowd(t *testing.T, annotations *store.Store, extra int) {
 	t.Helper()
-	record, err := annotations.Load("main.go")
-	if err != nil {
-		t.Fatal(err)
-	}
 	excerpt := "\tserve()"
 	for i := range extra {
-		record.Annotations = append(record.Annotations, store.Annotation{
-			ID:            "01JQ8ZK3M4N5P6R7S8T9V0W" + string(rune('A'+i)) + "12",
-			Scope:         store.ScopeExcerpt,
-			Excerpt:       excerpt,
-			ExcerptSHA256: store.ExcerptSHA256(excerpt),
-			LastSeenLine:  4,
-			Kind:          store.KindWhy,
-			Body:          store.WrapProse(strings.Repeat("Reasoning that runs long enough to be several lines tall. ", 4)),
-			Created:       store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-		})
-	}
-	if err := annotations.Save(record); err != nil {
-		t.Fatal(err)
+		id, err := store.NewID(time.Date(2026, 8, 3, 0, 0, i, 0, time.UTC))
+		if err != nil {
+			t.Fatal(err)
+		}
+		record := store.Annotation{
+			Version: store.RecordVersion,
+			ID:      id,
+			File:    "main.go",
+			Anchor: store.Anchor{
+				Scope:        store.ScopeExcerpt,
+				Excerpt:      excerpt,
+				LastSeenLine: 4,
+			},
+			Kind:    store.KindWhy,
+			Body:    store.WrapProse(strings.Repeat("Reasoning that runs long enough to be several lines tall. ", 4)),
+			Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
+			Author:  store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
+		}
+		if err := annotations.Save(&record); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
@@ -283,7 +287,7 @@ func TestBrandAssetsAreServedFromTheBinary(t *testing.T) {
 
 func TestEveryStatusHasAColour(t *testing.T) {
 	_, css := request(t, setOf(annotatedRepository(t)), "/assets/style.css")
-	for _, status := range []string{"ok", "moved", "drifted", "orphaned"} {
+	for _, status := range []string{"ok", "moved", "ambiguous", "drifted", "orphaned"} {
 		if !strings.Contains(css, ".dot."+status) || !strings.Contains(css, ".pill."+status) {
 			t.Errorf("status %q has no visual treatment", status)
 		}

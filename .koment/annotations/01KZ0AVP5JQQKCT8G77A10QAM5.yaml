@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ0AVP5JQQKCT8G77A10QAM5
+file: internal/provenance/provenance.go
+kind: invariant
+body: |-
+  Reports ErrNoGit rather than guessing. A fabricated commit reference is
+  worse than an absent one: an absent context degrades the historical view
+  honestly, a wrong one sends a reader to the wrong file state and looks
+  authoritative doing it.
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: func Capture(root, file string, line, endLine int) (*store.GitContext, error) {
+  before: |-
+    // Capture records the commit an annotation was written against. It reports
+    // ErrNoGit rather than guessing when git cannot answer, because a fabricated
+    // commit reference is worse than an absent one.
+  after: "\tcommit, err := git(root, \"rev-parse\", \"HEAD\")\n\tif err != nil {\n\t\treturn nil, ErrNoGit"
+  last_seen_line: 20
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

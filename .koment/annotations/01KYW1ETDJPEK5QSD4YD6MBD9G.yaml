@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETDJPEK5QSD4YD6MBD9G
+file: internal/store/store.go
+kind: gotcha
+body: |-
+  Two bases, deliberately two methods. A person typing at a shell means a path
+  relative to their working directory; an MCP client means one relative to the
+  repository root. These were a single method named Relative until the MCP
+  tests failed with "../../../.. escapes the repository root" - the server was
+  resolving agent-supplied paths against its own process cwd, which has
+  nothing to do with where the repo is. Do not merge them back into one.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func (s *Store) FromRoot(path string) (string, error) {
+  before: |2-
+
+    // FromRoot reads a path the way an API caller means it: already relative to the
+    // repository root, wherever the koment process happens to be running.
+  after: "\tif filepath.IsAbs(path) {\n\t\treturn s.fromAbsolute(path, path)\n\t}"
+  last_seen_line: 82
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

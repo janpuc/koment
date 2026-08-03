@@ -23,11 +23,11 @@ const (
 	logoPNGName    = "koment-logo.png"
 )
 
-const exportUsage = `koment site renders one repository to static HTML.
+const exportUsage = `koment site renders a repository snapshot to static HTML.
 
   koment site --out <dir> [--banner <text>]
 
-This is the published tier (ADR 0026): everyone reads the annotations in a
+This is the published tier (ADR 0103): everyone reads the annotations in a
 browser, with no server to run and no authentication to design. Point it at a
 directory, commit a workflow, and GitHub Pages serves it — see docs/publishing.md.
 
@@ -55,6 +55,7 @@ func Site(args []string, stderr io.Writer) error {
 	commitURL := flags.String("commit-link", "", "URL the commit links to")
 	banner := flags.String("banner", "", "notice shown on every page, beside the commit")
 	bannerHref := flags.String("banner-link", "", "URL shown beside the banner")
+	repositoryLinks := flags.String("repository-links", "", "comma-separated name=URL entries for the contextual repository switcher")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -89,7 +90,11 @@ func Site(args []string, stderr io.Writer) error {
 	if label == "" {
 		label = chosen.Display()
 	}
-	written, err := export(chosen.Store(), *out, label, taken)
+	linked, err := parseRepositoryLinks(*repositoryLinks, label)
+	if err != nil {
+		return err
+	}
+	written, err := export(chosen.Store(), *out, label, taken, linked)
 	if err != nil {
 		return err
 	}
@@ -114,7 +119,7 @@ func commitOf(root, given string) (string, error) {
 	return commit, nil
 }
 
-func export(annotations *store.Store, out, name string, taken *snapshot) (int, error) {
+func export(annotations *store.Store, out, name string, taken *snapshot, repositories []repositoryLink) (int, error) {
 	files, err := annotations.AnnotatedFiles()
 	if err != nil {
 		return 0, err
@@ -137,7 +142,8 @@ func export(annotations *store.Store, out, name string, taken *snapshot) (int, e
 	}
 
 	for page, file := range pages {
-		rendered, err := renderPage(templates, annotations, file, exportedLinks(page), name, taken)
+		rendered, err := renderPage(templates, annotations, file, exportedLinks(page), name, taken,
+			exportedRepositoryLinks(page, repositories))
 		if err != nil {
 			return 0, err
 		}
@@ -162,19 +168,65 @@ func exportedLinks(page string) links {
 	}
 }
 
-func renderPage(templates *template.Template, annotations *store.Store, file string, how links, name string, taken *snapshot) ([]byte, error) {
+func renderPage(templates *template.Template, annotations *store.Store, file string, how links, name string,
+	taken *snapshot, repositories []repositoryLink,
+) ([]byte, error) {
 	built, err := build(annotations, file, how)
 	if err != nil {
 		return nil, err
 	}
 	built.Repository = name
 	built.Snapshot = taken
+	built.Repositories = repositories
 
 	var page strings.Builder
 	if err := templates.ExecuteTemplate(&page, "page.html", built); err != nil {
 		return nil, err
 	}
 	return []byte(page.String()), nil
+}
+
+func parseRepositoryLinks(specification, current string) ([]repositoryLink, error) {
+	if strings.TrimSpace(specification) == "" {
+		return nil, nil
+	}
+	var links []repositoryLink
+	currentCount := 0
+	for _, entry := range strings.Split(specification, ",") {
+		name, target, found := strings.Cut(entry, "=")
+		name = strings.TrimSpace(name)
+		target = strings.TrimSpace(target)
+		if !found || name == "" || target == "" {
+			return nil, fmt.Errorf("repository-links entry %q must be name=URL", entry)
+		}
+		isCurrent := name == current
+		if isCurrent {
+			currentCount++
+		}
+		links = append(links, repositoryLink{Name: name, Href: target, Current: isCurrent})
+	}
+	if len(links) < 2 {
+		return nil, fmt.Errorf("repository-links needs at least two entries")
+	}
+	if currentCount != 1 {
+		return nil, fmt.Errorf("repository-links must contain the current repository %q exactly once", current)
+	}
+	return links, nil
+}
+
+func exportedRepositoryLinks(page string, repositories []repositoryLink) []repositoryLink {
+	if len(repositories) == 0 {
+		return nil
+	}
+	up := strings.Repeat("../", strings.Count(page, "/"))
+	linked := make([]repositoryLink, len(repositories))
+	for index, repository := range repositories {
+		linked[index] = repository
+		if !strings.Contains(repository.Href, "://") && !strings.HasPrefix(repository.Href, "/") {
+			linked[index].Href = up + repository.Href
+		}
+	}
+	return linked
 }
 
 func writeFile(path string, content []byte) error {

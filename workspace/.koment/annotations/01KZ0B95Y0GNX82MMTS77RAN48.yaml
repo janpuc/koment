@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ0B95Y0GNX82MMTS77RAN48
+file: session/token.go
+kind: why
+body: |-
+  Renewal is offered only in the last hour of a token life. Earlier renewal
+  was tried and produced a stampede: every active client refreshed at once on
+  deploy, because their tokens had all been issued together.
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: "\treturn !t.Expired(now) && t.remaining(now) < renewalWindow"
+  before: |-
+    }
+
+    func (t Token) Renewable(now time.Time) bool {
+  after: '}'
+  last_seen_line: 23
+git:
+  commit: e5ef5a0353214dbf6e057c2742bf43bf747598d5
+  path: src/session.go
+  line: 21
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

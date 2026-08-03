@@ -73,11 +73,15 @@ koment_get(file: string)
 
 koment_search(query: string)
   → { query, matches: [ ...same shape, plus file ] }
+
+koment_repositories()
+  → { repositories: [ { id, name, default_branch, clone_url, files,
+                         annotations: { status: count } } ] }
 ```
 
-`status` is one of `ok`, `moved`, `drifted`, `orphaned`. When it is a failing
-one, `warning` carries prose saying so — a client should surface it rather than
-present the body as current fact.
+`status` is one of `ok`, `moved`, `ambiguous`, `drifted`, `orphaned`. When it is
+a failing one, `warning` carries prose saying so — a client should surface it
+rather than present the body as current fact.
 
 ## Check it works without a client
 

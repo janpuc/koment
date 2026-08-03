@@ -65,6 +65,7 @@ func covers(prefixes []string, file string) bool {
 var statusOrder = []anchor.Status{
 	anchor.StatusOK,
 	anchor.StatusMoved,
+	anchor.StatusAmbiguous,
 	anchor.StatusDrifted,
 	anchor.StatusOrphaned,
 }
@@ -82,7 +83,7 @@ func (t tally) total() int {
 }
 
 func (t tally) failures() int {
-	return t[anchor.StatusDrifted] + t[anchor.StatusOrphaned]
+	return t[anchor.StatusAmbiguous] + t[anchor.StatusDrifted] + t[anchor.StatusOrphaned]
 }
 
 func (t tally) String() string {

@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
-	"os"
 	"time"
 
 	"github.com/janpuc/koment/internal/anchor"
@@ -45,36 +43,37 @@ func runAdd(args []string, env Environment) int {
 	if err := anchorTo(&annotation, annotations, file, *excerpt); err != nil {
 		return fail(env, err)
 	}
+	annotation.File = file
 
-	annotation.Git = capture(annotations.Root(), file, annotation.LastSeenLine, env)
+	annotation.Git = capture(annotations.Root(), file, annotation.Anchor.LastSeenLine, env)
 
-	record, err := appendAnnotation(annotations, file, annotation)
-	if err != nil {
-		return fail(env, err)
-	}
-	if err := annotations.Save(record); err != nil {
+	if err := annotations.Save(&annotation); err != nil {
 		return fail(env, err)
 	}
 
-	fmt.Fprintf(env.Stdout, "%s  %s %s\n", annotation.ID, annotation.Kind, location(file, annotation.LastSeenLine))
+	fmt.Fprintf(env.Stdout, "%s  %s %s\n", annotation.ID, annotation.Kind, location(file, annotation.Anchor.LastSeenLine))
 	return ExitOK
 }
 
-func identity(root, explicit string, byAgent bool) (*store.Author, error) {
+func identity(root, explicit string, byAgent bool) (store.Author, error) {
 	kind := store.AuthorHuman
 	if byAgent {
 		kind = store.AuthorAgent
 	}
 	if explicit != "" {
-		return provenance.ParseAuthor(explicit, kind)
+		author, err := provenance.ParseAuthor(explicit, kind)
+		if err != nil {
+			return store.Author{}, err
+		}
+		return *author, nil
 	}
 
 	author, err := provenance.IdentityFromGit(root)
 	if err != nil {
-		return nil, err
+		return store.Author{}, err
 	}
 	author.Kind = kind
-	return author, nil
+	return *author, nil
 }
 
 // capture records the git context when git can answer, and says so when it
@@ -107,7 +106,13 @@ func buildAnnotation(kind, body string, stdin io.Reader) (store.Annotation, erro
 	if err != nil {
 		return store.Annotation{}, err
 	}
-	return store.Annotation{ID: id, Kind: parsedKind, Body: store.WrapProse(text), Created: store.Today()}, nil
+	return store.Annotation{
+		Version: store.RecordVersion,
+		ID:      id,
+		Kind:    parsedKind,
+		Body:    store.WrapProse(text),
+		Created: store.Today(),
+	}, nil
 }
 
 func bodyText(body string, stdin io.Reader) (string, error) {
@@ -129,51 +134,27 @@ func bodyText(body string, stdin io.Reader) (string, error) {
 }
 
 func anchorTo(annotation *store.Annotation, annotations *store.Store, file, excerpt string) error {
-	sourcePath, err := annotations.SourcePath(file)
-	if err != nil {
-		return err
-	}
-	content, err := os.ReadFile(sourcePath)
+	content, err := annotations.ReadSource(file)
 	if err != nil {
 		return fmt.Errorf("reading %s: %w", file, err)
 	}
 
 	if excerpt == "" {
-		annotation.Scope = store.ScopeFile
-		annotation.Excerpt = ""
-		annotation.ExcerptSHA256 = ""
-		annotation.LastSeenLine = 0
+		annotation.Anchor = store.Anchor{Scope: store.ScopeFile}
 		return nil
 	}
 
 	lines := anchor.ExcerptLines(content, excerpt)
-	switch len(lines) {
-	case 0:
+	if len(lines) == 0 {
 		return fmt.Errorf("excerpt not found in %s; it must match the file verbatim", file)
-	case 1:
-		annotation.Scope = store.ScopeExcerpt
-		annotation.Excerpt = excerpt
-		annotation.ExcerptSHA256 = store.ExcerptSHA256(excerpt)
-		annotation.LastSeenLine = lines[0]
-		return nil
-	default:
+	}
+	if len(lines) > 1 {
 		return fmt.Errorf("excerpt matches %d places in %s (lines %v); extend it until it is unique", len(lines), file, lines)
 	}
-}
-
-func appendAnnotation(annotations *store.Store, file string, annotation store.Annotation) (*store.Record, error) {
-	record, err := annotations.Load(file)
-	if errors.Is(err, fs.ErrNotExist) {
-		return &store.Record{
-			Version:     store.RecordVersion,
-			File:        file,
-			Annotations: []store.Annotation{annotation},
-		}, nil
-	}
+	captured, err := anchor.Capture(content, excerpt)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("capturing excerpt in %s: %w", file, err)
 	}
-
-	record.Annotations = append(record.Annotations, annotation)
-	return record, nil
+	annotation.Anchor = captured
+	return nil
 }

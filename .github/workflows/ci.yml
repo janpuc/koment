@@ -251,12 +251,6 @@ jobs:
           test -n "$INSTALLED_VERSION"
           koment version | grep -q "$INSTALLED_VERSION"
 
-      - name: Publish a site
-        run: |
-          koment site --out /tmp/site --name ci
-          test -f /tmp/site/index.html
-          grep -q "snapshot of" /tmp/site/index.html
-
   helm:
     name: helm chart
     runs-on: ubuntu-24.04

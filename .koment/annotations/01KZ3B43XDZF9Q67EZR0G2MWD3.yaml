@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ3B43XDZF9Q67EZR0G2MWD3
+file: action.yml
+kind: invariant
+body: |-
+  The setup action adds only a fixed subdirectory of GitHub runner-owned
+  RUNNER_TEMP to PATH. The downloaded executable is checksum-verified and the
+  requested version is restricted to single-line SemVer before any output is
+  written. The zizmor github-env suppression applies only to this fixed runner
+  boundary; never derive target from an action input or release data.
+created: "2026-08-03"
+anchor:
+  scope: excerpt
+  excerpt: '        target="${RUNNER_TEMP}/koment-bin"'
+  before: |2
+              fi
+            )
+  after: |2-
+            mkdir -p "$target"
+            tar -xzf "${work}/${archive}" -C "$target" koment
+            chmod +x "${target}/koment"
+  last_seen_line: 88
+git:
+  commit: 1d122963f024f48ed04833c6148369f92bbdebbc
+  path: action.yml
+  line: 89
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

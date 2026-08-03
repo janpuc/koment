@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KYW1ETE9RCDVQZJ9Z38XVYRD
+file: internal/cli/add.go
+kind: why
+body: |-
+  An excerpt that matches nothing, or that matches several places, is refused
+  here at creation rather than guessed at during resolution. Creation is the
+  only moment when a person is present and the intent is still known. ADR 0009
+  leans on this: because ambiguity cannot be stored, resolution never has to
+  disambiguate, and a "moved" result can be trusted to mean movement rather
+  than a coin flip between two candidates.
+created: "2026-07-31"
+anchor:
+  scope: excerpt
+  excerpt: func anchorTo(
+  before: "\treturn string(piped), nil\n}\n"
+  after: "\tcontent, err := annotations.ReadSource(file)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"reading %s: %w\", file, err)"
+  last_seen_line: 136
+author:
+  name: Legacy import
+  kind: unknown
+  source: migration

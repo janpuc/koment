@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ0JZA8F91P151JJHP9ERT0B
+file: internal/metrics/metrics.go
+kind: invariant
+body: |-
+  Every status is set on every sweep, including the ones at zero. Skipping a
+  zero would make a drift that someone fixed look identical to a scrape gap:
+  the series simply stops, and a dashboard cannot tell "no longer drifting"
+  from "no longer reporting". Setting all four unconditionally costs three
+  samples and removes the ambiguity.
+created: "2026-08-02"
+anchor:
+  scope: excerpt
+  excerpt: func (m *Metrics) ObserveRepository(resolved map[anchor.Status]int, files int, took time.Duration) {
+  before: |-
+    // ObserveRepository publishes a full sweep. Every status is set on every sweep,
+    // including the zero ones: leaving a status unset would make a drift that was
+    // fixed look like a scrape gap rather than a return to zero.
+  after: "\tfor _, status := range []anchor.Status{\n\t\tanchor.StatusOK, anchor.StatusMoved, anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned,\n\t} {"
+  last_seen_line: 134
+git:
+  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+  path: internal/metrics/metrics.go
+  line: 134
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: human
+  source: git-config

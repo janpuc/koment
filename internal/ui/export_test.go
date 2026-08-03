@@ -17,7 +17,7 @@ func exportTo(t *testing.T) string {
 		Banner:     "rebuilt nightly",
 		BannerHref: "https://example.test/koment",
 	}
-	if _, err := export(annotatedRepository(t), out, "fixture", taken); err != nil {
+	if _, err := export(annotatedRepository(t), out, "fixture", taken, nil); err != nil {
 		t.Fatalf("export: %v", err)
 	}
 	return out
@@ -101,6 +101,36 @@ func TestExportedPagesNameTheirRepository(t *testing.T) {
 	}
 }
 
+func TestExportedPagesKeepRepositorySwitchingInContext(t *testing.T) {
+	annotations := annotatedRepository(t)
+	out := t.TempDir()
+	repositories := []repositoryLink{
+		{Name: "koment", Href: "index.html", Current: true},
+		{Name: "workspace", Href: "r/workspace/index.html"},
+	}
+	if _, err := export(annotations, out, "koment", &snapshot{Commit: "abc1234"}, repositories); err != nil {
+		t.Fatal(err)
+	}
+
+	index := read(t, filepath.Join(out, "index.html"))
+	if !strings.Contains(index, `value="r/workspace/index.html"`) ||
+		!strings.Contains(index, `value="index.html" selected`) {
+		t.Errorf("root page has no contextual switcher:\n%s", firstLines(index, 45))
+	}
+	file := read(t, filepath.Join(out, "f", "main.go.html"))
+	if !strings.Contains(file, `value="../r/workspace/index.html"`) {
+		t.Errorf("file page does not preserve the switch target:\n%s", firstLines(file, 45))
+	}
+}
+
+func TestRepositoryLinkConfigurationRequiresTheCurrentRepository(t *testing.T) {
+	for _, specification := range []string{"one=index.html", "koment,workspace=other", "other=a,workspace=b"} {
+		if _, err := parseRepositoryLinks(specification, "koment"); err == nil {
+			t.Errorf("%q should be rejected", specification)
+		}
+	}
+}
+
 // A published page is a snapshot, and a snapshot that does not name its commit
 // is how a stale rendering passes for a current one (ADR 0026).
 func TestEveryPublishedPageNamesItsCommit(t *testing.T) {
@@ -177,7 +207,7 @@ func TestASiteRenderedFromAModifiedTreeSaysSo(t *testing.T) {
 func TestExportRendersTheSameContentAsTheServer(t *testing.T) {
 	annotations := annotatedRepository(t)
 	out := t.TempDir()
-	if _, err := export(annotations, out, "fixture", &snapshot{Commit: "abc1234"}); err != nil {
+	if _, err := export(annotations, out, "fixture", &snapshot{Commit: "abc1234"}, nil); err != nil {
 		t.Fatal(err)
 	}
 

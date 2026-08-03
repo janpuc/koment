@@ -46,6 +46,10 @@ shown as such everywhere; no surface may silently turn uncertainty into fact.
 11. **Comment intent meets users where they are.** Writing ordinary explanatory
     commentary should create a koment annotation. Keeping it inline requires an
     attributable, reviewable acknowledgement.
+12. **Agent obedience is not the boundary.** Repository instructions, MCP
+    guidance and client hooks make the correct workflow immediate, while a
+    required policy check decides what may land regardless of which agent made
+    the edit.
 
 ## Implementation status
 
@@ -53,18 +57,20 @@ This table is the honest boundary between the current v0.2 code and the target.
 
 | Capability | Current state | Target state |
 |---|---|---|
-| Git-backed annotations | implemented as record lists mirrored per source file | one record per annotation |
-| Deterministic excerpts | implemented | context disambiguation and explicit `ambiguous` failure |
+| Git-backed annotations | one record per annotation implemented | implemented |
+| Deterministic excerpts | context disambiguation and explicit `ambiguous` failure implemented | implemented |
 | CLI read and write | implemented | rebuilt on the common application service |
 | Local human UI | read-only | read and explicit loopback write mode |
 | Local agent MCP | read-only | read and explicit stdio write mode |
-| Static publishing | partial | atomic commit snapshot with body search and JSON |
+| Static publishing | direct default repository and contextual switching implemented | atomic commit snapshot with body search and JSON |
 | Multi-repository routing | partial | assigned identity plus synchronized commit snapshots |
 | HTTP serving | separate unauthenticated UI or MCP | one authenticated human-and-agent service |
-| Database index | prototype, not used by servers | new Postgres read model for served snapshots only |
+| Database index | local prototype removed | new Postgres read model for served snapshots only |
 | Remote authoring | design only | authenticated exact outbox materialized through Git |
+| Agent policy | hand-written setup guidance | one strict policy, generated client adapters and an authoritative CI gate |
 | Operational toolchain | mise, Lefthook, Renovate and security gates implemented | implemented |
 | Helm and release | baseline exists | konflate-aligned tests, hardening and signatures |
+| Maintained workspace | builds, tests, publishes and carries current annotations | implemented |
 
 ## Annotation record
 
@@ -220,7 +226,7 @@ The tiers share records and presentation, not false capability parity.
 | Tier | Source | Human read | Agent read | Write | Repository scope |
 |---|---|---|---|---|---|
 | local | current working tree | CLI and UI | stdio MCP | direct Git records | one or configured local set |
-| published | one commit snapshot | static UI | static JSON/search data | none | one repository per site |
+| published | commit snapshots | static UI | static JSON/search data | none | one repository or a configured set |
 | served | transactional snapshots | authenticated UI | authenticated MCP | authenticated outbox | many assigned repositories |
 
 ### Local
@@ -265,9 +271,16 @@ record plus its repository-relative YAML path.
 replacement. Rebuilding cannot leave pages from a previous snapshot.
 
 The output contains the human UI, annotation-body search data and an
-`annotations.json` machine-readable snapshot. Every page names the repository
-and commit. Static output is read-only by nature; it may link to a configured
-writer but never presents an inert write control.
+`annotations.json` machine-readable snapshot for each repository. Every page
+names the active repository and its commit. A publication can contain one
+repository or a configured set of independently stamped repository snapshots.
+Its root opens the configured default repository immediately; it never blocks
+on a repository-selection landing page. A persistent repository switcher in
+the normal application header changes context after the reader is already in
+the product.
+
+Static output is read-only by nature; it may link to a configured writer but
+never presents an inert write control.
 
 ### Served
 
@@ -303,6 +316,7 @@ repositories:
     name: Payments API
     clone_url: https://github.com/example/payments
     default_branch: main
+    default: true
 ```
 
 An ingester synchronizes each repository outside the request path:
@@ -321,7 +335,16 @@ actually stateless.
 Search, URLs, metrics, outbox rows and database keys all carry the assigned
 repository id. Cross-repository search names the repository of every result.
 When a file path exists in several repositories, an unscoped get refuses and
-names the candidates. ADR 0104 records the multi-repository decision.
+names the candidates.
+
+One repository in a configured set is the default. The human UI opens it as an
+ordinary repository view and keeps the active repository in a persistent
+header switcher; repository discovery is never a separate first-use page.
+Direct links retain repository context. Local agents derive the active
+repository from their workspace, served agents derive it from their scoped
+session, and only cross-repository operations require an explicit repository
+id. `koment_repositories` remains available for discovery but is not a startup
+gate. ADR 0104 records the multi-repository decision.
 
 ## Remote authoring and Git settlement
 
@@ -392,6 +415,20 @@ installs the chart into Kind and runs `helm test` against the built image.
 Images and charts are digest-addressable and signed. Binary checksums are
 authenticated rather than downloaded unsigned beside the binary they verify.
 
+## Maintained workspace
+
+The product carries a small, real repository workspace that builds, tests and
+contains current annotations. It is a supported way to evaluate local CLI,
+MCP, publishing and multi-repository behavior, not a gallery of intentionally
+broken statuses and not a separate demo product.
+
+Drifted, orphaned and ambiguous examples belong in deterministic testdata with
+explicit before and after source pairs. Published project content never serves
+known-stale rationale as though it were a maintained repository. The default
+published route opens koment itself, and the maintained workspace is available
+through the same contextual repository switcher as any other assigned
+repository.
+
 ## Comment-free dogfooding
 
 Before adding a comment, contributors rename, extract, introduce a named type or
@@ -433,6 +470,52 @@ repository policy rather than waived ad hoc. Conversion writes the annotation
 first and removes source prose second, so interruption may leave duplicate
 rationale but cannot silently discard it.
 
+## Agent contract and enforcement
+
+A koment-enabled repository carries `.koment/policy.yaml`. Its format version
+is 1 and it selects strict comment handling, intrinsic comment classes,
+generated and vendored paths, and the agent adapters the repository supports.
+This is the one machine-readable policy consumed by local checks, hooks and CI.
+It cannot grant an ordinary source comment a path-wide exemption.
+
+`koment agents install` makes that policy discoverable without asking every
+contributor to copy prose from documentation. It installs or refreshes a
+managed koment contract in root `AGENTS.md` and thin repository-owned adapters
+for supported clients, including Copilot repository instructions, an
+always-applied Cursor rule and client hooks where a trusted client exposes
+them. Existing project-specific instructions outside the managed contract are
+preserved. `koment agents check` fails if an installed adapter has drifted from
+the policy or omits a mandatory rule.
+
+Every adapter expresses the same strict contract:
+
+1. Read `koment_get(file)` before editing an existing file and use
+   `koment_search(query)` before changing a non-obvious decision.
+2. Treat drifted, orphaned and ambiguous annotations as history, never current
+   truth.
+3. Do not add explanatory inline comments. Rename, extract, introduce a named
+   type or constant, restructure, then use `koment_add`.
+4. Convert completed comment intent through `koment_convert_comment`. Retain it
+   only through `koment_acknowledge_comment` with the explicit acknowledgement
+   and agent authorship.
+5. Run `koment comments check` and `koment check` before completing work.
+
+MCP initialization repeats the contract and exposes mutation tools in explicit
+write mode, so an agent sees the procedure in the same session as the tools.
+Where a client supports trusted repository hooks, a pre-write hook rejects
+obvious newly added comments and a completion hook runs both checks and asks
+the agent to continue until they pass. These hooks provide early feedback; they
+are not a security boundary because clients can disable instructions, decline
+repository trust or write through an unhooked tool.
+
+The required `koment comments check` CI status is authoritative. It parses
+supported languages, accepts only intrinsic comments or exact attributable
+acknowledgements, and reports the command or MCP mutation that resolves each
+failure. Branch protection makes an agent-produced prohibited comment unable
+to land even when the agent ignored every instruction. An organization may add
+managed client policy for stronger workstation enforcement, but koment does
+not claim that repository files can control an arbitrary process.
+
 ## Implementation sequence
 
 ### 1. Operational floor — implemented
@@ -441,11 +524,12 @@ The pinned konflate-style toolchain, local hooks, Renovate baseline, workflow
 audit, vulnerability scan and aggregate CI status are in place. The existing
 race suite remains mandatory.
 
-### 2. Record and anchor reset
+### 2. Record and anchor reset — implemented
 
-Implement one-record-per-annotation storage, migrate this repository's records,
-publish and wire the strict record schema, add ambiguity and context resolution,
-enforce rooted filesystem access and remove the current index/export subsystem.
+One-record-per-annotation storage, migrated records, the strict record schema,
+contextual ambiguity resolution, rooted filesystem access, maintained workspace
+content and removal of the local index/export subsystem are implemented and
+verified together.
 
 ### 3. Shared reads and local writes
 
@@ -453,11 +537,14 @@ Introduce the snapshot and application services, move every reader to them,
 surface provenance consistently, add local UI and MCP writes, and rebuild static
 publishing and search. Add the shared comment-intent classifier, conversion,
 explicit acknowledgement and policy check before editor-specific integration.
+Add the version-1 repository policy, managed agent adapters, MCP initialization
+instructions and adapter drift checks in the same stage so strict instructions
+never advertise unavailable mutation tools.
 
 ### 4. Served multi-repository system
 
 Add the unified server, authentication, Postgres generations, repository
-ingestion, exact outbox and GitHub materializer.
+ingestion, contextual repository switcher, exact outbox and GitHub materializer.
 
 ### 5. Deployment and release
 
@@ -531,6 +618,12 @@ vNext is complete when:
 11. Typing an explanatory comment in the reference VS Code integration converts
     it to an attributed annotation, while an inline exception cannot pass CI
     without an exact, explicit acknowledgement record.
+12. A fresh agent session in every supported client receives the same strict
+    contract, can perform its required mutations and cannot land a prohibited
+    comment when it ignores that contract.
+13. Published and served multi-repository views open a useful default
+    repository directly and switch repositories without a selector landing
+    page.
 
 ## Non-goals
 
@@ -543,6 +636,8 @@ vNext is complete when:
 - A full forge abstraction before the GitHub implementation proves the
   interface.
 - An IDE plugin before the local and served application services are stable.
+- Filesystem interception or an operating-system sandbox that claims to stop
+  every process from writing comment bytes.
 
 ## Prior art
 

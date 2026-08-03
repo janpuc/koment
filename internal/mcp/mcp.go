@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"strings"
 	"time"
 
@@ -61,11 +60,15 @@ func forGet(repositories *repository.Set, named, file string) (repository.Reposi
 	var candidates []repository.Repository
 	for _, candidate := range repositories.All() {
 		annotations := candidate.Store()
-		path, err := annotations.FromRoot(file)
+		candidateFile, err := annotations.FromRoot(file)
 		if err != nil {
 			continue
 		}
-		if _, err := annotations.Load(path); err == nil {
+		found, err := annotations.ForFile(candidateFile)
+		if err != nil {
+			return repository.Repository{}, err
+		}
+		if len(found) > 0 {
 			candidates = append(candidates, candidate)
 		}
 	}
@@ -196,9 +199,6 @@ func get(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHandle
 		}
 
 		resolutions, err := anchor.ResolveStored(annotations, file)
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, GetOutput{File: file, Repository: chosen.ID, Annotations: []Annotation{}}, nil
-		}
 		if err != nil {
 			return nil, GetOutput{}, err
 		}
@@ -274,8 +274,8 @@ func describe(repositoryID, file string, resolution anchor.Resolution) Annotatio
 		ID:         resolution.Annotation.ID,
 		Kind:       string(resolution.Annotation.Kind),
 		Body:       resolution.Annotation.Body,
-		Scope:      string(resolution.Annotation.Scope),
-		Excerpt:    resolution.Annotation.Excerpt,
+		Scope:      string(resolution.Annotation.Anchor.Scope),
+		Excerpt:    resolution.Annotation.Anchor.Excerpt,
 		Line:       resolution.Line,
 		Created:    resolution.Annotation.Created.Format("2006-01-02"),
 		Status:     string(resolution.Status),
@@ -285,6 +285,9 @@ func describe(repositoryID, file string, resolution anchor.Resolution) Annotatio
 
 func warningFor(status anchor.Status) string {
 	switch status {
+	case anchor.StatusAmbiguous:
+		return "STALE: the excerpt matches several places and its context does not identify one. " +
+			"Treat it as history until someone explicitly reanchors it."
 	case anchor.StatusDrifted:
 		return "STALE: the annotated code has changed and nobody revisited this note. " +
 			"Treat it as history, not as a description of the code as it stands. Do not act on it without checking."
