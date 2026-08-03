@@ -89,6 +89,32 @@ Or run the viewer against a checkout with the container:
 docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
 ```
 
+## Several repositories
+
+One deployment serves many. Identity is assigned, so a repository that moves
+keeps its annotations and its index (ADR 0024):
+
+```yaml
+# KOMENT_CONFIG=/etc/koment.yaml
+repositories:
+  - id: payments          # assigned once; never derived from the path
+    name: Payments API
+    root: /repos/payments
+    clone_url: https://github.com/you/payments
+    default_branch: main
+  - id: web
+    root: /repos/web
+```
+
+Or, for a container with a couple of mounts and nothing else to say:
+
+```bash
+KOMENT_REPOS=payments=/repos/payments,web=/repos/web
+```
+
+A single repository needs none of this — koment finds it by walking up from the
+working directory, exactly as before.
+
 ## Kubernetes
 
 koment publishes an **OCI** Helm chart to `oci://ghcr.io/janpuc/charts/koment`:
@@ -117,7 +143,9 @@ wins.
 
 | | |
 |---|---|
-| `KOMENT_REPO` | repository to serve; defaults to the working directory |
+| `KOMENT_REPO` | one repository; defaults to the working directory |
+| `KOMENT_REPOS` | several: `api=/repos/api,web=/repos/web` |
+| `KOMENT_CONFIG` | a YAML registry, for per-repository settings |
 | `KOMENT_LISTEN` | address for `koment ui` |
 | `KOMENT_HTTP` | address for `koment mcp --http` |
 | `KOMENT_STREAMABLE_HTTP` | address for `koment mcp --streamable-http` |
@@ -138,9 +166,16 @@ annotations.
 koment mcp        # stdio; also --http / --streamable-http for remote agents
 ```
 
-Two tools: `koment_get(file)` for the file an agent is about to edit, and
-`koment_search(query)` to find reasoning by topic. Every annotation arrives with
-its resolution status, so a stale one is never presented as current.
+Three tools:
+
+- **`koment_get(file, repository?)`** — annotations for the file an agent is about to edit
+- **`koment_search(query, repository?)`** — find reasoning by topic; omitting `repository` searches all of them
+- **`koment_repositories()`** — what this deployment serves, with counts
+
+Every annotation arrives with its resolution status *and* its repository, so a
+stale one is never presented as current and a result is never detached from its
+scope. When a path exists in several repositories `koment_get` **refuses and
+names the candidates** rather than guessing (ADR 0025).
 
 | | | |
 |---|---|---|

@@ -177,8 +177,12 @@ koment mcp --http 8765                # HTTP, JSON responses
 koment mcp --streamable-http 8765     # HTTP, server-sent events
 ```
 
-Exposes `koment_get(file)` and `koment_search(query)`. stdio is what you want
-unless the agent cannot spawn a subprocess.
+Exposes `koment_get(file, repository?)`, `koment_search(query, repository?)` and
+`koment_repositories()`. stdio is what you want unless the agent cannot spawn a
+subprocess.
+
+With several repositories configured, an ambiguous `koment_get` fails and names
+the candidates instead of picking one.
 
 ---
 

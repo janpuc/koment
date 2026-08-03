@@ -16,7 +16,7 @@ const source = "package main\n\nfunc main() {\n\tserve()\n}\n"
 
 const rationale = "serve must be the last call: it blocks until the process is signalled."
 
-func repository(t *testing.T) *store.Store {
+func annotatedRepository(t *testing.T) *store.Store {
 	t.Helper()
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, store.DirName), 0o755); err != nil {
@@ -56,7 +56,7 @@ func get(t *testing.T, annotations *store.Store, target string) (int, string) {
 }
 
 func TestIndexRendersCodeAndItsAnnotationTogether(t *testing.T) {
-	code, body := get(t, repository(t), "/")
+	code, body := get(t, annotatedRepository(t), "/")
 	if code != http.StatusOK {
 		t.Fatalf("want 200, got %d", code)
 	}
@@ -72,7 +72,7 @@ func TestIndexRendersCodeAndItsAnnotationTogether(t *testing.T) {
 }
 
 func TestAnnotationIsAnchoredToItsLine(t *testing.T) {
-	_, body := get(t, repository(t), "/f/main.go")
+	_, body := get(t, annotatedRepository(t), "/f/main.go")
 
 	marked := strings.Index(body, `class="row marked`)
 	if marked < 0 {
@@ -88,7 +88,7 @@ func TestAnnotationIsAnchoredToItsLine(t *testing.T) {
 }
 
 func TestDriftIsRenderedAsHistoryNotAsCurrentCode(t *testing.T) {
-	annotations := repository(t)
+	annotations := annotatedRepository(t)
 	edited := strings.Replace(source, "\tserve()", "\tserveForever()", 1)
 	if err := os.WriteFile(filepath.Join(annotations.Root(), "main.go"), []byte(edited), 0o644); err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestDriftIsRenderedAsHistoryNotAsCurrentCode(t *testing.T) {
 }
 
 func TestOrphanedFileStillShowsItsAnnotations(t *testing.T) {
-	annotations := repository(t)
+	annotations := annotatedRepository(t)
 	if err := os.Remove(filepath.Join(annotations.Root(), "main.go")); err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestOrphanedFileStillShowsItsAnnotations(t *testing.T) {
 }
 
 func TestCodeIsEscapedRatherThanInterpreted(t *testing.T) {
-	annotations := repository(t)
+	annotations := annotatedRepository(t)
 	hostile := "package main\n\nfunc main() {\n\tserve() // <script>alert(1)</script>\n}\n"
 	if err := os.WriteFile(filepath.Join(annotations.Root(), "main.go"), []byte(hostile), 0o644); err != nil {
 		t.Fatal(err)
@@ -151,7 +151,7 @@ func TestCodeIsEscapedRatherThanInterpreted(t *testing.T) {
 }
 
 func TestUnannotatedFileSaysSoRatherThan404(t *testing.T) {
-	code, body := get(t, repository(t), "/f/never/touched.go")
+	code, body := get(t, annotatedRepository(t), "/f/never/touched.go")
 	if code != http.StatusOK {
 		t.Fatalf("want 200, got %d", code)
 	}
@@ -176,7 +176,7 @@ func TestEmptyRepositoryExplainsHowToStart(t *testing.T) {
 }
 
 func TestStylesheetIsServedFromTheBinary(t *testing.T) {
-	code, body := get(t, repository(t), "/assets/style.css")
+	code, body := get(t, annotatedRepository(t), "/assets/style.css")
 	if code != http.StatusOK {
 		t.Fatalf("want 200, got %d", code)
 	}
@@ -186,7 +186,7 @@ func TestStylesheetIsServedFromTheBinary(t *testing.T) {
 }
 
 func TestEveryStatusHasAColour(t *testing.T) {
-	_, css := get(t, repository(t), "/assets/style.css")
+	_, css := get(t, annotatedRepository(t), "/assets/style.css")
 	for _, status := range []string{"ok", "moved", "drifted", "orphaned"} {
 		if !strings.Contains(css, ".dot."+status) || !strings.Contains(css, ".pill."+status) {
 			t.Errorf("status %q has no visual treatment", status)

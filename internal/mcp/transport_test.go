@@ -15,9 +15,10 @@ import (
 func serveOverHTTP(t *testing.T, jsonResponses bool) *httptest.Server {
 	t.Helper()
 	annotations := repositoryWithOneAnnotation(t)
+	repositories := onlyRepository(t, annotations)
 
 	handler := sdk.NewStreamableHTTPHandler(
-		func(*http.Request) *sdk.Server { return newServer(annotations, metrics.Discard{}) },
+		func(*http.Request) *sdk.Server { return newServer(repositories, metrics.Discard{}) },
 		&sdk.StreamableHTTPOptions{JSONResponse: jsonResponses},
 	)
 	server := httptest.NewServer(handler)

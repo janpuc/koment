@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/janpuc/koment/internal/metrics"
+	"github.com/janpuc/koment/internal/repository"
 
 	"github.com/janpuc/koment/internal/anchor"
 	"github.com/janpuc/koment/internal/store"
@@ -51,12 +53,29 @@ func repositoryWithOneAnnotation(t *testing.T) *store.Store {
 	return annotations
 }
 
+// onlyRepository wraps a single store as a registry, exercising the same
+// discovery path a laptop uses.
+func onlyRepository(t *testing.T, annotations *store.Store) *repository.Set {
+	t.Helper()
+	t.Setenv(repository.EnvRepo, annotations.Root())
+	set, err := repository.Load(annotations.Root())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return set
+}
+
 func connect(t *testing.T, annotations *store.Store) *sdk.ClientSession {
+	t.Helper()
+	return connectTo(t, onlyRepository(t, annotations))
+}
+
+func connectTo(t *testing.T, repositories *repository.Set) *sdk.ClientSession {
 	t.Helper()
 	ctx := context.Background()
 	serverTransport, clientTransport := sdk.NewInMemoryTransports()
 
-	serverSession, err := newServer(annotations, metrics.Discard{}).Connect(ctx, serverTransport, nil)
+	serverSession, err := newServer(repositories, metrics.Discard{}).Connect(ctx, serverTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,9 +133,11 @@ func TestServerExposesExactlyTheTwoAgreedTools(t *testing.T) {
 	for _, tool := range tools.Tools {
 		names = append(names, tool.Name)
 	}
-	want := []string{"koment_get", "koment_search"}
+	// ADR 0025 amended ADR 0005 from two tools to three, and no further.
+	want := []string{"koment_get", "koment_repositories", "koment_search"}
+	sort.Strings(names)
 	if strings.Join(names, ",") != strings.Join(want, ",") {
-		t.Errorf("ADR 0005 fixes the surface at %v, got %v", want, names)
+		t.Errorf("the surface is fixed at %v, got %v", want, names)
 	}
 }
 

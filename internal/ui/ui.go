@@ -13,11 +13,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/listen"
 	"github.com/janpuc/koment/internal/metrics"
+	"github.com/janpuc/koment/internal/repository"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -52,6 +54,7 @@ func Serve(args []string, stderr io.Writer) error {
 
 	address := flags.String("listen", defaultAddress, "address to serve on; a bare port is bound on loopback")
 	metricsAddress := flags.String("metrics", "", "serve Prometheus metrics on this separate address; off unless given")
+	named := flags.String("repository", "", "which repository to serve; required when several are configured")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -62,7 +65,7 @@ func Serve(args []string, stderr io.Writer) error {
 		return fmt.Errorf("ui takes no arguments, got %s", flags.Arg(0))
 	}
 
-	root, err := repositoryRoot()
+	chosen, err := chooseRepository(*named)
 	if err != nil {
 		return err
 	}
@@ -79,7 +82,7 @@ func Serve(args []string, stderr io.Writer) error {
 	}
 	fmt.Fprintf(stderr, "koment: http://%s\n", listener.Addr())
 
-	annotations := store.Open(root)
+	annotations := chosen.Store()
 	ctx := context.Background()
 	recorder := startMetrics(ctx, annotations, *metricsAddress, stderr)
 
@@ -88,17 +91,33 @@ func Serve(args []string, stderr io.Writer) error {
 
 // startMetrics returns a no-op recorder unless an address was given, so the
 // default posture exposes nothing new (ADR 0020).
-// repositoryRoot prefers KOMENT_REPO, because in a container the working
-// directory is a mount point rather than somewhere a person navigated to.
-func repositoryRoot() (string, error) {
-	if root, ok := config.Root(); ok {
-		return store.FindRoot(root)
-	}
+// chooseRepository resolves which repository to serve. With several configured
+// it refuses and lists them rather than picking one, matching koment_get's rule
+// (ADR 0025). The UI serving all of them at once is PR 2's job.
+func chooseRepository(named string) (repository.Repository, error) {
 	workingDirectory, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("finding the working directory: %w", err)
+		return repository.Repository{}, fmt.Errorf("finding the working directory: %w", err)
 	}
-	return store.FindRoot(workingDirectory)
+	repositories, err := repository.Load(workingDirectory)
+	if err != nil {
+		return repository.Repository{}, err
+	}
+
+	if named != "" {
+		chosen, found := repositories.Resolve(named)
+		if !found {
+			return repository.Repository{}, fmt.Errorf("no repository %q; configured: %s",
+				named, strings.Join(repositories.IDs(), ", "))
+		}
+		return chosen, nil
+	}
+	if only, single := repositories.Only(); single {
+		return only, nil
+	}
+	return repository.Repository{}, fmt.Errorf(
+		"%d repositories are configured (%s); pass --repository to choose one",
+		repositories.Len(), strings.Join(repositories.IDs(), ", "))
 }
 
 func startMetrics(ctx context.Context, annotations *store.Store, address string, stderr io.Writer) metrics.Recorder {

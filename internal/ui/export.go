@@ -39,7 +39,8 @@ func Site(args []string, stderr io.Writer) error {
 	}
 
 	out := flags.String("out", "", "directory to write into")
-	name := flags.String("name", "", "repository name shown on every page; defaults to the directory name")
+	name := flags.String("name", "", "repository name shown on every page; defaults to the repository's own name")
+	named := flags.String("repository", "", "which repository to render; required when several are configured")
 	banner := flags.String("banner", "", "notice shown on every page, naming the snapshot")
 	bannerHref := flags.String("banner-link", "", "URL shown beside the banner")
 	if err := flags.Parse(args); err != nil {
@@ -52,24 +53,21 @@ func Site(args []string, stderr io.Writer) error {
 		return fmt.Errorf("site needs --out")
 	}
 
-	root, err := repositoryRoot()
+	chosen, err := chooseRepository(*named)
 	if err != nil {
 		return err
 	}
 
-	written, err := export(store.Open(root), *out, *banner, *bannerHref, repositoryName(*name, root))
+	label := *name
+	if label == "" {
+		label = chosen.Display()
+	}
+	written, err := export(chosen.Store(), *out, *banner, *bannerHref, label)
 	if err != nil {
 		return err
 	}
 	fmt.Fprintf(stderr, "koment: wrote %d pages to %s\n", written, *out)
 	return nil
-}
-
-func repositoryName(given, root string) string {
-	if given != "" {
-		return given
-	}
-	return filepath.Base(root)
 }
 
 func export(annotations *store.Store, out, banner, bannerHref, name string) (int, error) {
