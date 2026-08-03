@@ -98,6 +98,17 @@ linters:
         linters:
           - gosec
 
+      # G703 traces a URL path into os.ReadFile and cannot see through
+      # store.SourcePath, which cleans the path and refuses anything absolute
+      # or escaping the repository root before joining it. Serving a file the
+      # reader named is the whole job, so a variable path is not the defect.
+      # TestAServedPathCannotEscapeTheRepository enforces this rather than
+      # leaving it as a claim in this comment.
+      - path: internal/ui/
+        text: "G703"
+        linters:
+          - gosec
+
 formatters:
   enable:
     - gofmt

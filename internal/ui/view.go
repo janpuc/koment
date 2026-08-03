@@ -2,8 +2,6 @@ package ui
 
 import (
 	"os"
-	"path"
-	"sort"
 	"strings"
 
 	"github.com/janpuc/koment/internal/anchor"
@@ -11,21 +9,23 @@ import (
 )
 
 type view struct {
-	Total      int
-	Tally      []tallyEntry
-	Groups     []group
-	Current    string
-	File       *fileView
-	Empty      bool
-	NotFound   bool
-	Stylesheet string
-	Repository string
-	Snapshot   *snapshot
+	Total        int
+	Tally        []tallyEntry
+	Tree         []node
+	Loose        []entry
+	Repositories []repositoryLink
+	Repository   string
+	Current      string
+	File         *fileView
+	Empty        bool
+	NotFound     bool
+	Home         string
+	Stylesheet   string
+	Script       string
+	Snapshot     *snapshot
 }
 
-// snapshot is set only on a published page, and its presence is what makes the
-// page admit to being one. The served UI re-reads the tree per request and so
-// has nothing to confess (ADR 0026).
+// snapshot is set only on a published page.
 type snapshot struct {
 	Commit     string
 	CommitURL  string
@@ -33,26 +33,34 @@ type snapshot struct {
 	BannerHref string
 }
 
-type links struct {
-	file       func(target string) string
-	stylesheet string
+// repositoryLink is one entry in the switcher.
+type repositoryLink struct {
+	ID      string
+	Name    string
+	Href    string
+	Current bool
 }
 
-func servedLinks() links {
+type links struct {
+	file       func(target string) string
+	home       string
+	stylesheet string
+	script     string
+}
+
+func servedLinks(repositoryID string) links {
+	base := repositoryPrefix + repositoryID + "/"
 	return links{
-		file:       func(target string) string { return filePrefix + target },
+		file:       func(target string) string { return base + "f/" + target },
+		home:       base,
 		stylesheet: "/assets/style.css",
+		script:     "/assets/koment.js",
 	}
 }
 
 type tallyEntry struct {
 	Status anchor.Status
 	Count  int
-}
-
-type group struct {
-	Dir   string
-	Files []entry
 }
 
 type entry struct {
@@ -67,6 +75,7 @@ type entry struct {
 type fileView struct {
 	Path     string
 	Lines    []line
+	Notes    []note
 	Detached []note
 	Missing  bool
 }
@@ -74,26 +83,19 @@ type fileView struct {
 type line struct {
 	Number int
 	Text   string
-	Notes  []note
+	Marker anchor.Status
 }
 
 type note struct {
 	ID      string
 	Kind    string
 	Status  anchor.Status
+	Line    int
 	Body    []string
 	Created string
 	Excerpt string
 	Stale   bool
 	Warning string
-}
-
-// severity orders statuses so a file can advertise its worst one.
-var severity = map[anchor.Status]int{
-	anchor.StatusOK:       0,
-	anchor.StatusMoved:    1,
-	anchor.StatusDrifted:  2,
-	anchor.StatusOrphaned: 3,
 }
 
 var statusOrder = []anchor.Status{
@@ -106,7 +108,7 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		return nil, err
 	}
 	if len(files) == 0 {
-		return &view{Empty: true, Stylesheet: how.stylesheet}, nil
+		return &view{Empty: true, Stylesheet: how.stylesheet, Script: how.script, Home: how.home}, nil
 	}
 
 	current := requested
@@ -114,9 +116,14 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		current = files[0]
 	}
 
-	built := &view{Current: current, Stylesheet: how.stylesheet}
+	built := &view{
+		Current:    current,
+		Home:       how.home,
+		Stylesheet: how.stylesheet,
+		Script:     how.script,
+	}
 	counts := map[anchor.Status]int{}
-	byDirectory := map[string][]entry{}
+	listed := make([]entry, 0, len(files))
 
 	for _, file := range files {
 		resolutions, err := anchor.ResolveStored(annotations, file)
@@ -133,10 +140,9 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 			}
 		}
 
-		directory := path.Dir(file)
-		byDirectory[directory] = append(byDirectory[directory], entry{
+		listed = append(listed, entry{
 			Path:    file,
-			Name:    path.Base(file),
+			Name:    baseName(file),
 			Href:    how.file(file),
 			Count:   len(resolutions),
 			Worst:   worst,
@@ -154,8 +160,15 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		built.NotFound = true
 	}
 	built.Tally = tallyOf(counts)
-	built.Groups = groupsOf(byDirectory)
+	built.Tree, built.Loose = treeOf(listed, current)
 	return built, nil
+}
+
+func baseName(file string) string {
+	if cut := strings.LastIndex(file, "/"); cut >= 0 {
+		return file[cut+1:]
+	}
+	return file
 }
 
 func tallyOf(counts map[anchor.Status]int) []tallyEntry {
@@ -168,22 +181,8 @@ func tallyOf(counts map[anchor.Status]int) []tallyEntry {
 	return tally
 }
 
-func groupsOf(byDirectory map[string][]entry) []group {
-	directories := make([]string, 0, len(byDirectory))
-	for directory := range byDirectory {
-		directories = append(directories, directory)
-	}
-	sort.Strings(directories)
-
-	groups := make([]group, 0, len(directories))
-	for _, directory := range directories {
-		files := byDirectory[directory]
-		sort.Slice(files, func(i, j int) bool { return files[i].Name < files[j].Name })
-		groups = append(groups, group{Dir: directory, Files: files})
-	}
-	return groups
-}
-
+// buildFile renders the source as uniform lines and the notes separately, each
+// carrying the line it belongs to.
 func buildFile(annotations *store.Store, file string, resolutions []anchor.Resolution) (*fileView, error) {
 	built := &fileView{Path: file}
 
@@ -203,19 +202,23 @@ func buildFile(annotations *store.Store, file string, resolutions []anchor.Resol
 		return nil, err
 	}
 
-	anchored := map[int][]note{}
+	marked := map[int]anchor.Status{}
 	for _, resolution := range resolutions {
 		described := describe(resolution)
 		if resolution.Line == 0 {
 			built.Detached = append(built.Detached, described)
 			continue
 		}
-		anchored[resolution.Line] = append(anchored[resolution.Line], described)
+		built.Notes = append(built.Notes, described)
+		worst, seen := marked[resolution.Line]
+		if !seen || severity[resolution.Status] > severity[worst] {
+			marked[resolution.Line] = resolution.Status
+		}
 	}
 
 	for i, text := range strings.Split(strings.TrimSuffix(string(content), "\n"), "\n") {
 		number := i + 1
-		built.Lines = append(built.Lines, line{Number: number, Text: text, Notes: anchored[number]})
+		built.Lines = append(built.Lines, line{Number: number, Text: text, Marker: marked[number]})
 	}
 	return built, nil
 }
@@ -228,6 +231,7 @@ func describe(resolution anchor.Resolution) note {
 		ID:      resolution.Annotation.ID,
 		Kind:    string(resolution.Annotation.Kind),
 		Status:  resolution.Status,
+		Line:    resolution.Line,
 		Body:    store.Paragraphs(resolution.Annotation.Body),
 		Created: resolution.Annotation.Created.Format("2006-01-02"),
 		Excerpt: resolution.Annotation.Excerpt,

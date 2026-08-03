@@ -167,6 +167,10 @@ func (s *Set) add(entry Repository) error {
 	return nil
 }
 
+// Of narrows a set to one repository, which is how --repository restricts what
+// a server exposes without changing how anything downstream is written.
+func Of(only Repository) *Set { return &Set{repositories: []Repository{only}} }
+
 func (s *Set) All() []Repository {
 	ordered := append([]Repository(nil), s.repositories...)
 	sort.Slice(ordered, func(i, j int) bool { return ordered[i].ID < ordered[j].ID })

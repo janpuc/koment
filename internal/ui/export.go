@@ -18,6 +18,7 @@ const (
 	exportedSuffix = ".html"
 	indexPage      = "index.html"
 	stylesheetName = "style.css"
+	scriptName     = "koment.js"
 )
 
 const exportUsage = `koment site renders one repository to static HTML.
@@ -62,9 +63,14 @@ func Site(args []string, stderr io.Writer) error {
 		return fmt.Errorf("site needs --out")
 	}
 
-	chosen, err := chooseRepository(*named)
+	repositories, err := serveable(*named)
 	if err != nil {
 		return err
+	}
+	chosen, single := repositories.Only()
+	if !single {
+		return fmt.Errorf("%d repositories are configured (%s); a site renders one, so pass --repository",
+			repositories.Len(), strings.Join(repositories.IDs(), ", "))
 	}
 
 	taken := &snapshot{
@@ -113,12 +119,14 @@ func export(annotations *store.Store, out, name string, taken *snapshot) (int, e
 	}
 	templates := template.Must(template.ParseFS(assets, "assets/*.html"))
 
-	stylesheet, err := assets.ReadFile("assets/" + stylesheetName)
-	if err != nil {
-		return 0, err
-	}
-	if err := writeFile(filepath.Join(out, stylesheetName), stylesheet); err != nil {
-		return 0, err
+	for _, asset := range []string{stylesheetName, scriptName} {
+		content, err := assets.ReadFile("assets/" + asset)
+		if err != nil {
+			return 0, err
+		}
+		if err := writeFile(filepath.Join(out, asset), content); err != nil {
+			return 0, err
+		}
 	}
 
 	pages := map[string]string{indexPage: ""}
@@ -144,7 +152,9 @@ func exportedLinks(page string) links {
 	up := strings.Repeat("../", strings.Count(page, "/"))
 	return links{
 		file:       func(target string) string { return up + "f/" + target + exportedSuffix },
+		home:       up + indexPage,
 		stylesheet: up + stylesheetName,
+		script:     up + scriptName,
 	}
 }
 

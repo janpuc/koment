@@ -1,0 +1,41 @@
+version: 1
+file: internal/ui/tree.go
+annotations:
+  - id: 01KZ2Z605JQJECK7WHMX7E750H
+    scope: excerpt
+    excerpt: "\tfor len(at.Files) == 0 && len(at.Dirs) == 1 {"
+    excerpt_sha256: 9a94d338a6958562304e3e60a9812a50b285df6b441237538f2861141eab626e
+    last_seen_line: 77
+    kind: why
+    body: |-
+      A directory whose only content is one more directory is scaffolding, not
+      structure. Rendering each as its own row spends the rail's width on names
+      nobody navigates by: a Go layout came out as four rows to reach one file.
+      Folding the chain gives one row reading internal/ui/assets.
+
+      The loop stops as soon as a directory has files of its own, because at that
+      point the directory is a real place a reader might want to collapse
+      independently of its child.
+    created: "2026-08-03"
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: agent
+      source: git-config
+  - id: 01KZ2Z60KXQ5Y1CDA9H7DQYX5W
+    scope: excerpt
+    excerpt: "\treturn root.Dirs, root.Files"
+    excerpt_sha256: eba5df3308c78ee949361e515447bb0e00a6b2d69bd6520272312eb50b20cea7
+    last_seen_line: 41
+    kind: gotcha
+    body: |-
+      Root-level files come back separately rather than inside a node. The root is
+      not a row anyone should have to expand, and giving it one would file
+      README.md under a directory that does not exist. An earlier version returned
+      only root.Dirs and silently dropped every file at the top level.
+    created: "2026-08-03"
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: agent
+      source: git-config
