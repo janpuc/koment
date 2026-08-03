@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.0](https://github.com/janpuc/koment/compare/v0.1.2...v0.2.0) (2026-08-03)
+
+
+### Features
+
+* .koment bootstraps the index, and export rebuilds .koment from it ([#9](https://github.com/janpuc/koment/issues/9)) ([90357ea](https://github.com/janpuc/koment/commit/90357ea3b697f1235c7937484010cf43dd1654ad))
+* a nested file tree, a repository switcher, and notes that float ([#13](https://github.com/janpuc/koment/issues/13)) ([725f526](https://github.com/janpuc/koment/commit/725f526da5dbc756cae655edcdfb96f5650963cd))
+* multi-repository is first class, not a second citizen ([#11](https://github.com/janpuc/koment/issues/11)) ([5655d1b](https://github.com/janpuc/koment/commit/5655d1b23479e361e9cc9d0358f0d0b0cbfb0249))
+* publishing is a first-class tier, not demo scaffolding ([#12](https://github.com/janpuc/koment/issues/12)) ([7da5802](https://github.com/janpuc/koment/commit/7da5802d868b3cefd37043ef7f38b53095841088))
+
 ## [0.1.2](https://github.com/janpuc/koment/compare/v0.1.1...v0.1.2) (2026-08-02)
 
 
