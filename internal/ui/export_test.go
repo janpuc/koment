@@ -35,7 +35,10 @@ func read(t *testing.T, path string) string {
 func TestExportWritesAnIndexAndAPagePerFile(t *testing.T) {
 	out := exportTo(t)
 
-	for _, page := range []string{"index.html", "style.css", filepath.Join("f", "main.go.html")} {
+	for _, page := range []string{
+		"index.html", "style.css", "koment-logo.svg", "koment-logo.png",
+		filepath.Join("f", "main.go.html"),
+	} {
 		if _, err := os.Stat(filepath.Join(out, page)); err != nil {
 			t.Errorf("missing %s: %v", page, err)
 		}
@@ -57,10 +60,16 @@ func TestExportedLinksAreRelativeToTheOutputRoot(t *testing.T) {
 	if !strings.Contains(index, `href="style.css"`) {
 		t.Error("index stylesheet link is not relative")
 	}
+	if !strings.Contains(index, `href="koment-logo.png"`) || !strings.Contains(index, `src="koment-logo.svg"`) {
+		t.Error("index branding links are not relative")
+	}
 
 	page := read(t, filepath.Join(out, "f", "main.go.html"))
 	if !strings.Contains(page, `href="../style.css"`) {
 		t.Errorf("nested page does not walk back up to the stylesheet:\n%s", firstLines(page, 12))
+	}
+	if !strings.Contains(page, `href="../koment-logo.png"`) || !strings.Contains(page, `src="../koment-logo.svg"`) {
+		t.Error("nested branding links do not walk back up to the output root")
 	}
 	if strings.Contains(page, `href="/f/`) || strings.Contains(page, `href="/assets/`) {
 		t.Error("exported pages must not use absolute paths; they break under a subpath")
@@ -72,6 +81,9 @@ func TestExportedLinksWalkUpForDeepPaths(t *testing.T) {
 
 	if got, want := how.stylesheet, "../../../style.css"; got != want {
 		t.Errorf("stylesheet: want %q, got %q", got, want)
+	}
+	if got, want := how.logoSVG, "../../../koment-logo.svg"; got != want {
+		t.Errorf("logo: want %q, got %q", got, want)
 	}
 	if got, want := how.file("internal/cli/cli.go"), "../../../f/internal/cli/cli.go.html"; got != want {
 		t.Errorf("file link: want %q, got %q", got, want)
@@ -135,6 +147,7 @@ func TestASiteRenderedFromAModifiedTreeSaysSo(t *testing.T) {
 	run("init", "-q")
 	run("config", "user.email", "test@example.test")
 	run("config", "user.name", "test")
+	run("config", "commit.gpgsign", "false")
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
