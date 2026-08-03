@@ -15,3 +15,52 @@ annotations:
       nothing. ADR 0005 requires this in the MCP payload; this is the same
       guarantee expressed visually.
     created: "2026-07-31"
+  - id: 01KZ2Z60RSWSH9D3D2XSKBGWKF
+    scope: excerpt
+    excerpt: func buildFile(annotations *store.Store, file string, resolutions []anchor.Resolution) (*fileView, error) {
+    excerpt_sha256: 4d1f2ec6071083f6330bcf223573a3182373a0e002de5ce918bc32cf87a840f6
+    last_seen_line: 186
+    kind: why
+    body: |-
+      Notes are deliberately not attached to their line's row. When they were,
+      each line was a grid row whose height was set by the tallest cell in it, so
+      a long note stretched its line and pushed the surrounding code apart.
+      Measured: ten annotations on a five-line const block rendered as about
+      thirty-five lines, and the code stopped being readable as code.
+
+      Lines are now uniform and the notes carry their line number instead. The
+      browser nudges each note down to meet its line and moves the note, never the
+      code, when two would collide. With scripting off they stay in a column in
+      line order, which is correct but less precise — that degradation is the
+      price of the published tier having no server (ADR 0026).
+    created: "2026-08-03"
+    git:
+      commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
+      path: internal/ui/view.go
+      line: 186
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: agent
+      source: git-config
+  - id: 01KZ2Z60XJSTBJCXJZM3E0BZN1
+    scope: excerpt
+    excerpt: "\t\tworst, seen := marked[resolution.Line]"
+    excerpt_sha256: b4bda03d902959c9dd50eca79d87e36908e12e53940d939b5cb6408a8430ed3b
+    last_seen_line: 213
+    kind: gotcha
+    body: |-
+      The absence check is load-bearing. severity[ok] is 0 and severity[missing
+      key] is also 0, so a comparison alone never fires for the first annotation
+      on a line and the marker would be dropped. The same zero-value trap already
+      cost this project a bug in the file listing's worst-status roll-up.
+    created: "2026-08-03"
+    git:
+      commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
+      path: internal/ui/view.go
+      line: 213
+    author:
+      name: janpuc
+      email: janpuc@proton.me
+      kind: agent
+      source: git-config

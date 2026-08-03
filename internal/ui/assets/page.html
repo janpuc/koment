@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{if .File}}{{.File.Path}} — {{end}}koment</title>
+<title>{{if .File}}{{.File.Path}} — {{end}}{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</title>
 <link rel="stylesheet" href="{{.Stylesheet}}">
 </head>
 <body>
@@ -26,41 +26,58 @@
 {{else}}
 
 <div class="app">
+  <input type="checkbox" id="drawer" class="drawer-state" hidden>
+
   <nav class="rail" aria-label="Annotated files">
     <div class="brand">
-      <b>{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</b>
-      <span>{{.Total}} annotation{{if ne .Total 1}}s{{end}}</span>
+      <a class="mark" href="{{.Home}}">{{if .Repository}}{{.Repository}}{{else}}koment{{end}}</a>
+      <span class="tally-count">{{.Total}} annotation{{if ne .Total 1}}s{{end}}</span>
     </div>
 
-    <div class="tally">
-      <div class="tally-line">Working tree</div>
-      <div class="pills">
-        {{range .Tally}}<span class="pill {{.Status}}">{{.Count}} {{.Status}}</span>{{end}}
-      </div>
+    {{if .Repositories}}
+    <div class="switcher">
+      <label for="repo-select">Repository</label>
+      <select id="repo-select" data-switcher>
+        {{range .Repositories}}
+          <option value="{{.Href}}"{{if .Current}} selected{{end}}>{{.Name}}</option>
+        {{end}}
+      </select>
+      <noscript>
+        <ul class="switcher-plain">
+          {{range .Repositories}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Name}}</a></li>{{end}}
+        </ul>
+      </noscript>
     </div>
-
-    {{range .Groups}}
-      <div class="dir">{{.Dir}}/</div>
-      {{range .Files}}
-        <a class="file" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>
-          <span class="dot {{.Worst}}"></span>
-          <span class="name">{{.Name}}</span>
-          <span class="count">{{.Count}}</span>
-        </a>
-      {{end}}
     {{end}}
+
+    <div class="pills">
+      {{range .Tally}}<span class="pill {{.Status}}">{{.Count}} {{.Status}}</span>{{end}}
+    </div>
+
+    <div class="sift">
+      <input type="search" id="sift" placeholder="Filter files" aria-label="Filter files" data-sift autocomplete="off">
+    </div>
+
+    <div class="tree" data-tree>
+      {{range .Tree}}{{template "node" .}}{{end}}
+      {{range .Loose}}{{template "leaf" .}}{{end}}
+    </div>
   </nav>
 
   <main class="panel">
-    {{if .NotFound}}
-      <div class="panel-head"><h1>Not annotated</h1></div>
-      <p class="hollow-inline">Nothing recorded against <code>{{.Current}}</code>.</p>
-    {{else}}
-      <div class="panel-head">
+    <div class="panel-head">
+      <label for="drawer" class="drawer-toggle" aria-label="Show files">Files</label>
+      {{if .NotFound}}
+        <h1>Not annotated</h1>
+      {{else}}
         <h1>{{.File.Path}}</h1>
         {{if .File.Missing}}<span class="pill orphaned">file is gone</span>{{end}}
-      </div>
+      {{end}}
+    </div>
 
+    {{if .NotFound}}
+      <p class="hollow-inline">Nothing recorded against <code>{{.Current}}</code>.</p>
+    {{else}}
       {{if .File.Detached}}
         <div class="detached">
           <div class="detached-head">Not anchored to a line</div>
@@ -69,16 +86,21 @@
       {{end}}
 
       {{if .File.Lines}}
-        <div class="code-scroll">
-          <div class="code">
-            {{range .File.Lines}}
-              <div class="row{{if .Notes}} marked {{(index .Notes 0).Status}}{{end}}">
-                <div class="ln">{{.Number}}</div>
-                <div class="src{{if not .Text}} void{{end}}">{{if .Text}}{{.Text}}{{else}} {{end}}</div>
-                <div class="margin">{{range .Notes}}{{template "note" .}}{{end}}</div>
-              </div>
-            {{end}}
+        <div class="reading" data-reading>
+          <div class="code-scroll">
+            <div class="code">
+              {{range .File.Lines}}
+                <div class="row{{if .Marker}} marked {{.Marker}}{{end}}" id="L{{.Number}}" data-line="{{.Number}}">
+                  <a class="ln" href="#L{{.Number}}">{{.Number}}</a>
+                  <code class="src{{if not .Text}} void{{end}}">{{if .Text}}{{.Text}}{{else}} {{end}}</code>
+                </div>
+              {{end}}
+            </div>
           </div>
+
+          <aside class="gloss" data-gloss aria-label="Annotations">
+            {{range .File.Notes}}{{template "note" .}}{{end}}
+          </aside>
         </div>
       {{end}}
     {{end}}
@@ -86,15 +108,38 @@
 </div>
 {{end}}
 
+<script src="{{.Script}}" defer></script>
 </body>
 </html>{{end}}
 
+{{define "node"}}
+<details class="dir"{{if .Open}} open{{end}}>
+  <summary>
+    <span class="dot {{.Worst}}"></span>
+    <span class="dir-name">{{.Name}}</span>
+    <span class="count">{{.Count}}</span>
+  </summary>
+  <div class="dir-body">
+    {{range .Dirs}}{{template "node" .}}{{end}}
+    {{range .Files}}{{template "leaf" .}}{{end}}
+  </div>
+</details>
+{{end}}
+
+{{define "leaf"}}
+<a class="file" href="{{.Href}}" data-name="{{.Path}}"{{if .Current}} aria-current="page"{{end}}>
+  <span class="dot {{.Worst}}"></span>
+  <span class="name">{{.Name}}</span>
+  <span class="count">{{.Count}}</span>
+</a>
+{{end}}
+
 {{define "note"}}
-<div class="note {{.Status}}{{if .Stale}} stale{{end}}">
+<article class="note {{.Status}}{{if .Stale}} stale{{end}}"{{if .Line}} data-for="{{.Line}}"{{end}}>
   <div class="note-head">
     <span class="kind">{{.Kind}}</span>
     <span class="sep">·</span><span>{{.Status}}</span>
-    <span class="sep">·</span><span>{{.Created}}</span>
+    {{if .Line}}<a class="at" href="#L{{.Line}}">L{{.Line}}</a>{{end}}
   </div>
 
   {{if .Stale}}{{if .Excerpt}}
@@ -106,6 +151,6 @@
   {{range .Body}}<p class="body">{{.}}</p>{{end}}
 
   {{if .Warning}}<div class="warn">{{.Warning}}</div>{{end}}
-  <div class="note-id">{{.ID}}</div>
-</div>
+  <div class="note-foot"><span>{{.Created}}</span><span class="note-id">{{.ID}}</span></div>
+</article>
 {{end}}
