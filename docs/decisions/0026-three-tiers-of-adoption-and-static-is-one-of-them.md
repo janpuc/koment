@@ -95,14 +95,14 @@ so it composes into a `koment check` gate and a `koment site` publish alike.
   exists.
 - **Two more things to keep working: an action and six release binaries.** The
   action is a thin installer precisely so that it stays cheap.
-- **The action cannot be tested until a release carries binaries.** It installs
-  a published release, and none exists yet, so a CI job added now would be red
-  on arrival for a reason that is not a defect. Until the first such release the
-  action is verified only against locally built artifacts of the same shape, and
-  that gap is recorded rather than papered over with a conditional that would
-  later hide a genuine break. This repository's own Pages workflow does not use
-  the action either: it builds from source, because its site has to show what is
-  on `main` rather than what was last released.
+- **The action is exercised in CI on Linux and macOS**, installing a published
+  release and publishing a site with it, so the copy-paste path breaks loudly
+  rather than when someone reports it. That job could not exist until the first
+  release carried binaries — v0.2.0 — and until then the gap was recorded here
+  rather than papered over with a conditional that would later hide a real
+  break. This repository's own Pages workflow still does not use the action: it
+  builds from source, because its site has to show what is on `main` rather than
+  what was last released.
 - Publishing a private repository's annotations makes its source public.
   Rendering a file means rendering its lines. The docs say this at the point of
   use, not in a footnote, because the failure is unrecoverable.
