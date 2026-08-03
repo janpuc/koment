@@ -26,7 +26,7 @@ runs:
       env:
         KOMENT_REQUESTED: ${{ inputs.version }}
         KOMENT_SOURCE: ${{ github.action_repository || 'janpuc/koment' }}
-      run: |
+      run: | # zizmor: ignore[github-env]
         set -euo pipefail
 
         case "$RUNNER_OS" in
@@ -60,7 +60,8 @@ runs:
         fi
         version=${tag#v}
 
-        if [ -z "$version" ] || [ "$tag" = "latest" ]; then
+        if [ -z "$version" ] || [ "$tag" = "latest" ] ||
+          [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
           echo "::error::could not resolve a koment release from '${KOMENT_REQUESTED}'"
           exit 1
         fi

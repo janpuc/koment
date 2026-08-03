@@ -4,10 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>koment — annotations beside the code</title>
+<link rel="icon" type="image/svg+xml" href="koment/koment-logo.svg">
+<link rel="icon" type="image/png" sizes="128x128" href="koment/koment-logo.png">
 <link rel="stylesheet" href="koment/style.css">
 <style>
   .landing { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
-  .landing h1 { font-family: var(--mono); font-size: 1.6rem; letter-spacing: -.03em; margin: 0 0 .4rem; }
+  .landing h1 { display: flex; align-items: center; gap: .7rem; font-family: var(--mono); font-size: 1.6rem; letter-spacing: -.03em; margin: 0 0 .4rem; }
+  .landing h1 img { width: 2.6rem; height: 2.6rem; }
   .lede { font-family: var(--serif); font-size: 1.05rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 2.5rem; max-width: 42rem; }
   .repos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
   .repo { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent); padding: 1.1rem 1.2rem 1.2rem; }
@@ -24,7 +27,7 @@
 <body>
 
 <div class="landing">
-  <h1>koment</h1>
+  <h1><img src="koment/koment-logo.svg" alt="">koment</h1>
   <p class="lede">
     Keeps the <em>why</em> of a codebase beside the code instead of inside it —
     anchored to a snippet, kept in git, and checked. When the code an annotation

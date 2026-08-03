@@ -1,0 +1,8 @@
+{
+  "yaml.schemas": {
+    "./schema/annotation.schema.json": [
+      ".koment/annotations/[0-9A-Z]*.yaml",
+      "demo/.koment/annotations/[0-9A-Z]*.yaml"
+    ]
+  }
+}

@@ -43,6 +43,9 @@ shown as such everywhere; no surface may silently turn uncertainty into fact.
 10. **Operations follow konflate's standard.** Tooling, CI, containers, Helm
     and releases use `home-operations/konflate` as their baseline unless an ADR
     records a deliberate difference.
+11. **Comment intent meets users where they are.** Writing ordinary explanatory
+    commentary should create a koment annotation. Keeping it inline requires an
+    attributable, reviewable acknowledgement.
 
 ## Implementation status
 
@@ -60,6 +63,7 @@ This table is the honest boundary between the current v0.2 code and the target.
 | HTTP serving | separate unauthenticated UI or MCP | one authenticated human-and-agent service |
 | Database index | prototype, not used by servers | new Postgres read model for served snapshots only |
 | Remote authoring | design only | authenticated exact outbox materialized through Git |
+| Operational toolchain | mise, Lefthook, Renovate and security gates implemented | implemented |
 | Helm and release | baseline exists | konflate-aligned tests, hardening and signatures |
 
 ## Annotation record
@@ -68,8 +72,18 @@ Each annotation is stored at `.koment/annotations/<id>.yaml`. The filename and
 the record id must agree. Adding two annotations creates two files, so
 concurrent humans and agents do not perform a shared read-modify-write.
 
+The repository publishes one strict JSON Schema for the annotation record.
+Every record written by koment starts with a `yaml-language-server` schema
+directive that points to the raw schema on the default branch, and this
+repository carries a VS Code YAML
+association for the annotation glob. Editors can validate fields, enumerations
+and required values without a koment plugin. The directive is tooling metadata,
+not rationale, and is allowed by the comment policy. The schema can move to a
+pinned published URL once the record has real external users.
+
 ```yaml
-version: 2
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
 id: 01JQ8ZK3M4N5P6R7S8T9V0W1X2
 file: internal/session/token.go
 kind: invariant
@@ -99,8 +113,8 @@ author:
 Required fields are `version`, `id`, `file`, `kind`, `body`, `created`,
 `anchor` and `author`. Git context is recorded when available and never affects
 resolution. Author kind is `human`, `agent` or `unknown`; new writes require the
-first two. An imported v1 annotation with no attributable author records an
-explicit `unknown` legacy identity; migration never invents a person.
+first two. An imported prototype annotation with no attributable author records
+an explicit `unknown` legacy identity; migration never invents a person.
 
 Kinds remain deliberately constrained:
 
@@ -112,6 +126,28 @@ Kinds remain deliberately constrained:
 The YAML decoder rejects unknown fields. Record serialization is deterministic
 so a semantic no-op does not create a Git diff. ADR 0100 records the storage
 decision.
+
+An annotation that authorizes an otherwise forbidden inline comment adds this
+machine-readable policy acknowledgement:
+
+```yaml
+kind: why
+body: |-
+  The generator requires this marker at the declaration it controls.
+anchor:
+  scope: excerpt
+  excerpt: "// generator:keep"
+  last_seen_line: 18
+policy:
+  exception: inline-comment
+  acknowledged: true
+```
+
+The anchor must resolve to the exact comment, not merely nearby code. Its body
+explains why renaming, extraction, a named type or constant, restructuring and
+an ordinary koment annotation were insufficient. Author and creation fields
+make the acknowledgement attributable. Changing or removing the comment makes
+the acknowledgement drift or orphan instead of silently broadening it.
 
 ## Anchors and resolution
 
@@ -198,6 +234,9 @@ koment list
 koment search <query>
 koment check [path...]
 koment reanchor <id> [--excerpt <text>] [--file <path>]
+koment comments check [path...]
+koment comments convert <file> --excerpt <comment> [--kind <kind>]
+koment comments acknowledge <file> --excerpt <comment> --body <text> --acknowledge-inline-comment
 koment ui [--write]
 koment mcp [--write]
 ```
@@ -213,6 +252,9 @@ The MCP surface is symmetrical with the application service:
 - `koment_search`
 - `koment_add` when writes are enabled
 - `koment_reanchor` when writes are enabled
+- `koment_convert_comment` when writes are enabled
+- `koment_acknowledge_comment` when writes are enabled and its explicit
+  acknowledgement input is true
 
 Every mutation records human or agent authorship honestly and returns the full
 record plus its repository-relative YAML path.
@@ -284,7 +326,7 @@ names the candidates. ADR 0104 records the multi-repository decision.
 ## Remote authoring and Git settlement
 
 Remote creation never edits a read replica's checkout and never pushes directly
-to a default branch. An authenticated request creates an exact v2 record in an
+to a default branch. An authenticated request creates an exact annotation record in an
 outbox with its stable id, repository id, base commit and author identity.
 
 ```text
@@ -362,24 +404,55 @@ An AST-aware CI check enforces the Go rule. Other source-like files are audited
 without blindly deleting schema directives or generated documentation markers.
 ADR 0107 records why koment enforces its own thesis.
 
+The policy guarantee is that an unacknowledged comment cannot pass `koment
+comments check` and therefore cannot land through a protected branch. koment
+cannot prevent an arbitrary editor or shell from placing bytes in an unsaved
+buffer, and a local Git hook is bypassable. The required CI check is the
+authoritative boundary; local hooks and editor diagnostics shorten feedback.
+
+Comments fall into three classes:
+
+1. Toolchain directives, generated-file markers, necessary upstream links,
+   genuine API documentation and deprecation markers remain inline without an
+   acknowledgement.
+2. A newly written explanatory comment is comment intent. `koment comments
+   convert` records its prose as an annotation before removing it from the
+   source. The comment's placement selects a deterministic anchor in the code
+   it described; the removed comment is never its own anchor. If conversion
+   cannot choose a unique anchor, the source stays untouched and the operation
+   fails loudly.
+3. A comment that truly must stay inline requires `koment comments acknowledge`.
+   CLI callers must pass `--acknowledge-inline-comment`; MCP callers must send
+   `acknowledge_inline_comment: true`; editor callers confirm a prompt that
+   names the rename, extraction, named-type and restructuring procedure. The
+   result is a `why` annotation with the policy acknowledgement shown above.
+
+There is no source-level `koment:ignore`, global CI bypass or path-wide escape
+hatch for ordinary project code. Generated and vendored inputs are declared as
+repository policy rather than waived ad hoc. Conversion writes the annotation
+first and removes source prose second, so interruption may leave duplicate
+rationale but cannot silently discard it.
+
 ## Implementation sequence
 
-### 1. Operational floor
+### 1. Operational floor — implemented
 
-Adopt the pinned konflate-style toolchain and missing CI security checks before
-large code changes. Retain the existing race suite.
+The pinned konflate-style toolchain, local hooks, Renovate baseline, workflow
+audit, vulnerability scan and aggregate CI status are in place. The existing
+race suite remains mandatory.
 
-### 2. Record and anchor v2
+### 2. Record and anchor reset
 
 Implement one-record-per-annotation storage, migrate this repository's records,
-add ambiguity and context resolution, enforce rooted filesystem access and
-remove the current index/export subsystem.
+publish and wire the strict record schema, add ambiguity and context resolution,
+enforce rooted filesystem access and remove the current index/export subsystem.
 
 ### 3. Shared reads and local writes
 
 Introduce the snapshot and application services, move every reader to them,
 surface provenance consistently, add local UI and MCP writes, and rebuild static
-publishing and search.
+publishing and search. Add the shared comment-intent classifier, conversion,
+explicit acknowledgement and policy check before editor-specific integration.
 
 ### 4. Served multi-repository system
 
@@ -388,8 +461,48 @@ ingestion, exact outbox and GitHub materializer.
 
 ### 5. Deployment and release
 
-Replace the prototype chart modes, add schema and E2E coverage, then sign and
-digest-pin all release artifacts.
+Replace the prototype chart modes, add a values schema and E2E coverage, then
+sign and digest-pin all release artifacts.
+
+### 6. Comment-intent and editor-native annotations — planned after the vNext core
+
+Add an editor-neutral `koment lsp` process backed by the same repository
+snapshot and mutation services. It exposes status diagnostics, hover content,
+code lenses and add or reanchor commands without parsing or writing annotation
+records independently.
+
+Build a thin VS Code extension first. It starts or connects to koment, renders
+annotation bodies beside their resolved source through native decorations and
+gutter status, and opens focused editing controls when prose needs more space.
+It never inserts virtual comments into the source buffer. A human or agent can
+add and reanchor through the same application mutation contract, with explicit
+authorship preserved.
+
+In a koment-managed workspace, typing a syntactically complete explanatory
+comment is the familiar entry path. The extension observes the completed edit,
+asks the language-neutral service to classify it and, when the anchor is
+unambiguous, replaces it with an annotation while preserving the inline visual
+through a decoration. Intrinsic comments and text that appears to be temporarily
+commented-out code are not converted. Uncertain cases remain in the buffer with
+an immediate diagnostic and the actions `Convert to koment` and `Keep inline
+with acknowledgement`.
+
+The editor flow is acceleration, not enforcement. VS Code change events occur
+after an edit, and save participants can be skipped or time-bounded. The
+extension never races a save or deletes prose before the application service
+has durably written its record. The same diagnostics and code actions are
+available over LSP; native adapters add automatic conversion and richer
+decorations where their editor APIs permit it.
+
+Other editors receive the portable LSP surface first and may add native adapters
+for richer inline presentation. Workspace-folder and repository ids define the
+multi-repository boundary, so two repositories containing the same path never
+share decorations or mutations accidentally.
+
+This stage starts only after deterministic resolution and the local
+application service are stable in real use. It is planned here so the snapshot,
+mutation and repository contracts do not accidentally assume a browser or a
+separate UI.
 
 Each stage leaves tests and documentation describing only behaviour that
 exists. A capability moves from `planned` to `implemented` in this document in
@@ -415,12 +528,15 @@ vNext is complete when:
    CI.
 10. koment's own source has moved non-exempt rationale out of inline comments
     and its annotations resolve.
+11. Typing an explanatory comment in the reference VS Code integration converts
+    it to an attributed annotation, while an inline exception cannot pass CI
+    without an exact, explicit acknowledgement record.
 
 ## Non-goals
 
 - LLM-generated annotations or semantic reanchoring.
 - Consolidating, summarizing or expiring rationale as a memory system.
-- Tree-sitter or language-specific symbol anchors before deterministic v2 is in
+- Tree-sitter or language-specific symbol anchors before the deterministic record is in
   real use.
 - A writable static site.
 - Direct pushes from the served tier to a default branch.
@@ -438,3 +554,7 @@ vNext is complete when:
   — deterministic anchoring prior art.
 - [Architecture Decision Records](https://adr.github.io/) — project-wide
   decision history; koment records rationale local to code.
+- [VS Code Extension API](https://code.visualstudio.com/api/references/vscode-api)
+  — editor changes, diagnostics, code actions and decorations.
+- [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
+  — portable diagnostics and code actions across editors.

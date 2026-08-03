@@ -28,7 +28,7 @@ configured trusted proxies and records the issuer or credential mechanism in
 the author's verification field. The deployment must prevent direct network
 bypass of the trusted proxy.
 
-An authenticated remote mutation writes an exact v2 record to a Postgres
+An authenticated remote mutation writes an exact annotation record to a Postgres
 outbox with repository id, base commit, stable annotation id and author. A
 provider interface materializes it through a branch and pull request; GitHub is
 the first implementation. Direct pushes to a default branch are not supported.

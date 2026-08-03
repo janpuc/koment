@@ -1,0 +1,10 @@
+[pre-commit]
+parallel = true
+
+[pre-commit.commands.format-go]
+glob = "*.go"
+run = "gofmt -w {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.annotations]
+run = "mise run annotations"

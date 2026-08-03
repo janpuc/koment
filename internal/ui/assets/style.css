@@ -143,12 +143,16 @@ body {
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: .5rem;
   padding: 0 1.1rem .9rem;
 }
 .brand .mark {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  min-width: 0;
   font-family: var(--mono);
   font-size: 1.02rem;
   letter-spacing: -.02em;
@@ -158,6 +162,8 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.brand-mark { width: 1.45rem; height: 1.45rem; flex: none; }
+.brand-label { overflow: hidden; text-overflow: ellipsis; }
 .brand .mark:hover { color: var(--accent); }
 .tally-count { font-size: .7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; flex: none; }
 

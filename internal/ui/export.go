@@ -19,6 +19,8 @@ const (
 	indexPage      = "index.html"
 	stylesheetName = "style.css"
 	scriptName     = "koment.js"
+	logoSVGName    = "koment-logo.svg"
+	logoPNGName    = "koment-logo.png"
 )
 
 const exportUsage = `koment site renders one repository to static HTML.
@@ -119,7 +121,7 @@ func export(annotations *store.Store, out, name string, taken *snapshot) (int, e
 	}
 	templates := template.Must(template.ParseFS(assets, "assets/*.html"))
 
-	for _, asset := range []string{stylesheetName, scriptName} {
+	for _, asset := range []string{stylesheetName, scriptName, logoSVGName, logoPNGName} {
 		content, err := assets.ReadFile("assets/" + asset)
 		if err != nil {
 			return 0, err
@@ -155,6 +157,8 @@ func exportedLinks(page string) links {
 		home:       up + indexPage,
 		stylesheet: up + stylesheetName,
 		script:     up + scriptName,
+		logoSVG:    up + logoSVGName,
+		logoPNG:    up + logoPNGName,
 	}
 }
 
