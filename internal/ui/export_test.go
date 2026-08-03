@@ -10,7 +10,7 @@ import (
 func exportTo(t *testing.T) string {
 	t.Helper()
 	out := t.TempDir()
-	if _, err := export(repository(t), out, "snapshot of commit abc1234", "https://example.test/koment", "fixture"); err != nil {
+	if _, err := export(annotatedRepository(t), out, "snapshot of commit abc1234", "https://example.test/koment", "fixture"); err != nil {
 		t.Fatalf("export: %v", err)
 	}
 	return out
@@ -94,7 +94,7 @@ func TestExportedPagesCarryTheSnapshotBanner(t *testing.T) {
 }
 
 func TestExportRendersTheSameContentAsTheServer(t *testing.T) {
-	annotations := repository(t)
+	annotations := annotatedRepository(t)
 	out := t.TempDir()
 	if _, err := export(annotations, out, "", "", "fixture"); err != nil {
 		t.Fatal(err)

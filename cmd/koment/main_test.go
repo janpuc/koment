@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -45,7 +46,8 @@ func TestServesOverRealStdio(t *testing.T) {
 	for _, tool := range tools.Tools {
 		names = append(names, tool.Name)
 	}
-	if got, want := strings.Join(names, ","), "koment_get,koment_search"; got != want {
+	sort.Strings(names)
+	if got, want := strings.Join(names, ","), "koment_get,koment_repositories,koment_search"; got != want {
 		t.Errorf("want tools %q, got %q", want, got)
 	}
 

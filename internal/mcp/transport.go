@@ -16,7 +16,7 @@ import (
 	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/listen"
 	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/janpuc/koment/internal/repository"
 )
 
 const (
@@ -61,45 +61,44 @@ func Serve(args []string, stderr io.Writer) error {
 		return errors.New("--http and --streamable-http are alternatives; choose one")
 	}
 
-	annotations, err := openHere()
+	repositories, err := loadRepositories()
 	if err != nil {
 		return err
 	}
 
 	ctx := context.Background()
-	recorder := startMetrics(ctx, annotations, *metricsAddress, stderr)
+	recorder := startMetrics(ctx, repositories, *metricsAddress, stderr)
 
 	switch {
 	case *httpAddress != "":
-		return serveHTTP(ctx, annotations, *httpAddress, true, stderr, recorder)
+		return serveHTTP(ctx, repositories, *httpAddress, true, stderr, recorder)
 	case *streamableAddress != "":
-		return serveHTTP(ctx, annotations, *streamableAddress, false, stderr, recorder)
+		return serveHTTP(ctx, repositories, *streamableAddress, false, stderr, recorder)
 	}
-	return newServer(annotations, recorder).Run(ctx, &sdk.StdioTransport{})
+	return newServer(repositories, recorder).Run(ctx, &sdk.StdioTransport{})
 }
 
-// repositoryRoot prefers KOMENT_REPO, because in a container the working
-// directory is a mount point rather than somewhere a person navigated to.
-func repositoryRoot() (string, error) {
-	if root, ok := config.Root(); ok {
-		return store.FindRoot(root)
-	}
+func loadRepositories() (*repository.Set, error) {
 	workingDirectory, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("finding the working directory: %w", err)
+		return nil, fmt.Errorf("finding the working directory: %w", err)
 	}
-	return store.FindRoot(workingDirectory)
+	return repository.Load(workingDirectory)
 }
 
-func openHere() (*store.Store, error) {
-	root, err := repositoryRoot()
-	if err != nil {
-		return nil, err
+// sweepAll reports the whole deployment. Gauges are summed across repositories
+// because the metric answers "how much drift is there", which is a deployment
+// question rather than a per-repository one.
+func sweepAll(repositories *repository.Set, recorder metrics.Recorder) error {
+	for _, entry := range repositories.All() {
+		if err := metrics.Sweep(entry.Store(), recorder); err != nil {
+			return err
+		}
 	}
-	return store.Open(root), nil
+	return nil
 }
 
-func startMetrics(ctx context.Context, annotations *store.Store, address string, stderr io.Writer) metrics.Recorder {
+func startMetrics(ctx context.Context, repositories *repository.Set, address string, stderr io.Writer) metrics.Recorder {
 	if address == "" {
 		return metrics.Discard{}
 	}
@@ -114,7 +113,7 @@ func startMetrics(ctx context.Context, annotations *store.Store, address string,
 		ticker := time.NewTicker(sweepInterval)
 		defer ticker.Stop()
 		for {
-			if err := metrics.Sweep(annotations, recorder); err != nil {
+			if err := sweepAll(repositories, recorder); err != nil {
 				fmt.Fprintf(stderr, "koment: metrics sweep: %v\n", err)
 			}
 			select {
@@ -127,7 +126,7 @@ func startMetrics(ctx context.Context, annotations *store.Store, address string,
 	return recorder
 }
 
-func serveHTTP(ctx context.Context, annotations *store.Store, address string, jsonResponses bool, stderr io.Writer, recorder metrics.Recorder) error {
+func serveHTTP(ctx context.Context, repositories *repository.Set, address string, jsonResponses bool, stderr io.Writer, recorder metrics.Recorder) error {
 	resolved, err := listen.Address(address)
 	if err != nil {
 		return err
@@ -135,7 +134,7 @@ func serveHTTP(ctx context.Context, annotations *store.Store, address string, js
 	listen.WarnIfPublic(resolved, stderr)
 
 	handler := sdk.NewStreamableHTTPHandler(
-		func(*http.Request) *sdk.Server { return newServer(annotations, recorder) },
+		func(*http.Request) *sdk.Server { return newServer(repositories, recorder) },
 		&sdk.StreamableHTTPOptions{JSONResponse: jsonResponses},
 	)
 
@@ -154,17 +153,21 @@ func serveHTTP(ctx context.Context, annotations *store.Store, address string, js
 		}
 	}()
 
-	fmt.Fprintf(stderr, "koment: serving %d annotated files at http://%s\n", annotatedFileCount(annotations), listener.Addr())
+	fmt.Fprintf(stderr, "koment: serving %d annotated files at http://%s\n", annotatedFileCount(repositories), listener.Addr())
 	if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
 }
 
-func annotatedFileCount(annotations *store.Store) int {
-	files, err := annotations.AnnotatedFiles()
-	if err != nil {
-		return 0
+func annotatedFileCount(repositories *repository.Set) int {
+	total := 0
+	for _, entry := range repositories.All() {
+		files, err := entry.Store().AnnotatedFiles()
+		if err != nil {
+			continue
+		}
+		total += len(files)
 	}
-	return len(files)
+	return total
 }

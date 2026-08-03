@@ -205,8 +205,13 @@ plumbing.
 
 MCP tools exposed:
 
-- `koment_get(file)` — annotations for a path, with resolution status
-- `koment_search(query)` — full-text across bodies
+- `koment_get(file, repository?)` — annotations for a path, with resolution status
+- `koment_search(query, repository?)` — full-text across bodies, every repository by default
+- `koment_repositories()` — what is served, with counts
+
+Three, not two: ADR 0025 amends ADR 0005 because discovery is a distinct
+question from retrieval, and an agent that has to guess a repository name will
+guess wrong.
 
 ### `koment ui`
 

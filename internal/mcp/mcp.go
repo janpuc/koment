@@ -4,6 +4,7 @@ package mcp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/janpuc/koment/internal/anchor"
 	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/janpuc/koment/internal/repository"
 )
 
 const (
@@ -21,17 +22,97 @@ const (
 
 	getDescription = "Annotations recorded against a source file: why it is written this way, " +
 		"what bit someone here before, and which invariants must hold. Read this before editing " +
-		"an unfamiliar file. Every annotation carries a resolution status; heed the warning field."
+		"an unfamiliar file. Every annotation carries a resolution status; heed the warning field. " +
+		"Pass repository when more than one is served - call koment_repositories to see them. " +
+		"Omitting it resolves only if exactly one repository has that path."
 
 	searchDescription = "Full-text search across annotation bodies. Use it to find recorded rationale " +
-		"by topic when you do not already know which file holds it."
+		"by topic when you do not already know which file holds it. Omitting repository searches " +
+		"every repository; each match names the one it came from."
+
+	repositoriesDescription = "The repositories this koment serves, with their annotation counts. " +
+		"Call this first when you do not know which repository a file belongs to."
 )
 
-func newServer(annotations *store.Store, recorder metrics.Recorder) *sdk.Server {
+func newServer(repositories *repository.Set, recorder metrics.Recorder) *sdk.Server {
 	server := sdk.NewServer(&sdk.Implementation{Name: serverName, Version: serverVersion}, nil)
-	sdk.AddTool(server, &sdk.Tool{Name: "koment_get", Description: getDescription}, get(annotations, recorder))
-	sdk.AddTool(server, &sdk.Tool{Name: "koment_search", Description: searchDescription}, search(annotations, recorder))
+	sdk.AddTool(server, &sdk.Tool{Name: "koment_get", Description: getDescription}, get(repositories, recorder))
+	sdk.AddTool(server, &sdk.Tool{Name: "koment_search", Description: searchDescription}, search(repositories, recorder))
+	sdk.AddTool(server, &sdk.Tool{Name: "koment_repositories", Description: repositoriesDescription}, list(repositories))
 	return server
+}
+
+// forGet picks the repository a path belongs to. With several candidates it
+// refuses and names them rather than guessing, because answering an ambiguous
+// question silently is the failure koment exists to prevent (ADR 0025).
+func forGet(repositories *repository.Set, named, file string) (repository.Repository, error) {
+	if named != "" {
+		chosen, found := repositories.Resolve(named)
+		if !found {
+			return repository.Repository{}, fmt.Errorf("no repository %q; served: %s",
+				named, strings.Join(repositories.IDs(), ", "))
+		}
+		return chosen, nil
+	}
+	if only, single := repositories.Only(); single {
+		return only, nil
+	}
+
+	var candidates []repository.Repository
+	for _, candidate := range repositories.All() {
+		annotations := candidate.Store()
+		path, err := annotations.FromRoot(file)
+		if err != nil {
+			continue
+		}
+		if _, err := annotations.Load(path); err == nil {
+			candidates = append(candidates, candidate)
+		}
+	}
+
+	switch len(candidates) {
+	case 1:
+		return candidates[0], nil
+	case 0:
+		return repository.Repository{}, fmt.Errorf("no repository has annotations for %s; served: %s",
+			file, strings.Join(repositories.IDs(), ", "))
+	default:
+		names := make([]string, 0, len(candidates))
+		for _, candidate := range candidates {
+			names = append(names, candidate.ID)
+		}
+		return repository.Repository{}, fmt.Errorf(
+			"%s is annotated in more than one repository (%s); pass repository to choose",
+			file, strings.Join(names, ", "))
+	}
+}
+
+func list(repositories *repository.Set) sdk.ToolHandlerFor[RepositoriesInput, RepositoriesOutput] {
+	return func(_ context.Context, _ *sdk.CallToolRequest, _ RepositoriesInput) (*sdk.CallToolResult, RepositoriesOutput, error) {
+		summaries := make([]RepositorySummary, 0, repositories.Len())
+		for _, entry := range repositories.All() {
+			counts := map[string]int{}
+			files, err := entry.Store().AnnotatedFiles()
+			if err != nil {
+				return nil, RepositoriesOutput{}, err
+			}
+			for _, file := range files {
+				resolutions, err := anchor.ResolveStored(entry.Store(), file)
+				if err != nil {
+					return nil, RepositoriesOutput{}, err
+				}
+				for _, resolution := range resolutions {
+					counts[string(resolution.Status)]++
+				}
+			}
+			summaries = append(summaries, RepositorySummary{
+				ID: entry.ID, Name: entry.Display(),
+				DefaultBranch: entry.DefaultBranch, CloneURL: entry.CloneURL,
+				Files: len(files), Annotations: counts,
+			})
+		}
+		return nil, RepositoriesOutput{Repositories: summaries}, nil
+	}
 }
 
 // measure records a tool call and, for each annotation handed over, its
@@ -49,16 +130,34 @@ func measure(recorder metrics.Recorder, tool string, started time.Time, served [
 }
 
 type GetInput struct {
-	File string `json:"file" jsonschema:"path of the source file, relative to the repository root"`
+	File       string `json:"file" jsonschema:"path of the source file, relative to the repository root"`
+	Repository string `json:"repository,omitempty" jsonschema:"which repository; needed only when several serve this path"`
+}
+
+type RepositoriesInput struct{}
+
+type RepositoriesOutput struct {
+	Repositories []RepositorySummary `json:"repositories"`
+}
+
+type RepositorySummary struct {
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	DefaultBranch string         `json:"default_branch,omitempty"`
+	CloneURL      string         `json:"clone_url,omitempty"`
+	Files         int            `json:"files"`
+	Annotations   map[string]int `json:"annotations"`
 }
 
 type GetOutput struct {
+	Repository  string       `json:"repository"`
 	File        string       `json:"file"`
 	Annotations []Annotation `json:"annotations"`
 }
 
 type SearchInput struct {
-	Query string `json:"query" jsonschema:"text to look for in annotation bodies, matched case-insensitively"`
+	Query      string `json:"query" jsonschema:"text to look for in annotation bodies, matched case-insensitively"`
+	Repository string `json:"repository,omitempty" jsonschema:"limit to one repository; omit to search all of them"`
 }
 
 type SearchOutput struct {
@@ -67,22 +166,29 @@ type SearchOutput struct {
 }
 
 type Annotation struct {
-	File    string `json:"file"`
-	ID      string `json:"id"`
-	Kind    string `json:"kind"`
-	Body    string `json:"body"`
-	Scope   string `json:"scope"`
-	Excerpt string `json:"excerpt,omitempty"`
-	Line    int    `json:"line,omitempty"`
-	Created string `json:"created"`
-	Status  string `json:"status"`
-	Warning string `json:"warning,omitempty"`
+	Repository string `json:"repository"`
+	File       string `json:"file"`
+	ID         string `json:"id"`
+	Kind       string `json:"kind"`
+	Body       string `json:"body"`
+	Scope      string `json:"scope"`
+	Excerpt    string `json:"excerpt,omitempty"`
+	Line       int    `json:"line,omitempty"`
+	Created    string `json:"created"`
+	Status     string `json:"status"`
+	Warning    string `json:"warning,omitempty"`
 }
 
-func get(annotations *store.Store, recorder metrics.Recorder) sdk.ToolHandlerFor[GetInput, GetOutput] {
+func get(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHandlerFor[GetInput, GetOutput] {
 	return func(_ context.Context, _ *sdk.CallToolRequest, input GetInput) (result *sdk.CallToolResult, out GetOutput, err error) {
 		started := time.Now()
 		defer func() { measure(recorder, "koment_get", started, out.Annotations, err) }()
+
+		chosen, err := forGet(repositories, input.Repository, input.File)
+		if err != nil {
+			return nil, GetOutput{}, err
+		}
+		annotations := chosen.Store()
 
 		file, err := annotations.FromRoot(input.File)
 		if err != nil {
@@ -91,16 +197,19 @@ func get(annotations *store.Store, recorder metrics.Recorder) sdk.ToolHandlerFor
 
 		resolutions, err := anchor.ResolveStored(annotations, file)
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, GetOutput{File: file, Annotations: []Annotation{}}, nil
+			return nil, GetOutput{File: file, Repository: chosen.ID, Annotations: []Annotation{}}, nil
 		}
 		if err != nil {
 			return nil, GetOutput{}, err
 		}
-		return nil, GetOutput{File: file, Annotations: describeAll(file, resolutions)}, nil
+		return nil, GetOutput{
+			File: file, Repository: chosen.ID,
+			Annotations: describeAll(chosen.ID, file, resolutions),
+		}, nil
 	}
 }
 
-func search(annotations *store.Store, recorder metrics.Recorder) sdk.ToolHandlerFor[SearchInput, SearchOutput] {
+func search(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHandlerFor[SearchInput, SearchOutput] {
 	return func(_ context.Context, _ *sdk.CallToolRequest, input SearchInput) (result *sdk.CallToolResult, out SearchOutput, err error) {
 		started := time.Now()
 		defer func() { measure(recorder, "koment_search", started, out.Matches, err) }()
@@ -110,20 +219,35 @@ func search(annotations *store.Store, recorder metrics.Recorder) sdk.ToolHandler
 			return nil, SearchOutput{}, errors.New("query must not be empty")
 		}
 
-		files, err := annotations.AnnotatedFiles()
-		if err != nil {
-			return nil, SearchOutput{}, err
+		// Unlike get, an omitted repository searches all of them: searching
+		// broadly and naming where each hit came from is useful, where
+		// refusing would not be (ADR 0025).
+		searching := repositories.All()
+		if input.Repository != "" {
+			chosen, found := repositories.Resolve(input.Repository)
+			if !found {
+				return nil, SearchOutput{}, fmt.Errorf("no repository %q; served: %s",
+					input.Repository, strings.Join(repositories.IDs(), ", "))
+			}
+			searching = []repository.Repository{chosen}
 		}
 
 		matches := []Annotation{}
-		for _, file := range files {
-			resolutions, err := anchor.ResolveStored(annotations, file)
+		for _, entry := range searching {
+			annotations := entry.Store()
+			files, err := annotations.AnnotatedFiles()
 			if err != nil {
 				return nil, SearchOutput{}, err
 			}
-			for _, resolution := range resolutions {
-				if containsFold(resolution.Annotation.Body, query) {
-					matches = append(matches, describe(file, resolution))
+			for _, file := range files {
+				resolutions, err := anchor.ResolveStored(annotations, file)
+				if err != nil {
+					return nil, SearchOutput{}, err
+				}
+				for _, resolution := range resolutions {
+					if containsFold(resolution.Annotation.Body, query) {
+						matches = append(matches, describe(entry.ID, file, resolution))
+					}
 				}
 			}
 		}
@@ -135,26 +259,27 @@ func containsFold(haystack, needle string) bool {
 	return strings.Contains(strings.ToLower(haystack), strings.ToLower(needle))
 }
 
-func describeAll(file string, resolutions []anchor.Resolution) []Annotation {
+func describeAll(repositoryID, file string, resolutions []anchor.Resolution) []Annotation {
 	described := make([]Annotation, len(resolutions))
 	for i, resolution := range resolutions {
-		described[i] = describe(file, resolution)
+		described[i] = describe(repositoryID, file, resolution)
 	}
 	return described
 }
 
-func describe(file string, resolution anchor.Resolution) Annotation {
+func describe(repositoryID, file string, resolution anchor.Resolution) Annotation {
 	return Annotation{
-		File:    file,
-		ID:      resolution.Annotation.ID,
-		Kind:    string(resolution.Annotation.Kind),
-		Body:    resolution.Annotation.Body,
-		Scope:   string(resolution.Annotation.Scope),
-		Excerpt: resolution.Annotation.Excerpt,
-		Line:    resolution.Line,
-		Created: resolution.Annotation.Created.Format("2006-01-02"),
-		Status:  string(resolution.Status),
-		Warning: warningFor(resolution.Status),
+		Repository: repositoryID,
+		File:       file,
+		ID:         resolution.Annotation.ID,
+		Kind:       string(resolution.Annotation.Kind),
+		Body:       resolution.Annotation.Body,
+		Scope:      string(resolution.Annotation.Scope),
+		Excerpt:    resolution.Annotation.Excerpt,
+		Line:       resolution.Line,
+		Created:    resolution.Annotation.Created.Format("2006-01-02"),
+		Status:     string(resolution.Status),
+		Warning:    warningFor(resolution.Status),
 	}
 }
 

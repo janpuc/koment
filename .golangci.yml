@@ -89,6 +89,15 @@ linters:
         linters:
           - gosec
 
+      # G703 flags reading the file KOMENT_CONFIG names. That path is
+      # operator-supplied configuration, not caller input: anyone who can set
+      # the environment already controls the process. Refusing a variable path
+      # would mean refusing to be configured.
+      - path: internal/repository/
+        text: "G703|G304"
+        linters:
+          - gosec
+
 formatters:
   enable:
     - gofmt
