@@ -152,8 +152,6 @@ func TestIdentityIsAssignedNotDerivedFromThePath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The same repository, moved. Its id must follow the config, not the path,
-	// or the index and every per-repository state would be orphaned.
 	t.Setenv(EnvRepos, "api="+second)
 	after, err := Load(t.TempDir())
 	if err != nil {

@@ -28,6 +28,7 @@ const (
 const transportUsage = `koment mcp serves annotations to agents.
 
   koment mcp                            stdio (default)
+  koment mcp --write                    stdio with mutation tools
   koment mcp --http <addr>              HTTP, JSON responses
   koment mcp --streamable-http <addr>   HTTP, server-sent events
 
@@ -48,6 +49,7 @@ func Serve(args []string, stderr io.Writer) error {
 	httpAddress := flags.String("http", "", "serve over HTTP at this address, with JSON responses")
 	streamableAddress := flags.String("streamable-http", "", "serve over HTTP at this address, with SSE responses")
 	metricsAddress := flags.String("metrics", "", "serve Prometheus metrics on this separate address; off unless given")
+	writes := flags.Bool("write", false, "register local mutation tools; valid only with stdio")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -59,6 +61,9 @@ func Serve(args []string, stderr io.Writer) error {
 	}
 	if *httpAddress != "" && *streamableAddress != "" {
 		return errors.New("--http and --streamable-http are alternatives; choose one")
+	}
+	if *writes && (*httpAddress != "" || *streamableAddress != "") {
+		return errors.New("--write is available only over stdio; unauthenticated HTTP never registers mutation tools")
 	}
 
 	repositories, err := loadRepositories()
@@ -75,7 +80,7 @@ func Serve(args []string, stderr io.Writer) error {
 	case *streamableAddress != "":
 		return serveHTTP(ctx, repositories, *streamableAddress, false, stderr, recorder)
 	}
-	return newServer(repositories, recorder).Run(ctx, &sdk.StdioTransport{})
+	return newServer(repositories, recorder, *writes).Run(ctx, &sdk.StdioTransport{})
 }
 
 func loadRepositories() (*repository.Set, error) {
@@ -86,9 +91,6 @@ func loadRepositories() (*repository.Set, error) {
 	return repository.Load(workingDirectory)
 }
 
-// sweepAll reports the whole deployment. Gauges are summed across repositories
-// because the metric answers "how much drift is there", which is a deployment
-// question rather than a per-repository one.
 func sweepAll(repositories *repository.Set, recorder metrics.Recorder) error {
 	for _, entry := range repositories.All() {
 		if err := metrics.Sweep(entry.Store(), recorder); err != nil {
@@ -134,7 +136,7 @@ func serveHTTP(ctx context.Context, repositories *repository.Set, address string
 	listen.WarnIfPublic(resolved, stderr)
 
 	handler := sdk.NewStreamableHTTPHandler(
-		func(*http.Request) *sdk.Server { return newServer(repositories, recorder) },
+		func(*http.Request) *sdk.Server { return newServer(repositories, recorder, false) },
 		&sdk.StreamableHTTPOptions{JSONResponse: jsonResponses},
 	)
 

@@ -17,8 +17,6 @@ func Instrument(recorder Recorder, name string, next http.Handler) http.Handler 
 	})
 }
 
-// recordingWriter remembers the status code, which net/http otherwise discards
-// once it has been written.
 type recordingWriter struct {
 	http.ResponseWriter
 	code    int

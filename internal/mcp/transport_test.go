@@ -18,7 +18,7 @@ func serveOverHTTP(t *testing.T, jsonResponses bool) *httptest.Server {
 	repositories := onlyRepository(t, annotations)
 
 	handler := sdk.NewStreamableHTTPHandler(
-		func(*http.Request) *sdk.Server { return newServer(repositories, metrics.Discard{}) },
+		func(*http.Request) *sdk.Server { return newServer(repositories, metrics.Discard{}, false) },
 		&sdk.StreamableHTTPOptions{JSONResponse: jsonResponses},
 	)
 	server := httptest.NewServer(handler)
@@ -104,5 +104,13 @@ func TestServeRejectsBothTransportsAtOnce(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "choose one") {
 		t.Errorf("unhelpful error: %v", err)
+	}
+}
+
+func TestServeRejectsWritesOverHTTP(t *testing.T) {
+	var stderr strings.Builder
+	err := Serve([]string{"--write", "--http", "8765"}, &stderr)
+	if err == nil || !strings.Contains(err.Error(), "only over stdio") {
+		t.Fatalf("err = %v", err)
 	}
 }
