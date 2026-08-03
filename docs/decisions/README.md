@@ -1,7 +1,7 @@
 # Architecture decisions
 
-This directory contains the active decisions for the approved vNext design.
-They use the 0100 series to keep their identities distinct from the v0.2
+This directory contains the active decisions for the approved design. They use
+the 0100 series to keep their identities distinct from the pre-deployment
 prototype decisions.
 
 On 2026-08-03, before any live deployment or durable served database existed,
@@ -18,8 +18,7 @@ git ls-tree -r v0.2.0 docs/decisions
 git show v0.2.0:docs/decisions/0022-index-annotations-in-a-database.md
 ```
 
-Current code may still implement a removed prototype decision. `DESIGN.md`
-marks those boundaries explicitly. Until the corresponding implementation
+`DESIGN.md` marks implemented and planned boundaries explicitly. Until a planned
 stage lands, the code describes current behaviour and the active ADR describes
 the approved destination.
 
@@ -34,6 +33,7 @@ the approved destination.
 - [0106 — Use konflate as the operational baseline](0106-konflate-is-the-operational-baseline.md)
 - [0107 — Enforce the comment-free thesis on koment itself](0107-dogfood-the-comment-free-thesis.md)
 - [0108 — Layer agent guidance behind an authoritative policy gate](0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md)
+- [0109 — Distribute authenticated artifacts instead of Go invocations](0109-distribute-authenticated-artifacts-instead-of-go-invocations.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

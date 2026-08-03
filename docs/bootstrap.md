@@ -1,10 +1,5 @@
 # Bootstrap
 
-> **Transition note:** this page explains the runnable tree while the approved
-> breaking architecture is implemented in stages. The full target and status are in
-> [DESIGN.md](../DESIGN.md). Active decisions begin at
-> [ADR 0100](decisions/README.md).
-
 Everything needed to be productive here, in one page. Written for a new
 developer and for a coding agent on its first task, who need the same things.
 
@@ -79,7 +74,7 @@ Resolution reads the excerpt and nothing else. Deleting every `git:` block would
 change no status — there is a test asserting exactly that. The commit hash is
 authoritative for reconstructing history; the excerpt is authoritative for
 applicability. [ADR 0100](decisions/0100-one-git-record-per-annotation.md)
-preserves that separation in the vNext record.
+preserves that separation in the current record.
 
 Resolution produces one of five statuses. `ambiguous`, `drifted` and `orphaned`
 exit non-zero; `ok` and `moved` do not.
@@ -109,18 +104,21 @@ mise run lint
 mise run vulncheck
 mise run workflow-lint
 mise run annotations
+mise run comments
+mise run agent-policy
 ```
 
 The committed lock file pins Go and every project tool for local shells and CI.
-Lefthook is installed by `mise install` and checks formatting and annotations
-before a commit. CI runs the same tasks plus the setup action, container and
-Helm smoke checks behind one required `test` status.
+Lefthook is installed by `mise install` and checks formatting, annotations,
+comment policy and agent adapters before a commit. CI runs the same tasks plus
+the setup action, container and Helm smoke checks behind one required `test`
+status.
 
 Try the tool on itself:
 
 ```sh
-go run ./cmd/koment show internal/store/ulid.go
-go run ./cmd/koment ui
+./koment show internal/store/ulid.go
+./koment ui --write
 ```
 
 ### Layout
@@ -128,8 +126,12 @@ go run ./cmd/koment ui
 ```
 cmd/koment/          entrypoint, flag parsing only
 internal/cli/        add, show, check, list, reanchor
+internal/application/ shared snapshot and mutation service
+internal/agentpolicy/ generated instructions, client adapters and hooks
 internal/store/      records, ULIDs, prose wrapping, git context, authorship
 internal/anchor/     resolution and drift status
+internal/commentpolicy/ deterministic source-comment classification
+internal/policy/      strict repository policy
 internal/provenance/ captures git context and author identity
 internal/listen/     bind address resolution, shared by both servers
 internal/config/     KOMENT_* environment fallback for every flag
@@ -143,9 +145,8 @@ workspace/           maintained session package and independent koment store
 Dependencies point one way: `store` depends on nothing internal, `anchor` on
 `store`, everything else on those. `cli` imports neither `mcp` nor `ui` — they
 are injected into `cli.Run` as a `Servers` struct, which is what keeps the MCP
-SDK out of the CLI's link graph. The rationale for this v0.2 boundary remains
-in the [pre-reset decision history](decisions/README.md); vNext readers consume
-the shared application model defined by ADR 0102.
+SDK out of the CLI's link graph. CLI, UI, MCP and static publication consume the
+shared application model defined by ADR 0102.
 
 ## Verify the maintained workspace
 

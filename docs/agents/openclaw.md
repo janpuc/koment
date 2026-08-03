@@ -11,7 +11,7 @@ its config, which is JSON5 — so comments and trailing commas are fine.
     servers: {
       koment: {
         command: "koment",
-        args: ["mcp"],
+        args: ["mcp", "--write"],
         cwd: "/path/to/your/repo",
         transport: "stdio",
         enabled: true,
@@ -53,7 +53,7 @@ koment mcp --http 8765
 }
 ```
 
-There is no authentication on the v0.2 HTTP transport. That is legacy
+There is no authentication on the current HTTP transport. That is transitional
 behaviour; the approved served tier authenticates every non-loopback request
 ([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
 

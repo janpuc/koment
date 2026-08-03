@@ -14,6 +14,8 @@ mise run lint
 mise run vulncheck
 mise run workflow-lint
 mise run annotations
+mise run comments
+mise run agent-policy
 ```
 
 `.mise/config.toml` and `.mise/mise.lock` are the toolchain source of truth.
@@ -26,11 +28,15 @@ and Helm smoke checks, then reports one required `test` status.
 ```
 cmd/koment/          entrypoint, flag parsing only
 internal/cli/        add, show, check, list, reanchor
+internal/application/ shared snapshot and mutation service
+internal/agentpolicy/ generated instructions, client adapters and hooks
 internal/store/      read/write .koment/annotations, ULIDs, prose wrapping
 internal/anchor/     resolution and drift status
+internal/commentpolicy/ deterministic source-comment classification
+internal/policy/      strict repository policy
 internal/listen/     bind address resolution, shared by both servers
 internal/mcp/        MCP server — stdio and HTTP
-internal/ui/         local read-only web view
+internal/ui/         local web view and atomic static publication
 docs/decisions/      ADRs
 ```
 

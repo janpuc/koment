@@ -34,7 +34,7 @@ runs:
           macOS)  platform=darwin ;;
           *)
             echo "::error::koment's setup action supports Linux and macOS runners." \
-                 "On $RUNNER_OS, install with: go install github.com/${KOMENT_SOURCE}/cmd/koment@latest"
+                 "Download the checksum-listed Windows archive from the koment release instead."
             exit 1
             ;;
         esac

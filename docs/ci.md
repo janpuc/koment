@@ -1,8 +1,10 @@
 # CI and pre-commit
 
-`koment check` exits non-zero when any annotation is `ambiguous`, `drifted` or
-`orphaned`.
-That is the whole integration.
+Three checks enforce a koment-enabled repository:
+
+- `koment check` rejects unresolved annotations.
+- `koment comments check` rejects ordinary inline comments that bypass koment.
+- `koment agents check` rejects missing or stale generated agent adapters.
 
 ## GitHub Actions
 
@@ -21,16 +23,21 @@ jobs:
       - uses: actions/checkout@v5
       - uses: janpuc/koment@v0.2.0
       - run: koment check
+      - run: koment comments check
+      - run: koment agents check
 ```
 
 The action downloads a released binary, verifies it against the release's
 checksums and puts it on `PATH`. Pin a release with `with: { version: 0.2.0 }`;
 it defaults to the latest. Linux and macOS runners.
 
-Already have a Go job? Add one line rather than a whole workflow:
+Already have a job with koment installed? Add the same three gates:
 
 ```yaml
-      - run: go run github.com/janpuc/koment/cmd/koment@latest check
+      - run: |
+          koment check
+          koment comments check
+          koment agents check
 ```
 
 To publish the annotations as well as check them, see
@@ -40,11 +47,14 @@ To publish the annotations as well as check them, see
 
 ```yaml
 annotations:
-  image: golang:alpine
   script:
-    - go install github.com/janpuc/koment/cmd/koment@latest
     - koment check
+    - koment comments check
+    - koment agents check
 ```
+
+Install the checksum-listed release binary in the runner image or job bootstrap;
+end-user and CI installations do not build koment from source.
 
 ## Pre-commit
 
@@ -60,6 +70,16 @@ repos:
         entry: koment check
         language: system
         pass_filenames: false
+      - id: koment-comments
+        name: comments follow koment policy
+        entry: koment comments check
+        language: system
+        pass_filenames: false
+      - id: koment-agents
+        name: agent adapters are current
+        entry: koment agents check
+        language: system
+        pass_filenames: false
 ```
 
 `pass_filenames: false` matters: `koment check` takes paths to *narrow* to, and
@@ -71,7 +91,7 @@ Plain git hook, no framework:
 ```sh
 # .git/hooks/pre-commit
 #!/bin/sh
-exec koment check
+koment check && koment comments check && koment agents check
 ```
 
 ## Narrowing
@@ -114,7 +134,8 @@ argument for keeping annotations in the repository.
 
 ## Should drift block a merge?
 
-Yes — that is the design. But it is your build.
+Yes — that is the design. The resolution, comment-policy and adapter checks
+should be required together.
 
 If a large refactor produces drift you genuinely intend to resolve later, make
 that visible rather than silent: `continue-on-error: true` on the step keeps the

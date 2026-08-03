@@ -4,12 +4,15 @@ VS Code has native MCP support. Workspace servers go in `.vscode/mcp.json`.
 
 ## Configure
 
+`koment agents install` writes this project configuration and the matching
+Copilot instructions. The resulting `.vscode/mcp.json` contains:
+
 ```json
 {
   "servers": {
     "koment": {
       "command": "koment",
-      "args": ["mcp"]
+      "args": ["mcp", "--write"]
     }
   }
 }
@@ -38,21 +41,16 @@ started with `koment mcp --http 8765` from inside the repository.
 ## Verify
 
 Open Chat, switch to **Agent** mode, and open the tools picker — `koment_get`,
-`koment_search` and `koment_repositories` should be listed. `MCP: List Servers`
+`koment_search`, `koment_repositories` and the four mutation tools should be
+listed. `MCP: List Servers`
 in the command palette shows status and logs, which is where to look when a
 server won't start.
 
-## Make it read them
+## Make it use them
 
-Add to `.github/copilot-instructions.md`:
-
-```markdown
-Before editing any file, call `koment_get` on it and read the annotations.
-Treat an `ambiguous`, `drifted` or `orphaned` annotation as history, not as
-current fact. Search koment before changing a non-obvious decision. Do not add
-an explanatory inline comment; record local rationale with koment and
-project-wide rationale in an ADR.
-```
+The generated `.github/copilot-instructions.md` carries the strict contract.
+Run `koment agents check` in CI so the instructions and MCP configuration cannot
+quietly drift.
 
 ## Notes
 

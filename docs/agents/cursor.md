@@ -5,6 +5,9 @@ globally.
 
 ## Configure
 
+`koment agents install` writes this project configuration and the managed Cursor
+rule. The resulting `.cursor/mcp.json` contains:
+
 Create `.cursor/mcp.json`:
 
 ```json
@@ -12,7 +15,7 @@ Create `.cursor/mcp.json`:
   "mcpServers": {
     "koment": {
       "command": "koment",
-      "args": ["mcp"]
+      "args": ["mcp", "--write"]
     }
   }
 }
@@ -20,42 +23,22 @@ Create `.cursor/mcp.json`:
 
 Commit it, and every contributor using Cursor gets the tools.
 
-No koment binary on `PATH`:
-
-```json
-{
-  "mcpServers": {
-    "koment": {
-      "command": "go",
-      "args": ["run", "github.com/janpuc/koment/cmd/koment@latest", "mcp"]
-    }
-  }
-}
-```
-
 ## Verify
 
-**Settings → MCP**. `koment` should show as connected with three tools. If it
+**Settings → MCP**. `koment` should show as connected with seven tools. If it
 shows an error, the usual cause is `koment` not being on the `PATH` Cursor
 inherits — a GUI app launched from the Dock does not get your shell's `PATH`. An
 absolute path in `command` settles it:
 
 ```json
-{ "mcpServers": { "koment": { "command": "/opt/homebrew/bin/koment", "args": ["mcp"] } } }
+{ "mcpServers": { "koment": { "command": "/opt/homebrew/bin/koment", "args": ["mcp", "--write"] } } }
 ```
 
-## Make it read them
+## Make it use them
 
-Add a rule in `.cursor/rules/` (or `.cursorrules`):
-
-```markdown
-Before editing any file, call `koment_get` on it and read the annotations.
-They hold reasoning that is deliberately not in the comments. Treat a
-`ambiguous`, `drifted` or `orphaned` annotation as history, not as current fact.
-Search koment before changing a non-obvious decision. Do not add an explanatory
-inline comment; record local rationale with koment and project-wide rationale in
-an ADR.
-```
+The generated `.cursor/rules/koment.mdc` carries the strict contract. Run
+`koment agents check` in CI so the rule and MCP configuration cannot quietly
+drift.
 
 ## Notes
 

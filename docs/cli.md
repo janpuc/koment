@@ -5,10 +5,15 @@ koment add <file> [--excerpt <text>] --kind <kind> --body <text|->
 koment show <file>
 koment check [path...]
 koment list [--kind <kind>] [path...]
+koment search <query>
 koment reanchor <id> [--excerpt <text>] [--file <path>]
-koment ui [--listen <addr>]
+koment comments check [path...]
+koment comments convert <file> --excerpt <comment> [--kind <kind>]
+koment comments acknowledge <file> --excerpt <comment> --body <text|-> --acknowledge-inline-comment
+koment agents install|check
+koment ui [--listen <addr>] [--write]
 koment site --out <dir>                  # render a repository snapshot to static HTML
-koment mcp [--http <addr> | --streamable-http <addr>]
+koment mcp [--write | --http <addr> | --streamable-http <addr>]
 koment version
 ```
 
@@ -77,6 +82,19 @@ koment list internal/store
 
 Exits `1` if anything shown is ambiguous, drifted or orphaned.
 
+## search
+
+Searches annotation ids, files, kinds, bodies and author identity through the
+same repository snapshot as every other reader.
+
+```sh
+koment search 'clock skew'
+```
+
+Matches include their current resolution status and full body. The command
+exits `1` when a matching record is ambiguous, drifted or orphaned so scripted
+readers cannot mistake stale rationale for current fact.
+
 ## reanchor
 
 Repoints an annotation without touching YAML. Keeps its id and creation date —
@@ -125,18 +143,51 @@ It is a snapshot, not your working tree — use `koment ui` for that, which
 re-resolves on every request. The shared target behaviour is defined by
 [ADR 0102](decisions/0102-one-repository-snapshot-for-every-reader.md). A site
 renders your source as well as your annotations.
+The output directory is replaced atomically and also contains full
+`annotations.json` and flattened `search.json` projections.
+
+## comments
+
+`koment comments check` is the authoritative gate preventing ordinary Go
+comments from bypassing the repository procedure. Toolchain directives,
+generated markers, upstream links, deprecation markers and public API
+documentation are classified through `.koment/policy.yaml`.
+
+```sh
+koment comments check
+koment comments convert internal/auth/token.go --excerpt '// Explain why.' --kind gotcha
+koment comments acknowledge internal/auth/token.go \
+  --excerpt '// Required external marker.' \
+  --body 'The generator consumes this exact marker.' \
+  --acknowledge-inline-comment
+```
+
+Conversion writes an attributed annotation before removing the comment.
+Acknowledgement keeps the comment and creates an exact, attributed policy
+record; omitting the explicit flag is always rejected.
+
+## agents
+
+`koment agents install` creates the strict default `.koment/policy.yaml` and
+generates the selected repository instructions, MCP configs and supported
+client hooks while preserving unrelated configuration. Run it again after a
+policy or adapter change. `koment agents check` fails when any managed surface
+is missing or stale.
 
 ## ui
 
-Local read-only web view — your code with its annotations in the margin.
+Local web view — your code with its annotations in the margin.
 
 ```sh
 koment ui
 koment ui --listen 8080
+koment ui --write
 ```
 
-Binds loopback and prints the URL. A bare port gets `127.0.0.1` prefixed; bind
-anywhere else and koment warns, because there is no authentication.
+Binds loopback and prints the URL. `--write` prints a capability-bearing
+bootstrap URL and is refused on non-loopback addresses. Opening that URL sets a
+same-site, HTTP-only capability cookie; the visible form writes human-authored
+annotations through the same application service as CLI and MCP.
 
 ## mcp
 
@@ -144,6 +195,7 @@ The MCP server. See [agent setup](agents/).
 
 ```sh
 koment mcp                            # stdio, the default
+koment mcp --write                    # stdio plus mutation tools
 koment mcp --http 8765                # HTTP, JSON responses
 koment mcp --streamable-http 8765     # HTTP, server-sent events
 ```
@@ -151,6 +203,10 @@ koment mcp --streamable-http 8765     # HTTP, server-sent events
 Exposes `koment_get(file, repository?)`, `koment_search(query, repository?)` and
 `koment_repositories()`. stdio is what you want unless the agent cannot spawn a
 subprocess.
+
+`--write` adds `koment_add`, `koment_reanchor`, `koment_convert_comment` and
+`koment_acknowledge_comment`. It is valid only over local stdio; HTTP transports
+are always read-only.
 
 With several repositories configured, an ambiguous `koment_get` fails and names
 the candidates instead of picking one.

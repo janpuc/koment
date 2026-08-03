@@ -15,10 +15,21 @@ client. Pick yours:
 | Zed | Zed `settings.json` | [zed.md](zed.md) |
 | Anything else | — | [other.md](other.md) |
 
+## Install the repository contract
+
+```sh
+koment agents install
+```
+
+This creates the strict `.koment/policy.yaml`, refreshes supported repository
+instruction files and client hooks, and configures writable local MCP where the
+client supports project configuration. Existing unrelated configuration is
+preserved. Commit the generated files so the procedure starts with the
+repository, not a person's workstation.
+
 ## What your agent gets
 
-Three tools, deliberately. Every MCP tool costs context in every request, so the
-surface stays small.
+Every local server has three read tools:
 
 - **`koment_get(file)`** — annotations for a file, each with its resolution
   status. The one to call before editing something unfamiliar.
@@ -26,6 +37,13 @@ surface stays small.
   know the topic but not the file.
 - **`koment_repositories()`** — the assigned repositories and their resolution
   counts, for an intentional cross-repository operation.
+
+`koment mcp --write` over stdio adds four mutation tools:
+
+- **`koment_add`** — create an annotation with the MCP client recorded as an agent.
+- **`koment_reanchor`** — explicitly confirm a changed anchor.
+- **`koment_convert_comment`** — record rationale before removing its inline comment.
+- **`koment_acknowledge_comment`** — keep an exceptional comment only with an exact, attributable acknowledgement.
 
 Every annotation carries its status. `ambiguous`, `drifted` and `orphaned`
 records arrive with an explicit warning and must be treated as history. An
@@ -41,28 +59,15 @@ workspace, which is what you want. If yours doesn't — or if you run the server
 yourself over HTTP — start it from inside the repository, or the annotations it
 serves will belong to a different project or none at all.
 
-## Give the agent a strict contract
+## What is actually enforced
 
-Wiring up the server makes the tools *available*. It does not make an agent
-*reach for them*. Put this contract in the repository instruction surface your
-client reads:
+Instructions tell a cooperative agent what to do. Supported pre-tool hooks can
+deny obvious comment-adding patches, and stop hooks make an agent continue when
+resolution, comment policy or generated adapters fail. Neither is a security
+boundary: a client can decline trust or write through an unhooked process.
 
-```markdown
-Before editing an existing file, call `koment_get` for it. Search koment before
-changing a non-obvious decision. Treat ambiguous, drifted and orphaned records
-as history, never current fact. Do not add an explanatory inline comment:
-rename, extract, introduce a named type or constant, restructure, then create a
-koment annotation with honest agent authorship. Run `koment check` before
-finishing, and do not report success while it fails.
-```
-
-koment's own repository does exactly this — see [AGENTS.md](../../AGENTS.md).
-
-Repository instructions and client hooks are early guardrails, not a security
-boundary: an agent client can decline trust, disable instructions or write
-through an unhooked process. Today `koment check` enforces annotation resolution,
-not the absence of explanatory comments. The target enforceable outcome is a
-required `koment comments check` status on a protected branch, paired with
-`koment check`. [ADR 0108](../decisions/0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md)
-defines the version-1 policy and generated adapters that will remove the manual
-copy step once local agent writes and comment-intent conversion exist.
+The authoritative boundary is CI. Require `koment check`, `koment comments
+check` and `koment agents check` on the protected branch. Then an ordinary
+comment or a weakened adapter cannot land regardless of which editor or agent
+created it. [ADR 0108](../decisions/0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md)
+records the layers and their limits.
