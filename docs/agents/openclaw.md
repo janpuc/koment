@@ -53,7 +53,9 @@ koment mcp --http 8765
 }
 ```
 
-There is no authentication on that port — see [ADR 0011](../decisions/0011-serve-mcp-over-http-as-well-as-stdio.md).
+There is no authentication on the v0.2 HTTP transport. That is legacy
+behaviour; the approved served tier authenticates every non-loopback request
+([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
 
 ## Timeouts
 

@@ -165,7 +165,7 @@ research prototype.
 
 ## 12. Record rationale as an annotation
 
-This repository is koment's own first user (ADR 0010). When you find yourself
+This repository is koment's own first user (ADR 0107). When you find yourself
 about to write a comment explaining *why*, and rules 1–4 above have not
 dissolved it, the rationale belongs in one of two places:
 

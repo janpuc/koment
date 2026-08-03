@@ -1,5 +1,10 @@
 # Bootstrap
 
+> **Transition note:** this page explains the runnable v0.2 tree. The approved
+> breaking vNext architecture and implementation status are in
+> [DESIGN.md](../DESIGN.md). Active decisions begin at
+> [ADR 0100](decisions/README.md).
+
 Everything needed to be productive here, in one page. Written for a new
 developer and for a coding agent on its first task, who need the same things.
 
@@ -71,7 +76,8 @@ do not:
 Resolution reads the excerpt and nothing else. Deleting every `git:` block would
 change no status — there is a test asserting exactly that. The commit hash is
 authoritative for reconstructing history; the excerpt is authoritative for
-applicability. ADR 0014 has the reasoning.
+applicability. [ADR 0100](decisions/0100-one-git-record-per-annotation.md)
+preserves that separation in the vNext record.
 
 Resolution produces one of four statuses. `drifted` and `orphaned` exit
 non-zero; `ok` and `moved` do not.
@@ -88,20 +94,21 @@ Two things, and it matters which is which:
 The index is rebuilt from YAML and is never authoritative. Delete it and run
 `koment index --rebuild`; nothing is lost. It is gitignored because it is a
 build artifact, and a database file in git would be unreviewable and unmergeable
-(ADR 0022).
+This is v0.2 behaviour. [ADR 0102](decisions/0102-one-repository-snapshot-for-every-reader.md)
+removes the local database rather than carrying its invalidation model forward.
 
 Resolution stays live: the index stamps each file with `(mtime, size)` and
 re-resolves anything that changed before serving a status.
 
-The derivation runs both ways, exactly (ADR 0023):
+The v0.2 derivation runs both ways:
 
 ```sh
 koment index      # .koment  ->  index   (automatic when the index is empty)
 koment export     # index    ->  .koment (byte-identical)
 ```
 
-So a wiped cache costs a rebuild, and a lost `.koment/` costs an export. Neither
-loses an annotation.
+The vNext design deliberately removes the reverse recovery claim: Git is the
+only authoritative recovery source.
 
 ## Run and test it locally
 
@@ -145,7 +152,9 @@ demo/                the fixture behind the published demo
 Dependencies point one way: `store` depends on nothing internal, `anchor` on
 `store`, everything else on those. `cli` imports neither `mcp` nor `ui` — they
 are injected into `cli.Run` as a `Servers` struct, which is what keeps the MCP
-SDK out of the CLI's link graph. That is load-bearing, not stylistic (ADR 0007).
+SDK out of the CLI's link graph. The rationale for this v0.2 boundary remains
+in the [pre-reset decision history](decisions/README.md); vNext readers consume
+the shared application model defined by ADR 0102.
 
 ## Regenerate the demo
 
@@ -185,7 +194,7 @@ turns them into a version and a changelog.
 
 The binaries are not optional decoration: `janpuc/koment@v0.2.0` downloads them, so
 a release that fails to attach them breaks every workflow that uses the action
-(ADR 0026).
+([ADR 0103](decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
 
 Nothing is published from an unmerged branch, and `main` requires a pull request
 with green CI, so there is no path to releasing something that did not pass.

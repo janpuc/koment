@@ -34,12 +34,12 @@ mcp_servers:
     url: "http://koment.internal:8765"
 ```
 
-**koment's HTTP transport has no authentication.** Anything that can reach the
-port can read every annotation in the repository. It binds loopback unless you
-say otherwise, and warns at startup when you do. If Hermes is on another host,
-put the port behind something that authenticates, or restrict it at the network
-level. See [ADR 0011](../decisions/0011-serve-mcp-over-http-as-well-as-stdio.md)
-for why it ships this way.
+**koment's v0.2 HTTP transport has no authentication.** Anything that can reach
+the port can read every annotation in the repository. It binds loopback unless
+you say otherwise, and warns at startup when you do. If Hermes is on another
+host, put the port behind something that authenticates or restrict it at the
+network level. The approved served tier replaces this behaviour
+([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
 
 ## Filter the tools
 
@@ -70,5 +70,5 @@ Treat a `drifted` or `orphaned` annotation as history, not as current fact.
   and the two do not overlap: a memory store consolidates, paraphrases and
   eventually forgets, which is the right behaviour for preferences and wrong for
   a verbatim record anchored to a line of code. koment deliberately does not use
-  one as a backend — [ADR 0004](../decisions/0004-do-not-use-a-memory-store-as-the-backend.md)
-  has the measured reasoning.
+  one as a backend. Git remains the exact record
+  ([ADR 0100](../decisions/0100-one-git-record-per-annotation.md)).

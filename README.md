@@ -11,6 +11,11 @@
 
 </div>
 
+> **Design reset in progress.** This README documents the runnable v0.2
+> implementation. The approved breaking vNext target and its honest capability
+> status are in [DESIGN.md](DESIGN.md); active decisions begin at
+> [ADR 0100](docs/decisions/README.md).
+
 Readable code answers *what*. It cannot answer *why this and not the obvious
 alternative*, *what bit us here before*, or *what breaks if you "simplify" this*.
 Comments are the usual home for that and they rot — they duplicate the code,
@@ -57,7 +62,7 @@ copy](docs/publishing.md).
 Anchoring is by **excerpt**, never by line number — line numbers rot on the next
 edit above them. The commit hash *is* recorded, but only to reconstruct history;
 it never decides whether an annotation still applies. Two questions, two
-mechanisms ([ADR 0014](docs/decisions/0014-record-the-git-context-of-every-annotation.md)).
+mechanisms ([ADR 0100](docs/decisions/0100-one-git-record-per-annotation.md)).
 
 koment is **read-only over the network**. The UI and the MCP server serve; they
 never write. Annotations are created by the CLI, by a person or an agent with a
@@ -69,7 +74,7 @@ anything.
 Pick one. Each is a place to stop, not a step you have to take, and **moving
 between them is not a migration** — all three read the same `.koment/` in git,
 so there is nothing to export, import or back up
-([ADR 0026](docs/decisions/0026-three-tiers-of-adoption-and-static-is-one-of-them.md)).
+([ADR 0103](docs/decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
 
 | | you run | you get |
 |---|---|---|
@@ -112,7 +117,8 @@ docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
 ## Several repositories
 
 One deployment serves many. Identity is assigned, so a repository that moves
-keeps its annotations and its index (ADR 0024):
+keeps its annotations and its index
+([ADR 0104](docs/decisions/0104-transactional-multi-repository-snapshots.md)):
 
 ```yaml
 # KOMENT_CONFIG=/etc/koment.yaml
@@ -150,7 +156,7 @@ helm install koment oci://ghcr.io/janpuc/charts/koment \
 
 Metrics land on a **separate port** from the serving one — the serving port is
 unauthenticated and ingress-facing, and `/metrics` must not inherit that
-([ADR 0020](docs/decisions/0020-expose-metrics-on-a-separate-listener.md)). The
+([ADR 0103](docs/decisions/0103-three-tiers-with-human-and-agent-capabilities.md)). The
 chart ships a Grafana dashboard the sidecar discovers by label. Its headline
 panel is drift over time, which is the one question `koment check` cannot answer,
 because it only ever sees one moment.
@@ -195,7 +201,8 @@ Three tools:
 Every annotation arrives with its resolution status *and* its repository, so a
 stale one is never presented as current and a result is never detached from its
 scope. When a path exists in several repositories `koment_get` **refuses and
-names the candidates** rather than guessing (ADR 0025).
+names the candidates** rather than guessing
+([ADR 0104](docs/decisions/0104-transactional-multi-repository-snapshots.md)).
 
 | | | |
 |---|---|---|
@@ -240,9 +247,9 @@ would be worse than the limit.
   record; koment holds knowledge bound to a *place* in the code.
 - **Not a memory system.** A consolidating store paraphrases, merges and
   eventually forgets. koment is a record, not a belief
-  ([ADR 0004](docs/decisions/0004-do-not-use-a-memory-store-as-the-backend.md)).
+  ([ADR 0100](docs/decisions/0100-one-git-record-per-annotation.md)).
 - **Not line-precise.** Anchors are snippets
-  ([ADR 0003](docs/decisions/0003-anchor-by-excerpt-not-line-numbers.md)).
+  ([ADR 0101](docs/decisions/0101-fail-ambiguous-anchor-resolution.md)).
 
 ## Prior art
 
