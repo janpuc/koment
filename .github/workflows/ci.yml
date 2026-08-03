@@ -102,6 +102,41 @@ jobs:
       - name: the binary runs
         run: docker run --rm koment:ci help
 
+  # The action is what docs/publishing.md tells people to copy. It installs a
+  # published release, so this exercises what a user actually gets rather than
+  # what is in the tree.
+  action:
+    name: setup action
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: setup
+        uses: ./
+
+      - name: koment is on PATH and reports the release it installed
+        run: |
+          set -euo pipefail
+          command -v koment
+          koment version
+          test -n "${{ steps.setup.outputs.version }}"
+          koment version | grep -q "${{ steps.setup.outputs.version }}"
+
+      # The published tier end to end, on a real repository, with the binary a
+      # user would have downloaded.
+      - name: it can publish a site
+        run: |
+          set -euo pipefail
+          koment site --out /tmp/site --name ci
+          test -f /tmp/site/index.html
+          grep -q "snapshot of" /tmp/site/index.html
+
   chart:
     name: helm chart
     runs-on: ubuntu-24.04
