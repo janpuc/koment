@@ -62,7 +62,7 @@ jobs:
         run: mise run annotations
 
   go-lint:
-    name: Go Lint
+    name: lint
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -184,7 +184,7 @@ jobs:
         run: mise run workflow-lint
 
   container:
-    name: Container
+    name: container build
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -258,7 +258,7 @@ jobs:
           grep -q "snapshot of" /tmp/site/index.html
 
   helm:
-    name: Helm
+    name: helm chart
     runs-on: ubuntu-24.04
     permissions:
       contents: read
