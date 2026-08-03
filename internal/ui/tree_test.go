@@ -15,19 +15,19 @@ func entriesFor(paths ...string) []entry {
 	return listed
 }
 
-func find(nodes []node, name string) (node, bool) {
+func find(nodes []treeNode, name string) (treeNode, bool) {
 	for _, at := range nodes {
 		if at.Name == name {
 			return at, true
 		}
 	}
-	return node{}, false
+	return treeNode{}, false
 }
 
 // The rail used to render one flat row per directory path, so a Go layout came
 // out as a list of unrelated strings with no structure between them.
 func TestTheTreeIsNestedNotFlat(t *testing.T) {
-	tree, _ := treeOf(entriesFor(
+	tree, _ := buildTree(entriesFor(
 		"internal/ui/view.go",
 		"internal/ui/tree.go",
 		"internal/store/record.go",
@@ -51,7 +51,7 @@ func TestTheTreeIsNestedNotFlat(t *testing.T) {
 // A chain of directories with nothing in it but the next directory is
 // scaffolding, and rendering each as its own row wastes the rail's width.
 func TestASingleChildChainCollapsesIntoOneRow(t *testing.T) {
-	tree, _ := treeOf(entriesFor("internal/ui/assets/style.css"), "")
+	tree, _ := buildTree(entriesFor("internal/ui/assets/style.css"), "")
 
 	if len(tree) != 1 {
 		t.Fatalf("want one row, got %d", len(tree))
@@ -68,7 +68,7 @@ func TestASingleChildChainCollapsesIntoOneRow(t *testing.T) {
 }
 
 func TestADirectoryWithItsOwnFilesDoesNotCollapse(t *testing.T) {
-	tree, _ := treeOf(entriesFor("internal/go.mod", "internal/ui/view.go"), "")
+	tree, _ := buildTree(entriesFor("internal/go.mod", "internal/ui/view.go"), "")
 
 	if tree[0].Name != "internal" {
 		t.Fatalf("internal has a file of its own and must stay its own row, got %q", tree[0].Name)
@@ -79,7 +79,7 @@ func TestADirectoryWithItsOwnFilesDoesNotCollapse(t *testing.T) {
 }
 
 func TestFilesAtTheRootAreListedNotBuriedInAFakeDirectory(t *testing.T) {
-	tree, loose := treeOf(entriesFor("README.md", "internal/ui/view.go"), "")
+	tree, loose := buildTree(entriesFor("README.md", "internal/ui/view.go"), "")
 
 	if _, ok := find(tree, "internal/ui"); !ok {
 		t.Errorf("internal/ui is missing from the tree, got %+v", tree)
@@ -100,7 +100,7 @@ func TestADirectoryCarriesTheWorstStatusBeneathIt(t *testing.T) {
 	listed := entriesFor("internal/ui/view.go", "internal/ui/tree.go")
 	listed[1].Worst = anchor.StatusDrifted
 
-	tree, _ := treeOf(listed, "")
+	tree, _ := buildTree(listed, "")
 
 	if tree[0].Worst != anchor.StatusDrifted {
 		t.Errorf("want drifted to surface at internal/ui, got %q", tree[0].Worst)
@@ -113,7 +113,7 @@ func TestADirectoryCarriesTheWorstStatusBeneathIt(t *testing.T) {
 // Everything closed is what keeps a large repository readable; the path to
 // what you are reading is the exception.
 func TestOnlyThePathToTheCurrentFileStartsOpen(t *testing.T) {
-	tree, _ := treeOf(entriesFor(
+	tree, _ := buildTree(entriesFor(
 		"internal/ui/view.go",
 		"internal/store/record.go",
 		"docs/publishing.md",
@@ -139,7 +139,7 @@ func TestOnlyThePathToTheCurrentFileStartsOpen(t *testing.T) {
 }
 
 func TestTheTreeSurvivesADeepPath(t *testing.T) {
-	tree, _ := treeOf(entriesFor("a/b/c/d/e/f/g.go"), "")
+	tree, _ := buildTree(entriesFor("a/b/c/d/e/f/g.go"), "")
 
 	if len(tree) != 1 || !strings.HasPrefix(tree[0].Name, "a/b") {
 		t.Errorf("a deep single-child path should fold into one row, got %+v", tree)

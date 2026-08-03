@@ -1,5 +1,15 @@
 # Agent rules for koment
 
+<!-- koment:managed-start -->
+## koment procedure
+
+- Before editing an existing file, call `koment_get` for it and read every annotation. Search with `koment_search` before changing a non-obvious decision.
+- Treat ambiguous, drifted and orphaned annotations as history, never as current fact.
+- Do not add explanatory inline comments. Prefer a better name, extraction, a named type or constant, or clearer structure; then record local rationale with `koment_add` and honest agent authorship.
+- Completed comment intent must use `koment_convert_comment`. Keeping an inline comment requires `koment_acknowledge_comment` with the explicit acknowledgement set to true.
+- Before finishing, run `koment check`, `koment comments check` and `koment agents check`. Do not report success while any fails.
+<!-- koment:managed-end -->
+
 You are working on a tool whose entire purpose is to make code understandable
 without comments. If this codebase needs comments to be understood, the project
 has failed its own thesis. Dogfood it.
@@ -19,7 +29,7 @@ so an MCP-capable client already has the tools:
 - `koment_search(query)` — find recorded rationale by topic
 - `koment_repositories()` — repository names when the server has more than one
 
-Without MCP, use the CLI: `go run ./cmd/koment show <file>`.
+Without MCP, use the installed CLI: `koment show <file>`.
 
 An annotation whose status is `ambiguous`, `drifted` or `orphaned` describes
 code that cannot be resolved reliably. Read it as history and say so; never act
@@ -177,14 +187,14 @@ dissolved it, the rationale belongs in one of two places:
 - Bound to a specific place in the code → a koment annotation.
 
 ```
-go run ./cmd/koment add <file> --excerpt '<verbatim snippet>' \
+koment add <file> --excerpt '<verbatim snippet>' --agent \
     --kind gotcha --body -
 ```
 
 `--body -` reads from stdin, which is easier than quoting prose in a shell.
 Kinds are `why`, `gotcha`, `invariant`, `anti-pattern`.
 
-Run `go run ./cmd/koment check` before you finish. It exits non-zero if any
+Run `koment check` before you finish. It exits non-zero if any
 annotation no longer resolves, including ones you invalidated by editing the
 code they were anchored to. Fix the annotation or fix the anchor — do not delete
 the annotation to make the check pass.

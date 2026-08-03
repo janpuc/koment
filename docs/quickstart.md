@@ -2,8 +2,12 @@
 
 ## Install
 
+Download the checksum-listed archive for your platform from the
+[latest release](https://github.com/janpuc/koment/releases/latest), or install
+that release with mise:
+
 ```sh
-go install github.com/janpuc/koment/cmd/koment@latest
+mise use -g github:janpuc/koment
 ```
 
 One static binary, no runtime. Check it:
@@ -17,6 +21,12 @@ koment help
 Work in a real repository — koment is not much use on a toy. Find a piece of
 code where you know something the code doesn't say. The test is simple: *would a
 competent stranger delete this, thinking it was pointless?*
+
+First install the repository policy and the adapters used by supported agents:
+
+```sh
+koment agents install
+```
 
 ```sh
 koment add internal/auth/token.go \
@@ -111,6 +121,21 @@ annotation that stopped being true has done its job and should go.
 
 What you should *not* do is delete it to make the check pass without reading it.
 That is the failure koment exists to prevent, just with extra steps.
+
+## Move an existing comment into koment
+
+Ordinary explanatory Go comments fail `koment comments check`. Convert one by
+passing the complete comment group exactly as it appears in source:
+
+```sh
+koment comments convert internal/auth/token.go \
+  --excerpt '// Keep the skew because clients have imperfect clocks.' \
+  --kind gotcha
+```
+
+koment records the annotation first and removes the source comment second. A
+comment can remain only through `koment comments acknowledge` with a rationale
+and the explicit `--acknowledge-inline-comment` flag.
 
 ## Commit it
 

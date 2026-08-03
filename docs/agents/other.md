@@ -10,7 +10,7 @@ Most clients spawn the server as a subprocess:
 | field | value |
 |---|---|
 | command | `koment` |
-| args | `["mcp"]` |
+| args | `["mcp", "--write"]` |
 | transport | stdio |
 | working directory | your repository |
 
@@ -18,14 +18,14 @@ Whatever the config format, that is what it needs to express. Two examples of
 the same thing:
 
 ```json
-{ "mcpServers": { "koment": { "command": "koment", "args": ["mcp"] } } }
+{ "mcpServers": { "koment": { "command": "koment", "args": ["mcp", "--write"] } } }
 ```
 
 ```yaml
 mcp_servers:
   koment:
     command: "koment"
-    args: ["mcp"]
+    args: ["mcp", "--write"]
 ```
 
 **Working directory matters.** koment walks up from it looking for `.koment/`,
@@ -59,8 +59,8 @@ authentication; anyone who can reach this port can read every annotation in
 the repository.
 ```
 
-**There is no authentication in v0.2.** Put it behind something that
-authenticates before exposing it beyond a trusted network. This is legacy
+**There is no authentication on the current HTTP transport.** Put it behind
+something that authenticates before exposing it beyond a trusted network. This is transitional
 behaviour; the approved served tier authenticates every non-loopback request
 ([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
 
@@ -77,11 +77,20 @@ koment_search(query: string)
 koment_repositories()
   → { repositories: [ { id, name, default_branch, clone_url, files,
                          annotations: { status: count } } ] }
+
+koment_add(file, excerpt?, kind, body, repository?)
+koment_reanchor(id, file?, excerpt?, repository?)
+koment_convert_comment(file, comment, kind?, repository?)
+koment_acknowledge_comment(file, comment, body,
+  acknowledge_inline_comment: true, repository?)
 ```
 
 `status` is one of `ok`, `moved`, `ambiguous`, `drifted`, `orphaned`. When it is
 a failing one, `warning` carries prose saying so — a client should surface it
 rather than present the body as current fact.
+
+The four mutation tools are registered only by local `--write` stdio servers.
+HTTP transports are read-only.
 
 ## Check it works without a client
 

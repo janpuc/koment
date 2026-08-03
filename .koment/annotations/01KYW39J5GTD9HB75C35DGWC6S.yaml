@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
 version: 1
 id: 01KYW39J5GTD9HB75C35DGWC6S
-file: internal/cli/reanchor.go
+file: internal/application/service.go
 kind: why
 body: |-
   Re-anchoring keeps the annotation's ULID and its created date on purpose.
@@ -12,10 +12,13 @@ body: |-
 created: "2026-07-31"
 anchor:
   scope: excerpt
-  excerpt: "\tmoved := *record"
-  before: "\t\t}\n\t}\n"
-  after: "\tif err := reanchorTo(&moved, annotations, target, *excerpt); err != nil {\n\t\treturn fail(env, err)\n\t}"
-  last_seen_line: 38
+  excerpt: func (s *Service) Reanchor(input ReanchorInput) (Mutation, error) {
+  before: |-
+    }
+
+    // Reanchor changes only an annotation's target.
+  after: "\trecord, err := s.store.FindByID(input.ID)\n\tif err != nil {\n\t\treturn Mutation{}, err"
+  last_seen_line: 87
 author:
   name: Legacy import
   kind: unknown

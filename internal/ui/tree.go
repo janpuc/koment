@@ -8,19 +8,17 @@ import (
 	"github.com/janpuc/koment/internal/anchor"
 )
 
-// node is a directory in the file tree.
-type node struct {
+type treeNode struct {
 	Name  string
 	Path  string
-	Dirs  []node
+	Dirs  []treeNode
 	Files []entry
 	Count int
 	Worst anchor.Status
 	Open  bool
 }
 
-// severity orders statuses so a directory can advertise the worst one beneath it.
-var severity = map[anchor.Status]int{
+var statusSeverity = map[anchor.Status]int{
 	anchor.StatusOK:        0,
 	anchor.StatusMoved:     1,
 	anchor.StatusAmbiguous: 2,
@@ -28,30 +26,26 @@ var severity = map[anchor.Status]int{
 	anchor.StatusOrphaned:  4,
 }
 
-// treeOf builds the directory tree, returning the nested directories and the
-// files that sit at the repository root.
-func treeOf(files []entry, current string) ([]node, []entry) {
-	root := &node{}
+func buildTree(files []entry, current string) ([]treeNode, []entry) {
+	root := &treeNode{}
 	for _, file := range files {
-		directory := directoryOf(root, path.Dir(file.Path))
+		directory := findOrCreateDirectory(root, path.Dir(file.Path))
 		directory.Files = append(directory.Files, file)
 	}
 
 	collapse(root)
-	summarise(root, current)
+	summariseTree(root, current)
 	return root.Dirs, root.Files
 }
 
-// directoryOf finds or creates the node for a slash-separated directory,
-// treating "." — what path.Dir gives a bare filename — as the root itself.
-func directoryOf(root *node, directory string) *node {
+func findOrCreateDirectory(root *treeNode, directory string) *treeNode {
 	if directory == "." || directory == "" {
 		return root
 	}
 
 	at := root
 	for _, segment := range strings.Split(directory, "/") {
-		next := (*node)(nil)
+		next := (*treeNode)(nil)
 		for i := range at.Dirs {
 			if at.Dirs[i].Name == segment {
 				next = &at.Dirs[i]
@@ -59,7 +53,7 @@ func directoryOf(root *node, directory string) *node {
 			}
 		}
 		if next == nil {
-			at.Dirs = append(at.Dirs, node{Name: segment, Path: path.Join(at.Path, segment)})
+			at.Dirs = append(at.Dirs, treeNode{Name: segment, Path: path.Join(at.Path, segment)})
 			next = &at.Dirs[len(at.Dirs)-1]
 		}
 		at = next
@@ -67,7 +61,7 @@ func directoryOf(root *node, directory string) *node {
 	return at
 }
 
-func collapse(at *node) {
+func collapse(at *treeNode) {
 	for i := range at.Dirs {
 		collapse(&at.Dirs[i])
 	}
@@ -84,15 +78,13 @@ func collapse(at *node) {
 	}
 }
 
-// summarise rolls counts and the worst status up the tree, and opens the
-// directories on the path to the file being shown.
-func summarise(at *node, current string) {
+func summariseTree(at *treeNode, current string) {
 	sort.Slice(at.Dirs, func(i, j int) bool { return at.Dirs[i].Name < at.Dirs[j].Name })
 	sort.Slice(at.Files, func(i, j int) bool { return at.Files[i].Name < at.Files[j].Name })
 
 	for _, file := range at.Files {
 		at.Count += file.Count
-		if severity[file.Worst] > severity[at.Worst] {
+		if statusSeverity[file.Worst] > statusSeverity[at.Worst] {
 			at.Worst = file.Worst
 		}
 		if file.Path == current {
@@ -102,10 +94,10 @@ func summarise(at *node, current string) {
 
 	for i := range at.Dirs {
 		child := &at.Dirs[i]
-		summarise(child, current)
+		summariseTree(child, current)
 
 		at.Count += child.Count
-		if severity[child.Worst] > severity[at.Worst] {
+		if statusSeverity[child.Worst] > statusSeverity[at.Worst] {
 			at.Worst = child.Worst
 		}
 		if child.Open {

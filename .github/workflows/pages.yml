@@ -29,7 +29,10 @@ jobs:
         run: go build -o koment ./cmd/koment
 
       - name: check koment
-        run: ./koment check
+        run: |
+          ./koment check
+          ./koment comments check
+          ./koment agents check
 
       - name: render koment
         run: |
@@ -56,7 +59,11 @@ jobs:
       - name: verify publication
         run: |
           test -f dist/index.html
+          test -f dist/annotations.json
+          test -f dist/search.json
           test -f dist/r/workspace/index.html
+          test -f dist/r/workspace/annotations.json
+          test -f dist/r/workspace/search.json
           grep -q "snapshot of" dist/index.html
           grep -q "snapshot of" dist/r/workspace/index.html
           grep -q "r/workspace/index.html" dist/index.html

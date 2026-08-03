@@ -131,6 +131,33 @@ body {
 .snapshot code, .snapshot a { font-family: var(--mono); color: var(--accent); }
 .snapshot .stamp code { letter-spacing: 0; font-size: .76rem; }
 
+.write-result, .write-warning {
+  margin: 1rem var(--gutter) 0;
+  padding: .55rem .75rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-size: .82rem;
+}
+.write-warning { color: var(--drifted); border-color: var(--drifted); }
+.write-card {
+  margin: 1rem var(--gutter);
+  padding: .7rem .85rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+.write-card summary { cursor: pointer; font-weight: 650; }
+.write-card form { display: grid; gap: .7rem; margin-top: .8rem; }
+.write-card label { display: grid; gap: .25rem; font-size: .76rem; color: var(--ink-soft); }
+.write-card input, .write-card select, .write-card textarea, .write-card button {
+  width: 100%;
+  padding: .45rem .55rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+.write-card button { width: auto; justify-self: start; cursor: pointer; color: var(--accent); }
+
 .app {
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);

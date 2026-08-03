@@ -43,18 +43,23 @@ func barePort(address string) (string, error) {
 // WarnIfPublic says so, loudly, when a bind address is reachable from beyond
 // this machine. Neither server authenticates.
 func WarnIfPublic(address string, stderr io.Writer) {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return
-	}
-	if parsed := net.ParseIP(host); parsed != nil && parsed.IsLoopback() {
-		return
-	}
-	if host == "localhost" {
+	if IsLoopback(address) {
 		return
 	}
 
 	fmt.Fprintf(stderr,
 		"koment: WARNING serving on %s, which is not loopback. There is no authentication; "+
 			"anyone who can reach this port can read every annotation in the repository.\n", address)
+}
+
+// IsLoopback reports whether an address is confined to the local machine.
+func IsLoopback(address string) bool {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return false
+	}
+	if parsed := net.ParseIP(host); parsed != nil && parsed.IsLoopback() {
+		return true
+	}
+	return host == "localhost"
 }

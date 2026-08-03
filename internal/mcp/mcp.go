@@ -10,7 +10,9 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/janpuc/koment/internal/agentpolicy"
 	"github.com/janpuc/koment/internal/anchor"
+	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/metrics"
 	"github.com/janpuc/koment/internal/repository"
 )
@@ -33,18 +35,22 @@ const (
 		"Call this first when you do not know which repository a file belongs to."
 )
 
-func newServer(repositories *repository.Set, recorder metrics.Recorder) *sdk.Server {
-	server := sdk.NewServer(&sdk.Implementation{Name: serverName, Version: serverVersion}, nil)
+func newServer(repositories *repository.Set, recorder metrics.Recorder, writes bool) *sdk.Server {
+	instructions := agentpolicy.Contract()
+	if !writes {
+		instructions += "\n\nThis server is read-only. Restart it with `koment mcp --write` over stdio when mutations are required."
+	}
+	server := sdk.NewServer(&sdk.Implementation{Name: serverName, Version: serverVersion}, &sdk.ServerOptions{Instructions: instructions})
 	sdk.AddTool(server, &sdk.Tool{Name: "koment_get", Description: getDescription}, get(repositories, recorder))
 	sdk.AddTool(server, &sdk.Tool{Name: "koment_search", Description: searchDescription}, search(repositories, recorder))
 	sdk.AddTool(server, &sdk.Tool{Name: "koment_repositories", Description: repositoriesDescription}, list(repositories))
+	if writes {
+		addWriteTools(server, repositories)
+	}
 	return server
 }
 
-// forGet picks the repository a path belongs to. With several candidates it
-// refuses and names them rather than guessing, because answering an ambiguous
-// question silently is the failure koment exists to prevent (ADR 0025).
-func forGet(repositories *repository.Set, named, file string) (repository.Repository, error) {
+func repositoryForGet(repositories *repository.Set, named, file string) (repository.Repository, error) {
 	if named != "" {
 		chosen, found := repositories.Resolve(named)
 		if !found {
@@ -94,34 +100,25 @@ func list(repositories *repository.Set) sdk.ToolHandlerFor[RepositoriesInput, Re
 	return func(_ context.Context, _ *sdk.CallToolRequest, _ RepositoriesInput) (*sdk.CallToolResult, RepositoriesOutput, error) {
 		summaries := make([]RepositorySummary, 0, repositories.Len())
 		for _, entry := range repositories.All() {
-			counts := map[string]int{}
-			files, err := entry.Store().AnnotatedFiles()
+			snapshot, err := application.BuildSnapshot(entry)
 			if err != nil {
 				return nil, RepositoriesOutput{}, err
 			}
-			for _, file := range files {
-				resolutions, err := anchor.ResolveStored(entry.Store(), file)
-				if err != nil {
-					return nil, RepositoriesOutput{}, err
-				}
-				for _, resolution := range resolutions {
-					counts[string(resolution.Status)]++
-				}
+			counts := map[string]int{}
+			for status, count := range snapshot.Counts() {
+				counts[string(status)] = count
 			}
 			summaries = append(summaries, RepositorySummary{
 				ID: entry.ID, Name: entry.Display(),
 				DefaultBranch: entry.DefaultBranch, CloneURL: entry.CloneURL,
-				Files: len(files), Annotations: counts,
+				Files: len(snapshot.Files), Annotations: counts,
 			})
 		}
 		return nil, RepositoriesOutput{Repositories: summaries}, nil
 	}
 }
 
-// measure records a tool call and, for each annotation handed over, its
-// resolution status — so a rising drifted rate is visible as agents reading
-// history as though it were current (ADR 0020).
-func measure(recorder metrics.Recorder, tool string, started time.Time, served []Annotation, err error) {
+func recordMCPCall(recorder metrics.Recorder, tool string, started time.Time, served []Annotation, err error) {
 	outcome := "ok"
 	if err != nil {
 		outcome = "error"
@@ -169,42 +166,70 @@ type SearchOutput struct {
 }
 
 type Annotation struct {
-	Repository string `json:"repository"`
-	File       string `json:"file"`
-	ID         string `json:"id"`
-	Kind       string `json:"kind"`
-	Body       string `json:"body"`
-	Scope      string `json:"scope"`
-	Excerpt    string `json:"excerpt,omitempty"`
-	Line       int    `json:"line,omitempty"`
-	Created    string `json:"created"`
-	Status     string `json:"status"`
-	Warning    string `json:"warning,omitempty"`
+	Repository  string            `json:"repository"`
+	File        string            `json:"file"`
+	ID          string            `json:"id"`
+	Kind        string            `json:"kind"`
+	Body        string            `json:"body"`
+	Scope       string            `json:"scope"`
+	Excerpt     string            `json:"excerpt,omitempty"`
+	Line        int               `json:"line,omitempty"`
+	Occurrences int               `json:"occurrences"`
+	Created     string            `json:"created"`
+	Status      string            `json:"status"`
+	Warning     string            `json:"warning,omitempty"`
+	Author      AnnotationAuthor  `json:"author"`
+	Git         *AnnotationGit    `json:"git,omitempty"`
+	Policy      *AnnotationPolicy `json:"policy,omitempty"`
+}
+
+type AnnotationAuthor struct {
+	Name     string `json:"name"`
+	Email    string `json:"email,omitempty"`
+	Kind     string `json:"kind"`
+	Source   string `json:"source"`
+	Account  string `json:"account,omitempty"`
+	Verified string `json:"verified,omitempty"`
+}
+
+type AnnotationGit struct {
+	Commit  string `json:"commit"`
+	Path    string `json:"path"`
+	Line    int    `json:"line,omitempty"`
+	EndLine int    `json:"end_line,omitempty"`
+}
+
+type AnnotationPolicy struct {
+	Exception    string `json:"exception"`
+	Acknowledged bool   `json:"acknowledged"`
 }
 
 func get(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHandlerFor[GetInput, GetOutput] {
 	return func(_ context.Context, _ *sdk.CallToolRequest, input GetInput) (result *sdk.CallToolResult, out GetOutput, err error) {
 		started := time.Now()
-		defer func() { measure(recorder, "koment_get", started, out.Annotations, err) }()
+		defer func() { recordMCPCall(recorder, "koment_get", started, out.Annotations, err) }()
 
-		chosen, err := forGet(repositories, input.Repository, input.File)
+		chosen, err := repositoryForGet(repositories, input.Repository, input.File)
 		if err != nil {
 			return nil, GetOutput{}, err
 		}
 		annotations := chosen.Store()
-
 		file, err := annotations.FromRoot(input.File)
 		if err != nil {
 			return nil, GetOutput{}, err
 		}
-
-		resolutions, err := anchor.ResolveStored(annotations, file)
+		snapshot, err := application.BuildSnapshot(chosen)
 		if err != nil {
 			return nil, GetOutput{}, err
 		}
+		fileSnapshot, found := snapshot.File(file)
+		views := []application.AnnotationView{}
+		if found {
+			views = fileSnapshot.Annotations
+		}
 		return nil, GetOutput{
 			File: file, Repository: chosen.ID,
-			Annotations: describeAll(chosen.ID, file, resolutions),
+			Annotations: describeAll(chosen.ID, views),
 		}, nil
 	}
 }
@@ -212,16 +237,13 @@ func get(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHandle
 func search(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHandlerFor[SearchInput, SearchOutput] {
 	return func(_ context.Context, _ *sdk.CallToolRequest, input SearchInput) (result *sdk.CallToolResult, out SearchOutput, err error) {
 		started := time.Now()
-		defer func() { measure(recorder, "koment_search", started, out.Matches, err) }()
+		defer func() { recordMCPCall(recorder, "koment_search", started, out.Matches, err) }()
 
 		query := strings.TrimSpace(input.Query)
 		if query == "" {
 			return nil, SearchOutput{}, errors.New("query must not be empty")
 		}
 
-		// Unlike get, an omitted repository searches all of them: searching
-		// broadly and naming where each hit came from is useful, where
-		// refusing would not be (ADR 0025).
 		searching := repositories.All()
 		if input.Repository != "" {
 			chosen, found := repositories.Resolve(input.Repository)
@@ -234,67 +256,53 @@ func search(repositories *repository.Set, recorder metrics.Recorder) sdk.ToolHan
 
 		matches := []Annotation{}
 		for _, entry := range searching {
-			annotations := entry.Store()
-			files, err := annotations.AnnotatedFiles()
+			snapshot, err := application.BuildSnapshot(entry)
 			if err != nil {
 				return nil, SearchOutput{}, err
 			}
-			for _, file := range files {
-				resolutions, err := anchor.ResolveStored(annotations, file)
-				if err != nil {
-					return nil, SearchOutput{}, err
-				}
-				for _, resolution := range resolutions {
-					if containsFold(resolution.Annotation.Body, query) {
-						matches = append(matches, describe(entry.ID, file, resolution))
-					}
-				}
+			for _, view := range snapshot.Search(query) {
+				matches = append(matches, describe(entry.ID, view))
 			}
 		}
 		return nil, SearchOutput{Query: query, Matches: matches}, nil
 	}
 }
 
-func containsFold(haystack, needle string) bool {
-	return strings.Contains(strings.ToLower(haystack), strings.ToLower(needle))
-}
-
-func describeAll(repositoryID, file string, resolutions []anchor.Resolution) []Annotation {
-	described := make([]Annotation, len(resolutions))
-	for i, resolution := range resolutions {
-		described[i] = describe(repositoryID, file, resolution)
+func describeAll(repositoryID string, views []application.AnnotationView) []Annotation {
+	described := make([]Annotation, len(views))
+	for index, view := range views {
+		described[index] = describe(repositoryID, view)
 	}
 	return described
 }
 
-func describe(repositoryID, file string, resolution anchor.Resolution) Annotation {
-	return Annotation{
-		Repository: repositoryID,
-		File:       file,
-		ID:         resolution.Annotation.ID,
-		Kind:       string(resolution.Annotation.Kind),
-		Body:       resolution.Annotation.Body,
-		Scope:      string(resolution.Annotation.Anchor.Scope),
-		Excerpt:    resolution.Annotation.Anchor.Excerpt,
-		Line:       resolution.Line,
-		Created:    resolution.Annotation.Created.Format("2006-01-02"),
-		Status:     string(resolution.Status),
-		Warning:    warningFor(resolution.Status),
+func describe(repositoryID string, view application.AnnotationView) Annotation {
+	record := view.Record
+	described := Annotation{
+		Repository:  repositoryID,
+		File:        record.File,
+		ID:          record.ID,
+		Kind:        string(record.Kind),
+		Body:        record.Body,
+		Scope:       string(record.Anchor.Scope),
+		Excerpt:     record.Anchor.Excerpt,
+		Line:        view.Line,
+		Occurrences: view.Occurrences,
+		Created:     record.Created.Format("2006-01-02"),
+		Status:      string(view.Status),
+		Warning:     view.Warning,
+		Author: AnnotationAuthor{
+			Name: record.Author.Name, Email: record.Author.Email, Kind: string(record.Author.Kind),
+			Source: string(record.Author.Source), Account: record.Author.Account, Verified: record.Author.Verified,
+		},
 	}
-}
-
-func warningFor(status anchor.Status) string {
-	switch status {
-	case anchor.StatusAmbiguous:
-		return "STALE: the excerpt matches several places and its context does not identify one. " +
-			"Treat it as history until someone explicitly reanchors it."
-	case anchor.StatusDrifted:
-		return "STALE: the annotated code has changed and nobody revisited this note. " +
-			"Treat it as history, not as a description of the code as it stands. Do not act on it without checking."
-	case anchor.StatusOrphaned:
-		return "STALE: the file this annotation described no longer exists. Treat it as history only."
-	case anchor.StatusMoved:
-		return "The annotated code is unchanged but has shifted position; line is where it is now."
+	if record.Git != nil {
+		described.Git = &AnnotationGit{
+			Commit: record.Git.Commit, Path: record.Git.Path, Line: record.Git.Line, EndLine: record.Git.EndLine,
+		}
 	}
-	return ""
+	if record.Policy != nil {
+		described.Policy = &AnnotationPolicy{Exception: record.Policy.Exception, Acknowledged: record.Policy.Acknowledged}
+	}
+	return described
 }

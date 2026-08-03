@@ -41,7 +41,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: janpuc/koment@v0.2.0
-      - run: koment check
+      - run: |
+          koment check
+          koment comments check
+          koment agents check
 
   publish:
     needs: check
@@ -78,15 +81,17 @@ repository does, and [its own workflows](../.github/workflows/) show the form.
 
 ## What each part is doing
 
-**`koment check` gates the publish.** An annotation whose code has changed exits
-non-zero, so a build that would publish drift fails instead. Running it on pull
+**The three repository checks gate the publish.** An unresolved annotation,
+prohibited inline comment or stale agent adapter exits non-zero, so a build that
+would publish an invalid repository fails instead. Running the checks on pull
 requests too is the point of koment; publishing is the smaller half.
 
-**`koment site` renders one repository snapshot.** It writes an `index.html`, a
-page per annotated file and static assets, all linked relatively so the result
-works under a project subpath, from a `file://` path, and behind any prefix. A
-grouped publication renders each snapshot separately and connects them through
-the same contextual repository switcher.
+**`koment site` renders one repository snapshot atomically.** It writes an
+`index.html`, a page per annotated file, static assets, `annotations.json` and
+`search.json`, all linked relatively so the result works under a project
+subpath, from a `file://` path, and behind any prefix. A grouped publication
+renders each snapshot separately and connects them through the same contextual
+repository switcher.
 
 **Every page names the commit it was rendered from.** A snapshot that does not
 say what it is a snapshot of is how a stale rendering passes for a current one.
@@ -143,10 +148,8 @@ docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
 ```
 
 You gain live resolution against the working tree, several repositories behind
-one switcher, cross-repository search and metrics. You take on hosting
-and an access-control decision, because the v0.2 served UI has no
-authentication. That is legacy behaviour: the approved served tier requires
-authentication
+one switcher, cross-repository search and metrics. You take on hosting and an
+access-control decision; the served tier requires authentication
 ([ADR 0105](decisions/0105-authenticated-outbox-settles-through-git.md)).
 Keeping the published site as well is a reasonable thing to do; they do not
 conflict.
@@ -164,7 +167,8 @@ command.
 
 `janpuc/koment@v0.2.0` downloads a released binary, verifies it against the
 release's published checksums, and puts it on `PATH`. It supports Linux and
-macOS runners; on Windows, use `go install`.
+macOS runners. Windows runners should install the checksum-listed release
+archive directly.
 
 The tag on `uses:` picks the *action*; the `version` input picks the *koment
 release* it installs, and defaults to the latest.

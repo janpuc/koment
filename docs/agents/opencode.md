@@ -11,7 +11,7 @@ your project root.
   "mcp": {
     "koment": {
       "type": "local",
-      "command": ["koment", "mcp"]
+      "command": ["koment", "mcp", "--write"]
     }
   }
 }
@@ -24,19 +24,6 @@ this wrong.
 
 MCP servers are enabled by default; add `"enabled": false` to switch one off
 without deleting it.
-
-No koment binary on `PATH`:
-
-```json
-{
-  "mcp": {
-    "koment": {
-      "type": "local",
-      "command": ["go", "run", "github.com/janpuc/koment/cmd/koment@latest", "mcp"]
-    }
-  }
-}
-```
 
 ## Remote
 

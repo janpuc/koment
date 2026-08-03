@@ -92,8 +92,6 @@ func loadFile(path string) (*Set, error) {
 	return set, nil
 }
 
-// loadList parses KOMENT_REPOS, which is name=path pairs. It is the small case:
-// a container with a few mounts and nothing else worth saying.
 func loadList(list string) (*Set, error) {
 	set := &Set{}
 	for entry := range strings.SplitSeq(list, ",") {
@@ -119,8 +117,6 @@ func loadList(list string) (*Set, error) {
 	return set, nil
 }
 
-// discover is the single-repository case, unchanged from before there was a
-// registry: walk up for a store and name it after its directory.
 func discover(start string) (*Set, error) {
 	root, err := store.FindRoot(start)
 	if err != nil {
@@ -131,9 +127,6 @@ func discover(start string) (*Set, error) {
 	return set, set.add(Repository{ID: identifier(root), Root: root})
 }
 
-// identifier names an unconfigured repository after its directory, falling back
-// to a hash only when that is not usable as an id. A configured repository
-// never reaches here — its id is assigned (ADR 0024).
 func identifier(root string) string {
 	base := strings.ToLower(filepath.Base(root))
 	cleaned := strings.Map(func(r rune) rune {

@@ -137,6 +137,28 @@ func (s *Store) ReadSource(file string) (_ []byte, returnedError error) {
 	return content, nil
 }
 
+// WriteSource atomically replaces a repository file without crossing its root.
+func (s *Store) WriteSource(file string, content []byte) (returnedError error) {
+	clean, err := validSourcePath(file)
+	if err != nil {
+		return err
+	}
+	root, err := os.OpenRoot(s.root)
+	if err != nil {
+		return fmt.Errorf("opening repository root %s: %w", s.root, err)
+	}
+	defer closeRepositoryRoot(root, &returnedError)
+	name := filepath.FromSlash(clean)
+	information, err := root.Stat(name)
+	if err != nil {
+		return fmt.Errorf("reading permissions for %s: %w", clean, err)
+	}
+	if err := writeAtomicallyWithMode(root, name, content, information.Mode().Perm()); err != nil {
+		return fmt.Errorf("writing source %s: %w", clean, err)
+	}
+	return nil
+}
+
 func (s *Store) RecordPath(id string) (string, error) {
 	name, err := recordName(id)
 	if err != nil {
@@ -220,12 +242,16 @@ func (s *Store) Save(annotation *Annotation) (returnedError error) {
 }
 
 func writeAtomically(root *os.Root, name string, content []byte) error {
+	return writeAtomicallyWithMode(root, name, content, 0o644)
+}
+
+func writeAtomicallyWithMode(root *os.Root, name string, content []byte, mode fs.FileMode) error {
 	var entropy [8]byte
 	if _, err := rand.Read(entropy[:]); err != nil {
 		return fmt.Errorf("creating temporary name for %s: %w", name, err)
 	}
 	temporaryName := name + "." + hex.EncodeToString(entropy[:])
-	temporary, err := root.OpenFile(temporaryName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	temporary, err := root.OpenFile(temporaryName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
 	if err != nil {
 		return fmt.Errorf("creating temporary file beside %s: %w", name, err)
 	}

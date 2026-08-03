@@ -1,11 +1,10 @@
-# koment — target design
+# koment — design
 
-Status: **approved target; implementation in progress.**
+Status: **approved; stages 1–3 implemented, stages 4–6 planned.**
 
-The v0.2 implementation remains usable while this design is built, but it is
-not the specification. The active architectural decisions start at ADR 0100 in
-`docs/decisions/`. Earlier decisions describe the pre-deployment prototype and
-remain available in Git history.
+This document is the specification. The active architectural decisions start at
+ADR 0100 in `docs/decisions/`. Earlier decisions describe the pre-deployment
+prototype and remain available in Git history.
 
 ## Thesis
 
@@ -50,26 +49,30 @@ shown as such everywhere; no surface may silently turn uncertainty into fact.
     guidance and client hooks make the correct workflow immediate, while a
     required policy check decides what may land regardless of which agent made
     the edit.
+13. **End users install artifacts, not a Go program.** Contributor workflows
+    may invoke the Go toolchain, but installation, CI integration, agents and
+    editors consume published, authenticated koment artifacts.
 
 ## Implementation status
 
-This table is the honest boundary between the current v0.2 code and the target.
+This table is the honest boundary between implemented and planned behavior.
 
 | Capability | Current state | Target state |
 |---|---|---|
 | Git-backed annotations | one record per annotation implemented | implemented |
 | Deterministic excerpts | context disambiguation and explicit `ambiguous` failure implemented | implemented |
-| CLI read and write | implemented | rebuilt on the common application service |
-| Local human UI | read-only | read and explicit loopback write mode |
-| Local agent MCP | read-only | read and explicit stdio write mode |
-| Static publishing | direct default repository and contextual switching implemented | atomic commit snapshot with body search and JSON |
+| CLI read and write | common application service, search and comment policy implemented | implemented |
+| Local human UI | read and capability-gated loopback write mode implemented | implemented |
+| Local agent MCP | read and explicit stdio write mode implemented | implemented |
+| Static publishing | atomic commit snapshot, body search and JSON implemented | implemented |
 | Multi-repository routing | partial | assigned identity plus synchronized commit snapshots |
 | HTTP serving | separate unauthenticated UI or MCP | one authenticated human-and-agent service |
 | Database index | local prototype removed | new Postgres read model for served snapshots only |
 | Remote authoring | design only | authenticated exact outbox materialized through Git |
-| Agent policy | hand-written setup guidance | one strict policy, generated client adapters and an authoritative CI gate |
+| Agent policy | strict policy, generated client adapters, hooks and CI gate implemented | implemented |
 | Operational toolchain | mise, Lefthook, Renovate and security gates implemented | implemented |
 | Helm and release | baseline exists | konflate-aligned tests, hardening and signatures |
+| End-user distribution | GitHub release assets and setup Action | binary package managers, agent marketplaces and editor registries |
 | Maintained workspace | builds, tests, publishes and carries current annotations | implemented |
 
 ## Annotation record
@@ -415,6 +418,42 @@ installs the chart into Kind and runs `helm test` against the built image.
 Images and charts are digest-addressable and signed. Binary checksums are
 authenticated rather than downloaded unsigned beside the binary they verify.
 
+## Installation and distribution
+
+GitHub Releases are the canonical source for platform archives, checksums,
+signatures, SBOMs and provenance. GHCR is canonical for the container and Helm
+OCI artifacts. Every package manager, marketplace and registry entry references
+or repackages those exact release outputs; it does not compile a second binary.
+
+End-user documentation never instructs a person, CI runner, agent client or
+editor to use `go install`, `go run` or a Go build container. Those commands are
+permitted only in contributor documentation and repository-owned development
+tasks. A channel that cannot consume or authenticate a released artifact does
+not ship until it can.
+
+Distribution is promoted in layers:
+
+1. GitHub Releases, the setup Action, GHCR images and Helm OCI artifacts ship
+   directly from the release workflow.
+2. A maintained Homebrew tap, mise's GitHub backend, WinGet and Scoop install
+   the platform archives. An Aqua registry entry supplies the short `mise use
+   koment` name and stronger checksum or attestation metadata.
+3. The koment Claude marketplace and official Claude plugin directory package
+   the strict instructions, hooks and MCP declaration. The official MCP
+   Registry points at koment's labeled OCI artifact or a checksummed MCPB
+   bundle rather than requiring an npm wrapper.
+4. The VS Code Marketplace and Open VSX publish the same extension artifact
+   when the editor integration exists.
+5. Homebrew core, Nixpkgs, AUR, MacPorts and other community catalogs are
+   pursued after a stable release where their external acceptance and ongoing
+   maintenance requirements are met.
+
+Release automation generates channel metadata from one version and checksum
+manifest, tests installation on every supported operating system and opens
+external registry pull requests where direct publication is unavailable. An
+external catalog is never described as available until its submission has been
+accepted. ADR 0109 records the artifact and distribution boundary.
+
 ## Maintained workspace
 
 The product carries a small, real repository workspace that builds, tests and
@@ -498,7 +537,8 @@ Every adapter expresses the same strict contract:
 4. Convert completed comment intent through `koment_convert_comment`. Retain it
    only through `koment_acknowledge_comment` with the explicit acknowledgement
    and agent authorship.
-5. Run `koment comments check` and `koment check` before completing work.
+5. Run `koment check`, `koment comments check` and `koment agents check` before
+   completing work.
 
 MCP initialization repeats the contract and exposes mutation tools in explicit
 write mode, so an agent sees the procedure in the same session as the tools.
@@ -531,7 +571,7 @@ contextual ambiguity resolution, rooted filesystem access, maintained workspace
 content and removal of the local index/export subsystem are implemented and
 verified together.
 
-### 3. Shared reads and local writes
+### 3. Shared reads and local writes — implemented
 
 Introduce the snapshot and application services, move every reader to them,
 surface provenance consistently, add local UI and MCP writes, and rebuild static
@@ -549,9 +589,12 @@ ingestion, contextual repository switcher, exact outbox and GitHub materializer.
 ### 5. Deployment and release
 
 Replace the prototype chart modes, add a values schema and E2E coverage, then
-sign and digest-pin all release artifacts.
+sign and digest-pin all release artifacts. Publish the canonical binaries,
+container and chart before promoting their metadata through Homebrew, mise,
+WinGet, Scoop, Claude and the MCP Registry. Publish the editor package to both
+the VS Code Marketplace and Open VSX when stage 6 implements it.
 
-### 6. Comment-intent and editor-native annotations — planned after the vNext core
+### 6. Comment-intent and editor-native annotations — planned after the deterministic local core
 
 Add an editor-neutral `koment lsp` process backed by the same repository
 snapshot and mutation services. It exposes status diagnostics, hover content,
@@ -597,7 +640,7 @@ the same change that verifies it.
 
 ## Definition of done
 
-vNext is complete when:
+The approved design is complete when:
 
 1. Concurrent local agents can add and reanchor records without losing work.
 2. All five resolution statuses have real before/after fixtures and identical
@@ -624,6 +667,9 @@ vNext is complete when:
 13. Published and served multi-repository views open a useful default
     repository directly and switch repositories without a selector landing
     page.
+14. A human can install koment on every supported operating system without a Go
+    toolchain, and every advertised package, marketplace or registry entry is
+    generated from an authenticated canonical release artifact.
 
 ## Non-goals
 
@@ -653,3 +699,11 @@ vNext is complete when:
   — editor changes, diagnostics, code actions and decorations.
 - [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
   — portable diagnostics and code actions across editors.
+- [mise GitHub backend](https://mise.jdx.dev/dev-tools/backends/github.html) —
+  direct installation of platform artifacts from GitHub Releases.
+- [Homebrew taps](https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap) —
+  independently maintained binary distribution metadata.
+- [Claude plugin marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
+  — distribution for instructions, hooks, MCP and LSP integrations.
+- [MCP Registry package types](https://modelcontextprotocol.io/registry/package-types)
+  — OCI and MCPB-backed MCP discovery without a language wrapper.

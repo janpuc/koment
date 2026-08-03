@@ -5,8 +5,10 @@ Codex keeps MCP servers in TOML, at `~/.codex/config.toml` globally or
 
 ## Configure
 
+`koment agents install` writes the project MCP entry and supported Codex hooks.
+
 ```sh
-codex mcp add koment -- koment mcp
+codex mcp add koment -- koment mcp --write
 ```
 
 That writes the entry for you. Or do it by hand:
@@ -14,7 +16,7 @@ That writes the entry for you. Or do it by hand:
 ```toml
 [mcp_servers.koment]
 command = "koment"
-args = ["mcp"]
+args = ["mcp", "--write"]
 ```
 
 Project-scoped configuration lives at `.codex/config.toml` and applies only to
@@ -24,16 +26,8 @@ per-repository. Setting `cwd` pins the repository explicitly:
 ```toml
 [mcp_servers.koment]
 command = "koment"
-args = ["mcp"]
+args = ["mcp", "--write"]
 cwd = "/path/to/your/repo"
-```
-
-No koment binary on `PATH`:
-
-```toml
-[mcp_servers.koment]
-command = "go"
-args = ["run", "github.com/janpuc/koment/cmd/koment@latest", "mcp"]
 ```
 
 ## Verify
@@ -45,17 +39,13 @@ codex mcp list
 `koment` should appear. Then ask for something you can check against
 `koment show <file>`.
 
-## Make it read them
+## Make it use them
 
-Codex reads `AGENTS.md`:
-
-```markdown
-Before editing any file, call `koment_get` on it and read the annotations.
-Treat an `ambiguous`, `drifted` or `orphaned` annotation as history, not as
-current fact. Search koment before changing a non-obvious decision. Do not add
-an explanatory inline comment; record local rationale with koment and
-project-wide rationale in an ADR.
-```
+Codex reads the managed contract in `AGENTS.md`. The generated pre-tool hook
+denies ordinary Go comment intent in `apply_patch`; its stop hook checks
+annotations, comments and adapters before the turn can finish. Run `koment
+agents check` in CI because hooks remain a workstation guardrail, not the
+authoritative boundary.
 
 ## Notes
 

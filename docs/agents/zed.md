@@ -12,7 +12,7 @@ Open settings with `zed: open settings file` from the command palette, and add:
   "context_servers": {
     "koment": {
       "command": "koment",
-      "args": ["mcp"],
+      "args": ["mcp", "--write"],
       "env": {}
     }
   }

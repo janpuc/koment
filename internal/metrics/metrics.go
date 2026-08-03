@@ -109,8 +109,6 @@ func New() *Metrics {
 			Buckets:   prometheus.DefBuckets,
 		}, []string{"tool"}),
 
-		// The metric this project should watch: a rising drifted rate means
-		// agents are being handed history as though it described the code.
 		mcpServed: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "mcp_annotations_served_total",

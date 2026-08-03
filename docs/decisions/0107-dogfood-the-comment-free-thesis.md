@@ -96,7 +96,7 @@ pretending any prompt can control an arbitrary process.
 - Some exported API documentation remains inline by design; the goal is no
   hidden implementation rationale, not an empty token count.
 - Moving rationale creates more annotations and exercises human and agent
-  authoring before vNext can be called complete.
+  authoring before the approved design can be called complete.
 
 ## Alternatives rejected
 

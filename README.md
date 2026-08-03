@@ -13,11 +13,6 @@
 
 </div>
 
-> **Design reset in progress.** This README documents the runnable v0.2
-> implementation. The approved breaking vNext target and its honest capability
-> status are in [DESIGN.md](DESIGN.md); active decisions begin at
-> [ADR 0100](docs/decisions/README.md).
-
 Readable code answers *what*. It cannot answer *why this and not the obvious
 alternative*, *what bit us here before*, or *what breaks if you "simplify" this*.
 Comments are the usual home for that and they rot — they duplicate the code,
@@ -68,10 +63,10 @@ edit above them. The commit hash *is* recorded, but only to reconstruct history;
 it never decides whether an annotation still applies. Two questions, two
 mechanisms ([ADR 0100](docs/decisions/0100-one-git-record-per-annotation.md)).
 
-koment is **read-only over the network**. The UI and the MCP server serve; they
-never write. Annotations are created by the CLI, by a person or an agent with a
-checkout — so a published instance exposes no way for a visitor to change
-anything.
+Network transports are read-only. A local `koment ui --write` session can add
+human-authored rationale through a one-time loopback capability, and
+`koment mcp --write` exposes agent mutations over stdio only. Published sites
+and HTTP MCP never write to a checkout.
 
 ## Three ways to run it
 
@@ -82,30 +77,32 @@ so there is nothing to export, import or back up
 
 | | you run | you get |
 |---|---|---|
-| **local** | the CLI, and `koment mcp` in your agent's config | annotate, `koment check`, agents read the reasoning. Nothing to host. |
+| **local** | the CLI, `koment ui --write`, and `koment mcp --write` | humans and agents read and write the same checked records. Nothing to host. |
 | **published** | [one workflow file](docs/publishing.md) → GitHub Pages | everyone reads the annotations in a browser. No server, no auth to design, no cost. |
 | **served** | the container or the [Helm chart](#kubernetes) | the live working tree, several repositories, search across them, metrics |
 
 ## Quick start
 
-```bash
-go install github.com/janpuc/koment/cmd/koment@latest
-```
+Install from the [latest release](https://github.com/janpuc/koment/releases/latest).
+Every release carries checksum-listed binaries for Linux, macOS and Windows on
+amd64 and arm64. If you use mise, its GitHub backend installs the same release:
 
-No Go toolchain? Every release carries binaries for linux, macOS and Windows on
-amd64 and arm64, with checksums —
-[grab one](https://github.com/janpuc/koment/releases/latest).
+```bash
+mise use -g github:janpuc/koment
+```
 
 ```bash
 cd ~/your-project
+koment agents install
 koment add src/auth.go \
   --excerpt 'if token.Expiry.Before(now.Add(-clockSkew)) {' \
   --kind gotcha \
   --body 'The skew subtraction is deliberate. Without it, clients whose clock
           runs fast get logged out mid-request. Bit us in #412.'
 
-koment check   # green
-koment ui      # look at it
+koment check
+koment comments check
+koment ui --write
 ```
 
 Now edit that line and run `koment check` again. It fails — because the reasoning
@@ -179,6 +176,7 @@ wins.
 | `KOMENT_LISTEN` | address for `koment ui` |
 | `KOMENT_HTTP` | address for `koment mcp --http` |
 | `KOMENT_STREAMABLE_HTTP` | address for `koment mcp --streamable-http` |
+| `KOMENT_WRITE` | enable local UI or stdio MCP mutation capabilities |
 | `KOMENT_METRICS` | address for the metrics listener; off unless set |
 | `KOMENT_OUT` | output directory for `koment site` |
 | `KOMENT_REPOSITORY_LINKS` | contextual repository switcher for a grouped static publication |
@@ -192,14 +190,23 @@ Git.
 ## Give it to your agents
 
 ```bash
-koment mcp        # stdio; also --http / --streamable-http for remote agents
+koment agents install
+koment mcp --write
 ```
 
-Three tools:
+The generated repository adapters give agents a strict procedure and configure
+the writable stdio server. It has three read tools:
 
 - **`koment_get(file, repository?)`** — annotations for the file an agent is about to edit
 - **`koment_search(query, repository?)`** — find reasoning by topic; omitting `repository` searches all of them
 - **`koment_repositories()`** — what this deployment serves, with counts
+
+Write mode adds four tools:
+
+- **`koment_add`** — create agent-attributed rationale
+- **`koment_reanchor`** — explicitly move an existing anchor
+- **`koment_convert_comment`** — record a comment as rationale, then remove it
+- **`koment_acknowledge_comment`** — retain an exceptional comment only after an explicit acknowledgement
 
 Every annotation arrives with its resolution status *and* its repository, so a
 stale one is never presented as current and a result is never detached from its
@@ -216,8 +223,9 @@ names the candidates** rather than guessing
 ## Publish it
 
 Your reviewers are not going to install anything. Give them a URL: one workflow
-file renders every annotation to static HTML and puts it on GitHub Pages, with
-no server, no database and no authentication to design.
+file renders every annotation to static HTML plus `annotations.json` and
+`search.json`, then puts the atomic snapshot on GitHub Pages with no server,
+database or authentication to design.
 
 ```yaml
 - uses: actions/checkout@v5
@@ -233,9 +241,9 @@ would publish drift fails first.
 **[The whole workflow, ready to copy →](docs/publishing.md)**
 
 A site renders your source as well as your annotations, so publishing one from a
-private repository publishes that source. One repository per site, by design —
-a static page has no server to resolve a repository against, and faking one
-would be worse than the limit.
+private repository publishes that source. Grouped publications render one
+snapshot per repository and connect them through the ordinary repository
+switcher; there is no selector landing page.
 
 ## Documentation
 

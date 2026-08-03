@@ -13,13 +13,10 @@ body: |-
 created: "2026-08-03"
 anchor:
   scope: excerpt
-  excerpt: func forGet(repositories *repository.Set, named, file string) (repository.Repository, error) {
-  before: |-
-    // forGet picks the repository a path belongs to. With several candidates it
-    // refuses and names them rather than guessing, because answering an ambiguous
-    // question silently is the failure koment exists to prevent (ADR 0025).
+  excerpt: func repositoryForGet(repositories *repository.Set, named, file string) (repository.Repository, error) {
+  before: "\treturn server\n}\n"
   after: "\tif named != \"\" {\n\t\tchosen, found := repositories.Resolve(named)\n\t\tif !found {"
-  last_seen_line: 47
+  last_seen_line: 53
 git:
   commit: 891a943c595ce0526139604cdd723ae6c63bf57b
   path: internal/mcp/mcp.go

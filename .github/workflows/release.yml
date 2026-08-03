@@ -66,7 +66,7 @@ jobs:
             [ "$os" = windows ] && binary=koment.exe
 
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
-              -ldflags="-s -w -X main.version=${VERSION} -X main.revision=${GITHUB_SHA}" \
+              -ldflags="-s -w -X main.releaseVersion=${VERSION} -X main.sourceRevision=${GITHUB_SHA}" \
               -o "dist/${binary}" ./cmd/koment
 
             name="koment_${VERSION}_${os}_${arch}"

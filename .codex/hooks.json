@@ -1,0 +1,30 @@
+{
+  "description": "Repository hooks including the koment policy guardrails.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "koment agents hook pre-tool",
+            "statusMessage": "Checking for explanatory comments",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "^apply_patch$"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "koment agents hook stop",
+            "statusMessage": "Checking koment policy",
+            "timeout": 30,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

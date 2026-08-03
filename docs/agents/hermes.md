@@ -10,7 +10,7 @@ typically at `~/.hermes/hermes-agent/config.yaml`.
 mcp_servers:
   koment:
     command: "koment"
-    args: ["mcp"]
+    args: ["mcp", "--write"]
 ```
 
 Hermes launches the server as a subprocess, so the binary must be on the `PATH`
@@ -34,7 +34,7 @@ mcp_servers:
     url: "http://koment.internal:8765"
 ```
 
-**koment's v0.2 HTTP transport has no authentication.** Anything that can reach
+**koment's current HTTP transport has no authentication.** Anything that can reach
 the port can read every annotation in the repository. It binds loopback unless
 you say otherwise, and warns at startup when you do. If Hermes is on another
 host, put the port behind something that authenticates or restrict it at the
@@ -43,14 +43,14 @@ network level. The approved served tier replaces this behaviour
 
 ## Filter the tools
 
-koment only exposes three, so this is rarely needed — but if you are trimming a
-large tool surface:
+The remote transport exposes only the three read tools. If you are trimming a
+local writable tool surface:
 
 ```yaml
 mcp_servers:
   koment:
     command: "koment"
-    args: ["mcp"]
+    args: ["mcp", "--write"]
     tools:
       include: ["koment_get", "koment_search", "koment_repositories"]
 ```

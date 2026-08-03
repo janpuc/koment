@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/janpuc/koment/internal/application"
+	repositorymodel "github.com/janpuc/koment/internal/repository"
 	"github.com/janpuc/koment/internal/store"
 )
 
@@ -23,10 +25,15 @@ const usage = `koment — out-of-band code annotations
   koment show <file>
   koment check [path...]
   koment list [--kind <kind>]
+  koment search <query>
   koment reanchor <id> [--excerpt <text>] [--file <path>]
-  koment ui [--listen <addr>]
+  koment comments check [path...]
+  koment comments convert <file> --excerpt <comment> [--kind <kind>]
+  koment comments acknowledge <file> --excerpt <comment> --body <text|-> --acknowledge-inline-comment
+  koment agents install|check
+  koment ui [--listen <addr>] [--write]
   koment site --out <dir>            render one repository to static HTML
-  koment mcp
+  koment mcp [--write | --http <addr> | --streamable-http <addr>]
   koment version
 
 check exits non-zero when an annotation is ambiguous, drifted or orphaned.
@@ -61,9 +68,12 @@ func Run(args []string, env Environment, servers Servers) int {
 	command, rest := args[0], args[1:]
 	run, known := map[string]func([]string, Environment) int{
 		"add":      runAdd,
+		"agents":   runAgents,
 		"show":     runShow,
 		"check":    runCheck,
+		"comments": runComments,
 		"list":     runList,
+		"search":   runSearch,
 		"reanchor": runReanchor,
 		"version":  runVersion,
 	}[command]
@@ -149,4 +159,13 @@ func openStore() (*store.Store, error) {
 		return nil, err
 	}
 	return store.Open(root), nil
+}
+
+func openApplication() (*application.Service, *store.Store, error) {
+	annotations, err := openStore()
+	if err != nil {
+		return nil, nil, err
+	}
+	entry := repositorymodel.Repository{ID: "local", Name: "Local repository", Root: annotations.Root()}
+	return application.NewService(entry), annotations, nil
 }

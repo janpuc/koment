@@ -88,8 +88,6 @@ func TestTheSwitcherOffersEveryRepositoryAndMarksTheCurrentOne(t *testing.T) {
 	if !strings.Contains(page, `value="/r/api/" selected`) {
 		t.Error("the switcher does not mark which repository is being shown")
 	}
-	// The switcher must work with scripting off, or the published tier loses
-	// navigation it has no server to replace.
 	if !strings.Contains(page, "<noscript>") || !strings.Contains(page, `href="/r/web/"`) {
 		t.Error("there is no scriptless way to change repository")
 	}

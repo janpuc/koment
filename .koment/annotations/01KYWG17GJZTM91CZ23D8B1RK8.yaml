@@ -13,13 +13,10 @@ body: |-
 created: "2026-07-31"
 anchor:
   scope: excerpt
-  excerpt: func describe(resolution anchor.Resolution) note {
-  before: |2-
-
-    // describe renders a drifted annotation as history: its excerpt is shown as
-    // what used to be there, never laid over the current source (ADR 0005).
-  after: "\tstale := resolution.Status.IsFailure()\n\treturn note{\n\t\tID:      resolution.Annotation.ID,"
-  last_seen_line: 236
+  excerpt: "\t\tif annotation.Line == 0 {\n\t\t\tbuilt.Detached = append(built.Detached, described)"
+  before: "\tmarked := map[int]anchor.Status{}\n\tfor _, annotation := range file.Annotations {\n\t\tdescribed := describe(annotation)"
+  after: "\t\t\tcontinue\n\t\t}\n\t\tbuilt.Notes = append(built.Notes, described)"
+  last_seen_line: 203
 author:
   name: Legacy import
   kind: unknown

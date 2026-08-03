@@ -11,10 +11,10 @@ body: |-
 created: "2026-08-03"
 anchor:
   scope: excerpt
-  excerpt: "\t\tworst, seen := marked[resolution.Line]"
-  before: "\t\t\tcontinue\n\t\t}\n\t\tbuilt.Notes = append(built.Notes, described)"
-  after: "\t\tif !seen || severity[resolution.Status] > severity[worst] {\n\t\t\tmarked[resolution.Line] = resolution.Status\n\t\t}"
-  last_seen_line: 221
+  excerpt: "\t\tif !seen || statusSeverity[annotation.Status] > statusSeverity[worst] {"
+  before: "\t\t}\n\t\tbuilt.Notes = append(built.Notes, described)\n\t\tworst, seen := marked[annotation.Line]"
+  after: "\t\t\tmarked[annotation.Line] = annotation.Status\n\t\t}\n\t}"
+  last_seen_line: 209
 git:
   commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
   path: internal/ui/view.go

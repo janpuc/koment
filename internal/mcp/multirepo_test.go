@@ -14,8 +14,6 @@ import (
 	"github.com/janpuc/koment/internal/store"
 )
 
-// twoRepositories builds two stores that share a path, which is the case a
-// single-repository server answered wrongly and silently.
 func twoRepositories(t *testing.T) *repository.Set {
 	t.Helper()
 	base := t.TempDir()

@@ -3,12 +3,15 @@ package ui
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/repository"
 	"github.com/janpuc/koment/internal/store"
 )
@@ -53,6 +56,15 @@ func setOf(annotations *store.Store) *repository.Set {
 	return repository.Of(repository.Repository{ID: "test", Root: annotations.Root()})
 }
 
+func snapshotFromStore(t *testing.T, annotations *store.Store) *application.RepositorySnapshot {
+	t.Helper()
+	built, err := application.BuildSnapshot(repository.Repository{ID: "test", Name: "fixture", Root: annotations.Root()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return built
+}
+
 func request(t *testing.T, repositories *repository.Set, target string) (int, string) {
 	t.Helper()
 	recorder := httptest.NewRecorder()
@@ -60,8 +72,6 @@ func request(t *testing.T, repositories *repository.Set, target string) (int, st
 	return recorder.Code, recorder.Body.String()
 }
 
-// get addresses one repository's page, which is what most of these tests are
-// about. Every served path carries its repository (ADR 0026).
 func get(t *testing.T, annotations *store.Store, page string) (int, string) {
 	t.Helper()
 	return request(t, setOf(annotations), "/r/test/"+strings.TrimPrefix(page, "/"))
@@ -189,7 +199,7 @@ func TestDriftIsRenderedAsHistoryNotAsCurrentCode(t *testing.T) {
 	if !strings.Contains(body, "<s>") {
 		t.Error("the vanished excerpt must be struck through")
 	}
-	if !strings.Contains(body, "Treat it as history") {
+	if !strings.Contains(body, "Treat this as history") {
 		t.Error("the warning must say what the status costs the reader")
 	}
 	if !strings.Contains(body, "1 drifted") {
@@ -291,6 +301,84 @@ func TestEveryStatusHasAColour(t *testing.T) {
 		if !strings.Contains(css, ".dot."+status) || !strings.Contains(css, ".pill."+status) {
 			t.Errorf("status %q has no visual treatment", status)
 		}
+	}
+}
+
+func TestWriteModeRequiresCapabilityOriginAndFormToken(t *testing.T) {
+	annotations := annotatedRepository(t)
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"config", "user.name", "UI Human"},
+		{"config", "user.email", "ui@example.test"},
+	} {
+		command := exec.Command("git", args...)
+		command.Dir = annotations.Root()
+		if output, err := command.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, output)
+		}
+	}
+	writeHandler := handler(setOf(annotations), "secret-capability")
+
+	bootstrap := httptest.NewRecorder()
+	writeHandler.ServeHTTP(bootstrap, httptest.NewRequest(http.MethodGet, "/?"+capabilityQuery+"=secret-capability", nil))
+	if bootstrap.Code != http.StatusSeeOther || len(bootstrap.Result().Cookies()) != 1 {
+		t.Fatalf("bootstrap = %d, cookies = %#v", bootstrap.Code, bootstrap.Result().Cookies())
+	}
+	cookie := bootstrap.Result().Cookies()[0]
+	if bootstrap.Header().Get("Location") != "/" || !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode {
+		t.Fatalf("bootstrap location = %q, cookie = %#v", bootstrap.Header().Get("Location"), cookie)
+	}
+
+	pageRequest := httptest.NewRequest(http.MethodGet, "/r/test/f/main.go", nil)
+	pageRequest.AddCookie(cookie)
+	page := httptest.NewRecorder()
+	writeHandler.ServeHTTP(page, pageRequest)
+	if !strings.Contains(page.Body.String(), "Add rationale") {
+		t.Fatalf("write form unavailable:\n%s", page.Body.String())
+	}
+
+	form := url.Values{
+		"capability": {"secret-capability"}, "file": {"main.go"}, "kind": {"why"},
+		"excerpt": {"func main()"}, "body": {"The entry point remains orchestration-only."},
+	}
+	withoutOrigin := httptest.NewRequest(http.MethodPost, "/r/test/annotations", strings.NewReader(form.Encode()))
+	withoutOrigin.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	withoutOrigin.AddCookie(cookie)
+	refused := httptest.NewRecorder()
+	writeHandler.ServeHTTP(refused, withoutOrigin)
+	if refused.Code != http.StatusForbidden {
+		t.Fatalf("missing Origin returned %d", refused.Code)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/r/test/annotations", strings.NewReader(form.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Origin", "http://example.com")
+	request.AddCookie(cookie)
+	created := httptest.NewRecorder()
+	writeHandler.ServeHTTP(created, request)
+	if created.Code != http.StatusSeeOther {
+		t.Fatalf("write returned %d: %s", created.Code, created.Body.String())
+	}
+	records, err := annotations.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 2 || records[1].Author.Name != "UI Human" || records[1].Author.Kind != store.AuthorHuman {
+		t.Fatalf("records = %#v", records)
+	}
+}
+
+func TestReadOnlyHandlerNeverRendersMutationForm(t *testing.T) {
+	_, body := get(t, annotatedRepository(t), "/f/main.go")
+	if strings.Contains(body, "Add rationale") {
+		t.Fatal("read-only handler exposed mutation form")
+	}
+}
+
+func TestFileLinksEscapeURLControlCharactersBySegment(t *testing.T) {
+	got := servedLinks("test").file("nested/a #?.go")
+	if got != "/r/test/f/nested/a%20%23%3F.go" {
+		t.Fatalf("file link = %q", got)
 	}
 }
 

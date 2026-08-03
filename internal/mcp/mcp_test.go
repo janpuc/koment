@@ -53,8 +53,6 @@ func repositoryWithOneAnnotation(t *testing.T) *store.Store {
 	return annotations
 }
 
-// onlyRepository wraps a single store as a registry, exercising the same
-// discovery path a laptop uses.
 func onlyRepository(t *testing.T, annotations *store.Store) *repository.Set {
 	t.Helper()
 	t.Setenv(repository.EnvRepo, annotations.Root())
@@ -71,11 +69,15 @@ func connect(t *testing.T, annotations *store.Store) *sdk.ClientSession {
 }
 
 func connectTo(t *testing.T, repositories *repository.Set) *sdk.ClientSession {
+	return connectToMode(t, repositories, false)
+}
+
+func connectToMode(t *testing.T, repositories *repository.Set, writes bool) *sdk.ClientSession {
 	t.Helper()
 	ctx := context.Background()
 	serverTransport, clientTransport := sdk.NewInMemoryTransports()
 
-	serverSession, err := newServer(repositories, metrics.Discard{}).Connect(ctx, serverTransport, nil)
+	serverSession, err := newServer(repositories, metrics.Discard{}, writes).Connect(ctx, serverTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,11 +135,70 @@ func TestServerExposesExactlyTheThreeAgreedTools(t *testing.T) {
 	for _, tool := range tools.Tools {
 		names = append(names, tool.Name)
 	}
-	// ADR 0025 amended ADR 0005 from two tools to three, and no further.
 	want := []string{"koment_get", "koment_repositories", "koment_search"}
 	sort.Strings(names)
 	if strings.Join(names, ",") != strings.Join(want, ",") {
 		t.Errorf("the surface is fixed at %v, got %v", want, names)
+	}
+}
+
+func TestWritableServerAddsOnlyTheFourMutationTools(t *testing.T) {
+	annotations := repositoryWithOneAnnotation(t)
+	session := connectToMode(t, onlyRepository(t, annotations), true)
+	tools, err := session.ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, tool := range tools.Tools {
+		names = append(names, tool.Name)
+	}
+	sort.Strings(names)
+	want := []string{"koment_acknowledge_comment", "koment_add", "koment_convert_comment", "koment_get", "koment_reanchor", "koment_repositories", "koment_search"}
+	if strings.Join(names, ",") != strings.Join(want, ",") {
+		t.Fatalf("tools = %v, want %v", names, want)
+	}
+	if instructions := session.InitializeResult().Instructions; !strings.Contains(instructions, "Before editing an existing file") {
+		t.Fatalf("initialization instructions = %q", instructions)
+	}
+}
+
+func TestAddMutationRecordsTheMCPClientAsAnAgent(t *testing.T) {
+	annotations := repositoryWithOneAnnotation(t)
+	session := connectToMode(t, onlyRepository(t, annotations), true)
+	got := callTool[MutationOutput](t, session, "koment_add", map[string]any{
+		"file": "main.go", "excerpt": "func main()", "kind": "why", "body": "The entry point stays orchestration-only.",
+	})
+	if got.Record.Author.Kind != "agent" || got.Record.Author.Name != "test" || got.Record.Author.Source != "session" {
+		t.Fatalf("author = %#v", got.Record.Author)
+	}
+	if got.Path != ".koment/annotations/"+got.Record.ID+".yaml" {
+		t.Fatalf("path = %q", got.Path)
+	}
+	if _, err := annotations.FindByID(got.Record.ID); err != nil {
+		t.Fatalf("record was not durable: %v", err)
+	}
+}
+
+func TestAcknowledgeMutationRequiresExplicitBoolean(t *testing.T) {
+	annotations := repositoryWithOneAnnotation(t)
+	commented := strings.Replace(annotatedSource, "\tserve()", "\t// Required by an external generator.\n\tserve()", 1)
+	if err := os.WriteFile(filepath.Join(annotations.Root(), "main.go"), []byte(commented), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	session := connectToMode(t, onlyRepository(t, annotations), true)
+	result, err := session.CallTool(context.Background(), &sdk.CallToolParams{
+		Name: "koment_acknowledge_comment",
+		Arguments: map[string]any{
+			"file": "main.go", "comment": "// Required by an external generator.",
+			"body": "The generator consumes this exact marker.", "acknowledge_inline_comment": false,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.IsError || !strings.Contains(contentText(result), "explicit acknowledgement") {
+		t.Fatalf("result = %#v, text = %q", result, contentText(result))
 	}
 }
 

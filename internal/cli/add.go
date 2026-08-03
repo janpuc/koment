@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"time"
 
-	"github.com/janpuc/koment/internal/anchor"
+	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/provenance"
 	"github.com/janpuc/koment/internal/store"
 )
@@ -23,16 +22,20 @@ func runAdd(args []string, env Environment) int {
 		return ExitUsage
 	}
 
-	annotation, err := buildAnnotation(*kind, *body, env.Stdin)
+	parsedKind, err := store.ParseKind(*kind)
 	if err != nil {
 		return misuse(env, "%v", err)
 	}
-
-	annotations, err := openStore()
+	text, err := bodyText(*body, env.Stdin)
+	if err != nil {
+		return misuse(env, "%v", err)
+	}
+	service, annotations, err := openApplication()
 	if err != nil {
 		return fail(env, err)
 	}
-	if annotation.Author, err = identity(annotations.Root(), *author, *byAgent); err != nil {
+	createdBy, err := identity(annotations.Root(), *author, *byAgent)
+	if err != nil {
 		return misuse(env, "%v", err)
 	}
 	file, err := annotations.FromWorkingDirectory(target)
@@ -40,18 +43,14 @@ func runAdd(args []string, env Environment) int {
 		return fail(env, err)
 	}
 
-	if err := anchorTo(&annotation, annotations, file, *excerpt); err != nil {
+	mutation, err := service.Add(application.AddInput{
+		File: file, Excerpt: *excerpt, Kind: parsedKind, Body: text, Author: createdBy,
+	})
+	if err != nil {
 		return fail(env, err)
 	}
-	annotation.File = file
-
-	annotation.Git = capture(annotations.Root(), file, annotation.Anchor.LastSeenLine, env)
-
-	if err := annotations.Save(&annotation); err != nil {
-		return fail(env, err)
-	}
-
-	fmt.Fprintf(env.Stdout, "%s  %s %s\n", annotation.ID, annotation.Kind, location(file, annotation.Anchor.LastSeenLine))
+	writeMutationWarnings(env, mutation)
+	fmt.Fprintf(env.Stdout, "%s  %s %s\n", mutation.Record.ID, mutation.Record.Kind, location(file, mutation.Record.Anchor.LastSeenLine))
 	return ExitOK
 }
 
@@ -76,45 +75,6 @@ func identity(root, explicit string, byAgent bool) (store.Author, error) {
 	return *author, nil
 }
 
-// capture records the git context when git can answer, and says so when it
-// cannot. A missing context costs the historical views, never a resolution.
-func capture(root, file string, line int, env Environment) *store.GitContext {
-	context, err := provenance.Capture(root, file, line, line)
-	if err != nil {
-		fmt.Fprintf(env.Stderr, "koment: no git context recorded (%s is not committed, or this is not a repository)\n", file)
-		return nil
-	}
-	if provenance.WorktreeIsDirty(root, file) {
-		fmt.Fprintf(env.Stderr, "koment: %s has uncommitted changes, so commit %s does not describe what you annotated\n",
-			file, context.Commit[:7])
-	}
-	return context
-}
-
-func buildAnnotation(kind, body string, stdin io.Reader) (store.Annotation, error) {
-	parsedKind, err := store.ParseKind(kind)
-	if err != nil {
-		return store.Annotation{}, err
-	}
-
-	text, err := bodyText(body, stdin)
-	if err != nil {
-		return store.Annotation{}, err
-	}
-
-	id, err := store.NewID(time.Now())
-	if err != nil {
-		return store.Annotation{}, err
-	}
-	return store.Annotation{
-		Version: store.RecordVersion,
-		ID:      id,
-		Kind:    parsedKind,
-		Body:    store.WrapProse(text),
-		Created: store.Today(),
-	}, nil
-}
-
 func bodyText(body string, stdin io.Reader) (string, error) {
 	if body != "-" {
 		if body == "" {
@@ -133,28 +93,8 @@ func bodyText(body string, stdin io.Reader) (string, error) {
 	return string(piped), nil
 }
 
-func anchorTo(annotation *store.Annotation, annotations *store.Store, file, excerpt string) error {
-	content, err := annotations.ReadSource(file)
-	if err != nil {
-		return fmt.Errorf("reading %s: %w", file, err)
+func writeMutationWarnings(env Environment, mutation application.Mutation) {
+	for _, warning := range mutation.Warnings {
+		fmt.Fprintf(env.Stderr, "koment: %s\n", warning)
 	}
-
-	if excerpt == "" {
-		annotation.Anchor = store.Anchor{Scope: store.ScopeFile}
-		return nil
-	}
-
-	lines := anchor.ExcerptLines(content, excerpt)
-	if len(lines) == 0 {
-		return fmt.Errorf("excerpt not found in %s; it must match the file verbatim", file)
-	}
-	if len(lines) > 1 {
-		return fmt.Errorf("excerpt matches %d places in %s (lines %v); extend it until it is unique", len(lines), file, lines)
-	}
-	captured, err := anchor.Capture(content, excerpt)
-	if err != nil {
-		return fmt.Errorf("capturing excerpt in %s: %w", file, err)
-	}
-	annotation.Anchor = captured
-	return nil
 }
