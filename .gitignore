@@ -13,6 +13,7 @@ coverage.*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/mcp.json
 !.vscode/settings.json
 *.swp
 .mise.local.toml
