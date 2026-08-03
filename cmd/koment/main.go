@@ -8,11 +8,9 @@ import (
 	"github.com/janpuc/koment/internal/ui"
 )
 
-// Stamped by the release build. Left empty everywhere else, where the module
-// version Go records in the binary is the better answer anyway.
 var (
-	version  string
-	revision string
+	releaseVersion string
+	sourceRevision string
 )
 
 func main() {
@@ -20,7 +18,7 @@ func main() {
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-		Build:  cli.Build{Version: version, Revision: revision},
+		Build:  cli.Build{Version: releaseVersion, Revision: sourceRevision},
 	}
 	os.Exit(cli.Run(os.Args[1:], env, cli.Servers{MCP: mcp.Serve, UI: ui.Serve, Site: ui.Site}))
 }
