@@ -1,0 +1,103 @@
+[tools]
+actionlint = "1.7.12"
+go = "1.26.5"
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.6.0"
+golangci-lint = "2.12.2"
+helm = "4.2.3"
+lefthook = "2.1.10"
+zizmor = "1.29.0"
+
+[tasks.build]
+description = "Compile every package"
+run = "go build ./..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.vulncheck]
+description = "Scan reachable Go code for known vulnerabilities"
+run = "govulncheck ./..."
+
+[tasks.test]
+description = "Run tests with the race detector and coverage"
+run = "go test -race -covermode=atomic -coverprofile=coverage.out ./..."
+
+[tasks.fmt]
+description = "Format Go source"
+run = "gofmt -w ."
+
+[tasks.fmt-check]
+description = "Reject unformatted Go source"
+run = "test -z \"$(gofmt -l .)\" || { gofmt -l .; exit 1; }"
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks.lint-fix]
+description = "Apply safe golangci-lint fixes"
+run = "golangci-lint run --fix ./..."
+
+[tasks.tidy-check]
+description = "Reject stale Go module metadata"
+run = """
+before_mod=$(mktemp)
+before_sum=$(mktemp)
+trap 'rm -f "$before_mod" "$before_sum"' EXIT HUP INT TERM
+cp go.mod "$before_mod"
+cp go.sum "$before_sum"
+go mod tidy
+if ! cmp -s "$before_mod" go.mod || ! cmp -s "$before_sum" go.sum; then
+  git --no-pager diff --no-ext-diff -- go.mod go.sum
+  exit 1
+fi
+"""
+
+[tasks.generate-check]
+description = "Reject stale generated files"
+run = """
+before=$(mktemp)
+after=$(mktemp)
+trap 'rm -f "$before" "$after"' EXIT HUP INT TERM
+snapshot() {
+  git status --porcelain=v1 --untracked-files=all
+  git --no-pager diff --no-ext-diff --binary HEAD
+}
+snapshot >"$before"
+go generate ./...
+snapshot >"$after"
+if ! cmp -s "$before" "$after"; then
+  git status --short
+  exit 1
+fi
+"""
+
+[tasks.annotations]
+description = "Verify koment's annotations"
+run = "go run ./cmd/koment check"
+
+[tasks.workflow-lint]
+description = "Lint and audit GitHub Actions"
+run = """
+actionlint
+zizmor --strict-collection .github/workflows action.yml
+"""
+
+[tasks.helm-lint]
+description = "Lint the Helm chart"
+run = "helm lint charts/koment"
+
+[tasks.helm-template]
+description = "Render every supported Helm mode"
+run = """
+for mode in ui mcp-http mcp-streamable; do
+  helm template koment charts/koment --set "mode=${mode}" >/dev/null
+done
+if helm template koment charts/koment --set mode=write >/dev/null 2>&1; then
+  exit 1
+fi
+"""
+
+[hooks]
+postinstall = "lefthook install"

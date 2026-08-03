@@ -113,22 +113,28 @@ only authoritative recovery source.
 ## Run and test it locally
 
 ```sh
-go build -o koment ./cmd/koment
-go test ./...                 # add -race before pushing anything concurrent
-go vet ./...
-gofmt -l .                    # must print nothing
-golangci-lint run ./...       # go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-./koment check                # koment's own annotations must resolve
+mise install
+mise run build
+mise run fmt-check
+mise run tidy-check
+mise run vet
+mise run test
+mise run lint
+mise run vulncheck
+mise run workflow-lint
+mise run annotations
 ```
 
-CI runs exactly that, plus a container build and Helm chart validation. If those
-five commands pass locally, CI will pass.
+The committed lock file pins Go and every project tool for local shells and CI.
+Lefthook is installed by `mise install` and checks formatting and annotations
+before a commit. CI runs the same tasks plus the setup action, container and
+Helm smoke checks behind one required `test` status.
 
 Try the tool on itself:
 
 ```sh
-./koment show internal/store/ulid.go
-./koment ui                   # then open the printed URL
+go run ./cmd/koment show internal/store/ulid.go
+go run ./cmd/koment ui
 ```
 
 ### Layout

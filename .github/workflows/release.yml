@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # Opens and maintains a release pull request. Merging it tags the release,
   # which is what triggers publishing below.
@@ -79,8 +83,9 @@ jobs:
       - name: attach to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.please.outputs.tag }}
         run: |
-          gh release upload "${{ needs.please.outputs.tag }}" \
+          gh release upload "$RELEASE_TAG" \
             dist/koment_*.tar.gz dist/koment_*.zip dist/koment_*_checksums.txt \
             --clobber
 
@@ -139,6 +144,11 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      CHART_VERSION: ${{ needs.please.outputs.version }}
+      REGISTRY_OWNER: ${{ github.repository_owner }}
+      REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      REGISTRY_USER: ${{ github.actor }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -149,8 +159,8 @@ jobs:
       - name: package and push
         run: |
           helm registry login ghcr.io \
-            --username "${{ github.actor }}" \
-            --password "${{ secrets.GITHUB_TOKEN }}"
+            --username "$REGISTRY_USER" \
+            --password "$REGISTRY_PASSWORD"
           helm package charts/koment --destination /tmp
-          helm push "/tmp/koment-${{ needs.please.outputs.version }}.tgz" \
-            "oci://ghcr.io/${{ github.repository_owner }}/charts"
+          helm push "/tmp/koment-${CHART_VERSION}.tgz" \
+            "oci://ghcr.io/${REGISTRY_OWNER}/charts"

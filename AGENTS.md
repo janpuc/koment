@@ -92,8 +92,10 @@ Hold yourself to the same bar.
 - Do not report something works without running it.
 - If you could not verify a claim, say so explicitly in your summary.
 - Quote real output when reporting results. Paraphrased output is not evidence.
-- Toolchain versions come from `go.mod` and the workflow files, not from
-  assumption.
+- Toolchain versions come from `go.mod` and `.mise/config.toml`, not from
+  assumption. Those files must carry the same Go version.
+- Run repository tasks through `mise run`. `.mise/config.toml` and its lock
+  file define the exact tools CI uses; `mise tasks` is the command reference.
 
 ## 5. Fail loudly
 
@@ -115,6 +117,7 @@ do not reach for a global logger.
 
 - Every anchoring rule gets a test with a real before/after file pair.
 - Drift detection gets tests for each status the model can produce.
+- Run `mise run test`; it includes the race detector and coverage.
 - Run the tests. Paste the output in your summary.
 - A change to parsing or anchoring without a test is not finished.
 

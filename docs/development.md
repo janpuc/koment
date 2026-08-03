@@ -3,16 +3,23 @@
 ## Build and test
 
 ```sh
-go build ./...
-go test ./...
-go vet ./...
-gofmt -l .
-
-go build -o koment ./cmd/koment
-./koment check          # koment's own annotations must resolve
+mise install
+mise tasks
+mise run build
+mise run fmt-check
+mise run tidy-check
+mise run vet
+mise run test
+mise run lint
+mise run vulncheck
+mise run workflow-lint
+mise run annotations
 ```
 
-CI runs exactly that. Go version comes from `go.mod`.
+`.mise/config.toml` and `.mise/mise.lock` are the toolchain source of truth.
+The Go version there must match `go.mod`. `mise install` also installs the
+Lefthook pre-commit checks. CI runs these tasks plus the setup action, container
+and Helm smoke checks, then reports one required `test` status.
 
 ## Layout
 
@@ -51,8 +58,8 @@ koment annotation. This repository is koment's own first user — see
 [ADR 0107](decisions/0107-dogfood-the-comment-free-thesis.md).
 
 **Every dependency needs an ADR.** Standard library first; a small
-well-understood module over a framework. The graph is currently two direct
-dependencies and the bar for a third is high.
+well-understood module over a framework. The bar for another direct dependency
+is high.
 
 **Active ADRs are immutable.** Changed your mind? Write a new one that
 supersedes the old and mark the old one. The owner-authorized pre-deployment
@@ -102,8 +109,8 @@ split it. Stage deliberately; never `git add -A` blindly.
 
 ## Where to start reading
 
-`DESIGN.md` for the architecture, then `docs/decisions/` in order. ADRs 0002,
-0003 and 0005 carry the load-bearing decisions: where annotations live, how they
-anchor, and how they reach agents.
+`DESIGN.md` for the architecture, then `docs/decisions/` in order. Active
+decisions start at ADR 0100; the pre-reset prototype decisions remain in Git
+history.
 
 Then run `koment ui` and look at the repository through its own tool.

@@ -11,8 +11,12 @@ coverage.*
 # Editors / OS
 .DS_Store
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 *.swp
+.mise.local.toml
+.mise.local.lock
 
 # Derived index — a build artifact, never repository content (ADR 0022).
 *.db
