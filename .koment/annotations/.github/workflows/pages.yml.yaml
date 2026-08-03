@@ -3,9 +3,9 @@ file: .github/workflows/pages.yml
 annotations:
   - id: 01KZ0JZWBX2XSAXFQ9JD6QF071
     scope: excerpt
-    excerpt: '      - name: export koment'
-    excerpt_sha256: 43fa7ec2988372bb298919bdeed5f68e356c1309a4afe6a2a50fa0db2abcb53c
-    last_seen_line: 36
+    excerpt: '      - name: render koment'
+    excerpt_sha256: 25d223d807c9b475ca9c3a5aa5d8e793597ca4e462af33cd20838b39568fc8af
+    last_seen_line: 42
     kind: why
     body: |-
       The demo exports two repositories: koment's own annotations and the fixture.

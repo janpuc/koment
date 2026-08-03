@@ -41,10 +41,28 @@ func endLineOrZero(line, endLine int) int {
 	return endLine
 }
 
+// HeadCommit is the abbreviated commit a snapshot was taken at. It reports
+// ErrNoGit rather than an empty string, so a caller that needs to name the
+// commit cannot mistake "not a repository" for "no commit".
+func HeadCommit(root string) (string, error) {
+	commit, err := git(root, "rev-parse", "--short", "HEAD")
+	if err != nil || commit == "" {
+		return "", ErrNoGit
+	}
+	return commit, nil
+}
+
 // WorktreeIsDirty reports whether the file has uncommitted changes, which makes
 // the captured commit describe something other than what was annotated.
 func WorktreeIsDirty(root, file string) bool {
 	changed, err := git(root, "status", "--porcelain", "--", file)
+	return err == nil && changed != ""
+}
+
+// TreeIsDirty is the same question asked of the whole repository, which is what
+// a snapshot of every file has to ask before naming a commit.
+func TreeIsDirty(root string) bool {
+	changed, err := git(root, "status", "--porcelain")
 	return err == nil && changed != ""
 }
 

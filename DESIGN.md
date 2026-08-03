@@ -189,9 +189,11 @@ koment show <file>              # annotations for one file, resolved
 koment check [path...]          # drift gate; non-zero on drifted/orphaned
 koment list [--kind k]          # everything, for review
 koment reanchor <id> [--excerpt <text>] [--file <path>]   # fix drift; keeps the id
+koment site --out <dir>         # render one repository to static HTML
 koment mcp                      # MCP server over stdio
 koment mcp --http <addr>              # ... over HTTP, JSON responses
 koment mcp --streamable-http <addr>   # ... over HTTP, SSE responses
+koment version
 ```
 
 stdio remains the default and the recommended transport. The HTTP transports
@@ -228,6 +230,20 @@ margin of the line they describe — rendered from Go templates embedded with
 Every request re-reads the working tree, so what is rendered is what is on
 disk. A `drifted` annotation is shown as struck-through history and never laid
 over current code.
+
+### Three tiers, one record
+
+`koment site` renders the same view to static files, which is how a team reads
+each other's annotations without anyone hosting anything. That makes three ways
+to run koment — local, published, served — and **moving between them is not a
+migration**, because all three read `.koment/` in git. Nothing to export, import
+or back up. ADR 0026.
+
+The published tier is one repository per site by design: a static page has no
+server to resolve a repository against, and a client-side router imitating one
+would diverge in ways that are harder to reason about than a stated limit.
+Beyond that limit, live resolution, cross-repository search and metrics, the two
+tiers render from the same code and any difference is a bug.
 
 
 Prior art: [konflate](https://github.com/home-operations/konflate), a read-only

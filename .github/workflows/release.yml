@@ -28,6 +28,62 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+  # Tier 1 has to be installable without a Go toolchain, and the setup action
+  # downloads these (ADR 0026).
+  binaries:
+    name: publish binaries
+    needs: please
+    if: needs.please.outputs.released == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # CGO is already off, so one runner cross-compiles every target and a
+      # build matrix would only add six jobs' worth of scheduling.
+      - name: build
+        env:
+          VERSION: ${{ needs.please.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp LICENSE README.md dist/
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}
+            arch=${target#*/}
+            binary=koment
+            [ "$os" = windows ] && binary=koment.exe
+
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
+              -ldflags="-s -w -X main.version=${VERSION} -X main.revision=${GITHUB_SHA}" \
+              -o "dist/${binary}" ./cmd/koment
+
+            name="koment_${VERSION}_${os}_${arch}"
+            if [ "$os" = windows ]; then
+              (cd dist && zip -q "${name}.zip" "$binary" LICENSE README.md && rm "$binary")
+            else
+              (cd dist && tar -czf "${name}.tar.gz" "$binary" LICENSE README.md && rm "$binary")
+            fi
+          done
+          rm dist/LICENSE dist/README.md
+          (cd dist && sha256sum ./*.tar.gz ./*.zip | sed 's| \./| |' > "koment_${VERSION}_checksums.txt")
+          ls -l dist
+
+      - name: attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.please.outputs.tag }}" \
+            dist/koment_*.tar.gz dist/koment_*.zip dist/koment_*_checksums.txt \
+            --clobber
+
   image:
     name: publish image
     needs: please

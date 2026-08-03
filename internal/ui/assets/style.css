@@ -80,13 +80,26 @@ body {
 }
 
 .snapshot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem .8rem;
   padding: .55rem 1.25rem;
   background: var(--surface-2);
   border-bottom: 1px solid var(--rule);
   font-size: .76rem;
   color: var(--ink-soft);
 }
+.snapshot .stamp {
+  flex: none;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .68rem;
+  color: var(--ink-faint);
+}
+.snapshot .said { min-width: 0; }
 .snapshot code, .snapshot a { font-family: var(--mono); color: var(--accent); }
+.snapshot .stamp code { letter-spacing: 0; font-size: .76rem; }
 
 .app {
   display: grid;

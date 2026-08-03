@@ -9,7 +9,9 @@ koment reanchor <id> [--excerpt <text>] [--file <path>]
 koment index [--rebuild] [--database-url <url>]
 koment export [--database-url <url>]     # rebuild .koment from the index
 koment ui [--listen <addr>]
+koment site --out <dir>                  # render one repository to static HTML
 koment mcp [--http <addr> | --streamable-http <addr>]
+koment version
 ```
 
 Exit codes: `0` fine, `1` drift or failure, `2` misuse.
@@ -144,13 +146,30 @@ check` still reads YAML.
 
 ## site
 
-Renders the read-only view to static HTML. Scoped to publishing the demo — for
-your own annotations use `koment ui`, which re-reads the working tree per
-request (ADR 0013).
+Renders one repository to static HTML — the published tier (ADR 0026). See
+[publishing](publishing.md) for the workflow to copy.
 
 ```sh
-koment site --out dist --name myrepo
+koment site --out dist
+koment site --out dist --name myrepo --commit-link "$url/commit/$sha"
 ```
+
+| | |
+|---|---|
+| `--out <dir>` | where to write. Required. |
+| `--name <text>` | repository name on every page; defaults to the repository's own |
+| `--commit <sha>` | the commit rendered; read from git when omitted |
+| `--commit-link <url>` | make the commit clickable |
+| `--banner <text>` · `--banner-link <url>` | a notice on every page |
+| `--repository <id>` | which repository, when several are configured |
+
+Every page names its commit, and `koment site` **refuses to render** when it
+cannot determine one: a snapshot that does not say what it is a snapshot of is
+how a stale rendering passes for the current tree. Pass `--commit` outside git.
+
+It is a snapshot, not your working tree — use `koment ui` for that, which
+re-resolves on every request (ADR 0013). A site renders your source as well as
+your annotations.
 
 Was `koment export` before 0.2; the plainer name went to the store rebuild,
 which is the more central operation.

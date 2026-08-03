@@ -6,7 +6,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/janpuc/koment/ci.yml?branch=main&label=ci)](https://github.com/janpuc/koment/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/actions/workflow/status/janpuc/koment/release.yml?branch=main&label=release)](https://github.com/janpuc/koment/actions/workflows/release.yml)
-[![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://janpuc.github.io/koment/)
+[![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://janpuc.github.io/koment/)
 [![License](https://img.shields.io/github/license/janpuc/koment)](https://github.com/janpuc/koment/blob/main/LICENSE)
 
 </div>
@@ -27,8 +27,9 @@ Hermes and the rest the same reasoning through the same interface — because an
 agent that cannot see why something was built a certain way will happily
 refactor the reason away.
 
-**[See it running →](https://janpuc.github.io/koment/)** — that is koment's own
-annotations, rendered by koment.
+**[See it running →](https://janpuc.github.io/koment/)** — koment's own
+annotations, rendered by koment onto GitHub Pages by [the workflow you can
+copy](docs/publishing.md).
 
 ## How it works
 
@@ -63,11 +64,30 @@ never write. Annotations are created by the CLI, by a person or an agent with a
 checkout — so a published instance exposes no way for a visitor to change
 anything.
 
+## Three ways to run it
+
+Pick one. Each is a place to stop, not a step you have to take, and **moving
+between them is not a migration** — all three read the same `.koment/` in git,
+so there is nothing to export, import or back up
+([ADR 0026](docs/decisions/0026-three-tiers-of-adoption-and-static-is-one-of-them.md)).
+
+| | you run | you get |
+|---|---|---|
+| **local** | the CLI, and `koment mcp` in your agent's config | annotate, `koment check`, agents read the reasoning. Nothing to host. |
+| **published** | [one workflow file](docs/publishing.md) → GitHub Pages | everyone reads the annotations in a browser. No server, no auth to design, no cost. |
+| **served** | the container or the [Helm chart](#kubernetes) | the live working tree, several repositories, search across them, metrics |
+
 ## Quick start
 
 ```bash
 go install github.com/janpuc/koment/cmd/koment@latest
+```
 
+No Go toolchain? Every release carries binaries for linux, macOS and Windows on
+amd64 and arm64, with checksums —
+[grab one](https://github.com/janpuc/koment/releases/latest).
+
+```bash
 cd ~/your-project
 koment add src/auth.go \
   --excerpt 'if token.Expiry.Before(now.Add(-clockSkew)) {' \
@@ -183,14 +203,33 @@ names the candidates** rather than guessing (ADR 0025).
 | [Zed](docs/agents/zed.md) | [Codex](docs/agents/codex.md) | [opencode](docs/agents/opencode.md) |
 | [Hermes](docs/agents/hermes.md) | [OpenClaw](docs/agents/openclaw.md) | [Anything else](docs/agents/other.md) |
 
-## CI
+## Publish it
+
+Your reviewers are not going to install anything. Give them a URL: one workflow
+file renders every annotation to static HTML and puts it on GitHub Pages, with
+no server, no database and no authentication to design.
 
 ```yaml
+- uses: actions/checkout@v5
+- uses: janpuc/koment@v0.2.0
 - run: koment check
+- run: koment site --out dist
 ```
+
+Every page names the commit it was rendered from, so a snapshot can never pass
+for the current tree. `koment check` in the same workflow means a build that
+would publish drift fails first.
+
+**[The whole workflow, ready to copy →](docs/publishing.md)**
+
+A site renders your source as well as your annotations, so publishing one from a
+private repository publishes that source. One repository per site, by design —
+a static page has no server to resolve a repository against, and faking one
+would be worse than the limit.
 
 ## Documentation
 
+- **[Publishing](docs/publishing.md)** — the copy-paste workflow, and moving to a served instance later
 - **[Bootstrap](docs/bootstrap.md)** — what it is, the data model, running it, releases
 - **[Getting started](docs/quickstart.md)** · **[Writing good annotations](docs/annotating.md)** · **[CLI reference](docs/cli.md)** · **[CI](docs/ci.md)**
 - **[Decisions](docs/decisions/)** — why it is built this way, and what was rejected
