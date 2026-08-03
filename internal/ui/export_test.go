@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,7 +18,7 @@ func exportTo(t *testing.T) string {
 		Banner:     "rebuilt nightly",
 		BannerHref: "https://example.test/koment",
 	}
-	if _, err := export(annotatedRepository(t), out, "fixture", taken, nil); err != nil {
+	if _, err := export(snapshotFromStore(t, annotatedRepository(t)), out, "fixture", taken, nil); err != nil {
 		t.Fatalf("export: %v", err)
 	}
 	return out
@@ -47,6 +48,61 @@ func TestExportWritesAnIndexAndAPagePerFile(t *testing.T) {
 	index := read(t, filepath.Join(out, "index.html"))
 	if !strings.Contains(index, rationale) {
 		t.Error("the index should show the first file's annotations")
+	}
+}
+
+func TestExportWritesMachineReadableSnapshotAndBodySearch(t *testing.T) {
+	out := exportTo(t)
+	var published staticPublication
+	if err := json.Unmarshal([]byte(read(t, filepath.Join(out, annotationsName))), &published); err != nil {
+		t.Fatal(err)
+	}
+	if published.Version != 1 || published.Repository.Commit != "abc1234" || len(published.Files) != 1 {
+		t.Fatalf("published = %#v", published)
+	}
+	if len(published.Files[0].Annotations) != 1 || published.Files[0].Annotations[0].Body != rationale {
+		t.Fatalf("annotations = %#v", published.Files[0].Annotations)
+	}
+	var searchable []searchEntry
+	if err := json.Unmarshal([]byte(read(t, filepath.Join(out, searchName))), &searchable); err != nil {
+		t.Fatal(err)
+	}
+	if len(searchable) != 1 || searchable[0].Body != rationale {
+		t.Fatalf("search = %#v", searchable)
+	}
+	index := read(t, filepath.Join(out, indexPage))
+	if !strings.Contains(index, "serve must be the last call") || !strings.Contains(index, "data-search=") {
+		t.Fatalf("index has no annotation-body search data:\n%s", firstLines(index, 60))
+	}
+}
+
+func TestPublishReplacesThePreviousSnapshot(t *testing.T) {
+	annotations := annotatedRepository(t)
+	out := filepath.Join(t.TempDir(), "site")
+	if err := os.MkdirAll(out, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(out, "stale.html"), []byte("stale"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := publish(snapshotFromStore(t, annotations), out, annotations.Root(), "fixture", &snapshot{Commit: "abc1234"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(out, "stale.html")); !os.IsNotExist(err) {
+		t.Fatalf("stale output remains: %v", err)
+	}
+	for _, name := range []string{indexPage, annotationsName, searchName} {
+		if _, err := os.Stat(filepath.Join(out, name)); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
+func TestPublishRefusesToReplaceTheRepositoryRoot(t *testing.T) {
+	annotations := annotatedRepository(t)
+	_, err := publish(snapshotFromStore(t, annotations), annotations.Root(), annotations.Root(), "fixture", &snapshot{Commit: "abc1234"}, nil)
+	if err == nil || !strings.Contains(err.Error(), "unsafe output") {
+		t.Fatalf("err = %v", err)
 	}
 }
 
@@ -108,7 +164,7 @@ func TestExportedPagesKeepRepositorySwitchingInContext(t *testing.T) {
 		{Name: "koment", Href: "index.html", Current: true},
 		{Name: "workspace", Href: "r/workspace/index.html"},
 	}
-	if _, err := export(annotations, out, "koment", &snapshot{Commit: "abc1234"}, repositories); err != nil {
+	if _, err := export(snapshotFromStore(t, annotations), out, "koment", &snapshot{Commit: "abc1234"}, repositories); err != nil {
 		t.Fatal(err)
 	}
 
@@ -207,7 +263,7 @@ func TestASiteRenderedFromAModifiedTreeSaysSo(t *testing.T) {
 func TestExportRendersTheSameContentAsTheServer(t *testing.T) {
 	annotations := annotatedRepository(t)
 	out := t.TempDir()
-	if _, err := export(annotations, out, "fixture", &snapshot{Commit: "abc1234"}, nil); err != nil {
+	if _, err := export(snapshotFromStore(t, annotations), out, "fixture", &snapshot{Commit: "abc1234"}, nil); err != nil {
 		t.Fatal(err)
 	}
 

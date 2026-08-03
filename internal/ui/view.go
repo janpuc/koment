@@ -1,18 +1,18 @@
 package ui
 
 import (
-	"errors"
-	"io/fs"
+	"net/url"
 	"strings"
 
 	"github.com/janpuc/koment/internal/anchor"
+	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/store"
 )
 
 type view struct {
 	Total        int
 	Tally        []tallyEntry
-	Tree         []node
+	Tree         []treeNode
 	Loose        []entry
 	Repositories []repositoryLink
 	Repository   string
@@ -26,9 +26,11 @@ type view struct {
 	LogoSVG      string
 	LogoPNG      string
 	Snapshot     *snapshot
+	WriteToken   string
+	CreatedID    string
+	WriteWarning string
 }
 
-// snapshot is set only on a published page.
 type snapshot struct {
 	Commit     string
 	CommitURL  string
@@ -36,7 +38,6 @@ type snapshot struct {
 	BannerHref string
 }
 
-// repositoryLink is one entry in the switcher.
 type repositoryLink struct {
 	ID      string
 	Name    string
@@ -56,13 +57,21 @@ type links struct {
 func servedLinks(repositoryID string) links {
 	base := repositoryPrefix + repositoryID + "/"
 	return links{
-		file:       func(target string) string { return base + "f/" + target },
+		file:       func(target string) string { return base + "f/" + escapedFilePath(target) },
 		home:       base,
 		stylesheet: "/assets/style.css",
 		script:     "/assets/koment.js",
 		logoSVG:    "/assets/koment-logo.svg",
 		logoPNG:    "/assets/koment-logo.png",
 	}
+}
+
+func escapedFilePath(file string) string {
+	parts := strings.Split(file, "/")
+	for index, part := range parts {
+		parts[index] = url.PathEscape(part)
+	}
+	return strings.Join(parts, "/")
 }
 
 type tallyEntry struct {
@@ -77,6 +86,7 @@ type entry struct {
 	Count   int
 	Worst   anchor.Status
 	Current bool
+	Search  string
 }
 
 type fileView struct {
@@ -109,12 +119,8 @@ var statusOrder = []anchor.Status{
 	anchor.StatusOK, anchor.StatusMoved, anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned,
 }
 
-func build(annotations *store.Store, requested string, how links) (*view, error) {
-	files, err := annotations.AnnotatedFiles()
-	if err != nil {
-		return nil, err
-	}
-	if len(files) == 0 {
+func build(repositorySnapshot *application.RepositorySnapshot, requested string, how links) (*view, error) {
+	if len(repositorySnapshot.Files) == 0 {
 		return &view{
 			Empty: true, Stylesheet: how.stylesheet, Script: how.script,
 			Home: how.home, LogoSVG: how.logoSVG, LogoPNG: how.logoPNG,
@@ -123,7 +129,7 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 
 	current := requested
 	if current == "" {
-		current = files[0]
+		current = repositorySnapshot.Files[0].Path
 	}
 
 	built := &view{
@@ -135,36 +141,33 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		LogoPNG:    how.logoPNG,
 	}
 	counts := map[anchor.Status]int{}
-	listed := make([]entry, 0, len(files))
+	listed := make([]entry, 0, len(repositorySnapshot.Files))
 
-	for _, file := range files {
-		resolutions, err := anchor.ResolveStored(annotations, file)
-		if err != nil {
-			return nil, err
-		}
-
+	for _, file := range repositorySnapshot.Files {
 		worst := anchor.StatusOK
-		for _, resolution := range resolutions {
-			counts[resolution.Status]++
+		var searchable strings.Builder
+		searchable.WriteString(file.Path)
+		for _, annotation := range file.Annotations {
+			counts[annotation.Status]++
 			built.Total++
-			if severity[resolution.Status] > severity[worst] {
-				worst = resolution.Status
+			if statusSeverity[annotation.Status] > statusSeverity[worst] {
+				worst = annotation.Status
 			}
+			searchable.WriteString("\n" + string(annotation.Record.Kind) + "\n" + annotation.Record.Body + "\n" + annotation.Record.Author.Name)
 		}
 
 		listed = append(listed, entry{
-			Path:    file,
-			Name:    baseName(file),
-			Href:    how.file(file),
-			Count:   len(resolutions),
+			Path:    file.Path,
+			Name:    baseName(file.Path),
+			Href:    how.file(file.Path),
+			Count:   len(file.Annotations),
 			Worst:   worst,
-			Current: file == current,
+			Current: file.Path == current,
+			Search:  strings.ToLower(searchable.String()),
 		})
 
-		if file == current {
-			if built.File, err = buildFile(annotations, file, resolutions); err != nil {
-				return nil, err
-			}
+		if file.Path == current {
+			built.File = buildFile(file)
 		}
 	}
 
@@ -172,7 +175,7 @@ func build(annotations *store.Store, requested string, how links) (*view, error)
 		built.NotFound = true
 	}
 	built.Tally = tallyOf(counts)
-	built.Tree, built.Loose = treeOf(listed, current)
+	built.Tree, built.Loose = buildTree(listed, current)
 	return built, nil
 }
 
@@ -193,69 +196,48 @@ func tallyOf(counts map[anchor.Status]int) []tallyEntry {
 	return tally
 }
 
-// buildFile renders the source as uniform lines and the notes separately, each
-// carrying the line it belongs to.
-func buildFile(annotations *store.Store, file string, resolutions []anchor.Resolution) (*fileView, error) {
-	built := &fileView{Path: file}
-
-	content, err := annotations.ReadSource(file)
-	if errors.Is(err, fs.ErrNotExist) {
+func buildFile(file application.FileSnapshot) *fileView {
+	built := &fileView{Path: file.Path}
+	if !file.Exists {
 		built.Missing = true
-		for _, resolution := range resolutions {
-			built.Detached = append(built.Detached, describe(resolution))
+		for _, annotation := range file.Annotations {
+			built.Detached = append(built.Detached, describe(annotation))
 		}
-		return built, nil
-	}
-	if err != nil {
-		return nil, err
+		return built
 	}
 
 	marked := map[int]anchor.Status{}
-	for _, resolution := range resolutions {
-		described := describe(resolution)
-		if resolution.Line == 0 {
+	for _, annotation := range file.Annotations {
+		described := describe(annotation)
+		if annotation.Line == 0 {
 			built.Detached = append(built.Detached, described)
 			continue
 		}
 		built.Notes = append(built.Notes, described)
-		worst, seen := marked[resolution.Line]
-		if !seen || severity[resolution.Status] > severity[worst] {
-			marked[resolution.Line] = resolution.Status
+		worst, seen := marked[annotation.Line]
+		if !seen || statusSeverity[annotation.Status] > statusSeverity[worst] {
+			marked[annotation.Line] = annotation.Status
 		}
 	}
 
-	for i, text := range strings.Split(strings.TrimSuffix(string(content), "\n"), "\n") {
+	for i, text := range strings.Split(strings.TrimSuffix(string(file.Content), "\n"), "\n") {
 		number := i + 1
 		built.Lines = append(built.Lines, line{Number: number, Text: text, Marker: marked[number]})
 	}
-	return built, nil
+	return built
 }
 
-// describe renders a drifted annotation as history: its excerpt is shown as
-// what used to be there, never laid over the current source (ADR 0005).
-func describe(resolution anchor.Resolution) note {
-	stale := resolution.Status.IsFailure()
+func describe(annotation application.AnnotationView) note {
+	stale := annotation.Status.IsFailure()
 	return note{
-		ID:      resolution.Annotation.ID,
-		Kind:    string(resolution.Annotation.Kind),
-		Status:  resolution.Status,
-		Line:    resolution.Line,
-		Body:    store.Paragraphs(resolution.Annotation.Body),
-		Created: resolution.Annotation.Created.Format("2006-01-02"),
-		Excerpt: resolution.Annotation.Anchor.Excerpt,
+		ID:      annotation.Record.ID,
+		Kind:    string(annotation.Record.Kind),
+		Status:  annotation.Status,
+		Line:    annotation.Line,
+		Body:    store.Paragraphs(annotation.Record.Body),
+		Created: annotation.Record.Created.Format("2006-01-02"),
+		Excerpt: annotation.Record.Anchor.Excerpt,
 		Stale:   stale,
-		Warning: warningFor(resolution.Status),
+		Warning: annotation.Warning,
 	}
-}
-
-func warningFor(status anchor.Status) string {
-	switch status {
-	case anchor.StatusAmbiguous:
-		return "The excerpt now matches several places and its context identifies none uniquely. Treat this note as history until it is reanchored."
-	case anchor.StatusDrifted:
-		return "The annotated code changed and nobody revisited this note. Treat it as history, not as a description of the code as it stands."
-	case anchor.StatusOrphaned:
-		return "The file this annotation described no longer exists. Treat it as history only."
-	}
-	return ""
 }

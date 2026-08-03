@@ -18,13 +18,10 @@ body: |-
 created: "2026-08-03"
 anchor:
   scope: excerpt
-  excerpt: func buildFile(annotations *store.Store, file string, resolutions []anchor.Resolution) (*fileView, error) {
-  before: |2-
-
-    // buildFile renders the source as uniform lines and the notes separately, each
-    // carrying the line it belongs to.
-  after: "\tbuilt := &fileView{Path: file}\n\n\tcontent, err := annotations.ReadSource(file)"
-  last_seen_line: 198
+  excerpt: "\t\tbuilt.Notes = append(built.Notes, described)"
+  before: "\t\t\tbuilt.Detached = append(built.Detached, described)\n\t\t\tcontinue\n\t\t}"
+  after: "\t\tworst, seen := marked[annotation.Line]\n\t\tif !seen || statusSeverity[annotation.Status] > statusSeverity[worst] {\n\t\t\tmarked[annotation.Line] = annotation.Status"
+  last_seen_line: 207
 git:
   commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
   path: internal/ui/view.go

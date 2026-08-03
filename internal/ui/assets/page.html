@@ -60,7 +60,7 @@
     </div>
 
     <div class="sift">
-      <input type="search" id="sift" placeholder="Filter files" aria-label="Filter files" data-sift autocomplete="off">
+      <input type="search" id="sift" placeholder="Search files and annotations" aria-label="Search files and annotations" data-sift autocomplete="off">
     </div>
 
     <div class="tree" data-tree>
@@ -80,6 +80,9 @@
       {{end}}
     </div>
 
+    {{if .CreatedID}}<div class="write-result">Created annotation <code>{{.CreatedID}}</code>.</div>{{end}}
+    {{if .WriteWarning}}<div class="write-warning">{{.WriteWarning}}</div>{{end}}
+
     {{if .NotFound}}
       <p class="hollow-inline">Nothing recorded against <code>{{.Current}}</code>.</p>
     {{else}}
@@ -89,6 +92,27 @@
           {{range .File.Detached}}{{template "note" .}}{{end}}
         </div>
       {{end}}
+
+      {{if .WriteToken}}{{if not .File.Missing}}
+        <details class="write-card">
+          <summary>Add rationale</summary>
+          <form method="post" action="{{.Home}}annotations">
+            <input type="hidden" name="capability" value="{{.WriteToken}}">
+            <input type="hidden" name="file" value="{{.File.Path}}">
+            <label>Kind
+              <select name="kind">
+                <option value="why">why</option>
+                <option value="gotcha">gotcha</option>
+                <option value="invariant">invariant</option>
+                <option value="anti-pattern">anti-pattern</option>
+              </select>
+            </label>
+            <label>Code excerpt <input name="excerpt" placeholder="Optional exact snippet"></label>
+            <label>Rationale <textarea name="body" required rows="4"></textarea></label>
+            <button type="submit">Add annotation</button>
+          </form>
+        </details>
+      {{end}}{{end}}
 
       {{if .File.Lines}}
         <div class="reading" data-reading>
@@ -132,7 +156,7 @@
 {{end}}
 
 {{define "leaf"}}
-<a class="file" href="{{.Href}}" data-name="{{.Path}}"{{if .Current}} aria-current="page"{{end}}>
+<a class="file" href="{{.Href}}" data-search="{{.Search}}"{{if .Current}} aria-current="page"{{end}}>
   <span class="dot {{.Worst}}"></span>
   <span class="name">{{.Name}}</span>
   <span class="count">{{.Count}}</span>

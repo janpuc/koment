@@ -56,3 +56,16 @@ func TestWarnIfPublicStaysQuietOnLoopback(t *testing.T) {
 		}
 	}
 }
+
+func TestIsLoopbackRejectsPublicAndMalformedAddresses(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:8765", "[::1]:8765", "localhost:8765"} {
+		if !IsLoopback(address) {
+			t.Errorf("%s should be loopback", address)
+		}
+	}
+	for _, address := range []string{"0.0.0.0:8765", "192.0.2.1:8765", "not-an-address"} {
+		if IsLoopback(address) {
+			t.Errorf("%s should not be loopback", address)
+		}
+	}
+}

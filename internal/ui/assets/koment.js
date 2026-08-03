@@ -28,7 +28,7 @@
       }
 
       files.forEach(function (file) {
-        var match = !needle || file.dataset.name.toLowerCase().indexOf(needle) !== -1;
+        var match = !needle || file.dataset.search.indexOf(needle) !== -1;
         file.hidden = !match;
       });
 

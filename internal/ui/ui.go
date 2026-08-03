@@ -1,10 +1,13 @@
-// Package ui serves a local read-only view where code and its annotations
-// converge on one screen (ADR 0013).
+// Package ui serves a local view where code and its annotations converge on
+// one screen.
 package ui
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/subtle"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,14 +15,18 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/config"
 	"github.com/janpuc/koment/internal/listen"
 	"github.com/janpuc/koment/internal/metrics"
+	"github.com/janpuc/koment/internal/provenance"
 	"github.com/janpuc/koment/internal/repository"
+	"github.com/janpuc/koment/internal/store"
 )
 
 //go:embed assets
@@ -31,11 +38,14 @@ const (
 	sweepInterval    = 30 * time.Second
 	headerTimeout    = 10 * time.Second
 	repositoryPrefix = "/r/"
+	capabilityQuery  = "koment-capability"
+	capabilityCookie = "koment_capability"
+	maxMutationBody  = 1 << 20
 )
 
-const usage = `koment ui serves a local, read-only view of annotated code.
+const usage = `koment ui serves a local view of annotated code.
 
-  koment ui [--listen <addr>] [--repository <id>]
+  koment ui [--listen <addr>] [--repository <id>] [--write]
 
 Every configured repository is served, each under /r/<id>/, with a switcher on
 the page. Pass --repository to serve only one.
@@ -57,6 +67,7 @@ func Serve(args []string, stderr io.Writer) error {
 	address := flags.String("listen", defaultAddress, "address to serve on; a bare port is bound on loopback")
 	metricsAddress := flags.String("metrics", "", "serve Prometheus metrics on this separate address; off unless given")
 	named := flags.String("repository", "", "serve only this repository; all configured ones are served otherwise")
+	writes := flags.Bool("write", false, "enable local annotation writes; valid only on loopback")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -67,7 +78,7 @@ func Serve(args []string, stderr io.Writer) error {
 		return fmt.Errorf("ui takes no arguments, got %s", flags.Arg(0))
 	}
 
-	repositories, err := serveable(*named)
+	repositories, err := selectedRepositories(*named)
 	if err != nil {
 		return err
 	}
@@ -77,22 +88,33 @@ func Serve(args []string, stderr io.Writer) error {
 		return err
 	}
 	listen.WarnIfPublic(resolved, stderr)
+	if *writes && !listen.IsLoopback(resolved) {
+		return fmt.Errorf("--write requires a loopback listen address")
+	}
+	writeToken := ""
+	if *writes {
+		if writeToken, err = newCapability(); err != nil {
+			return err
+		}
+	}
 
 	listener, err := net.Listen("tcp", resolved)
 	if err != nil {
 		return fmt.Errorf("listening on %s: %w", resolved, err)
 	}
-	fmt.Fprintf(stderr, "koment: http://%s\n", listener.Addr())
+	if writeToken == "" {
+		fmt.Fprintf(stderr, "koment: http://%s\n", listener.Addr())
+	} else {
+		fmt.Fprintf(stderr, "koment: http://%s/?%s=%s\n", listener.Addr(), capabilityQuery, writeToken)
+	}
 
 	ctx := context.Background()
 	recorder := startMetrics(ctx, repositories, *metricsAddress, stderr)
 
-	return serve(ctx, repositories, listener, stderr, recorder)
+	return serve(ctx, repositories, listener, stderr, recorder, writeToken)
 }
 
-// serveable is the set the UI will serve: every configured repository, or the
-// one --repository names.
-func serveable(named string) (*repository.Set, error) {
+func selectedRepositories(named string) (*repository.Set, error) {
 	workingDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("finding the working directory: %w", err)
@@ -113,8 +135,6 @@ func serveable(named string) (*repository.Set, error) {
 	return repository.Of(chosen), nil
 }
 
-// startMetrics returns a no-op recorder unless an address was given, so the
-// default posture exposes nothing new (ADR 0020).
 func startMetrics(ctx context.Context, repositories *repository.Set, address string, stderr io.Writer) metrics.Recorder {
 	if address == "" {
 		return metrics.Discard{}
@@ -130,8 +150,6 @@ func startMetrics(ctx context.Context, repositories *repository.Set, address str
 	return recorder
 }
 
-// sweepPeriodically keeps the repository gauges current. It is on a timer
-// rather than driven by a scrape so that a scraper cannot drive load.
 func sweepPeriodically(ctx context.Context, repositories *repository.Set, recorder metrics.Recorder, stderr io.Writer) {
 	ticker := time.NewTicker(sweepInterval)
 	defer ticker.Stop()
@@ -150,9 +168,9 @@ func sweepPeriodically(ctx context.Context, repositories *repository.Set, record
 	}
 }
 
-func serve(ctx context.Context, repositories *repository.Set, listener net.Listener, stderr io.Writer, recorder metrics.Recorder) error {
+func serve(ctx context.Context, repositories *repository.Set, listener net.Listener, stderr io.Writer, recorder metrics.Recorder, writeToken string) error {
 	server := &http.Server{
-		Handler:           metrics.Instrument(recorder, "ui", Handler(repositories)),
+		Handler:           metrics.Instrument(recorder, "ui", handler(repositories, writeToken)),
 		ReadHeaderTimeout: headerTimeout,
 	}
 
@@ -175,6 +193,10 @@ func serve(ctx context.Context, repositories *repository.Set, listener net.Liste
 // rendered is what is on disk rather than what was on disk at startup. Paths
 // are /r/<repository>/f/<file>.
 func Handler(repositories *repository.Set) http.Handler {
+	return handler(repositories, "")
+}
+
+func handler(repositories *repository.Set, writeToken string) http.Handler {
 	templates := template.Must(template.ParseFS(assets, "assets/*.html"))
 
 	mux := http.NewServeMux()
@@ -184,16 +206,21 @@ func Handler(repositories *repository.Set) http.Handler {
 		http.Redirect(w, r, repositoryPrefix+repositories.All()[0].ID+"/", http.StatusFound)
 	})
 	mux.HandleFunc("GET "+repositoryPrefix+"{repository}/{$}", func(w http.ResponseWriter, r *http.Request) {
-		render(w, templates, repositories, r.PathValue("repository"), "")
+		render(w, templates, repositories, r, r.PathValue("repository"), "", writeToken)
 	})
 	mux.HandleFunc("GET "+repositoryPrefix+"{repository}/f/{path...}", func(w http.ResponseWriter, r *http.Request) {
-		render(w, templates, repositories, r.PathValue("repository"), r.PathValue("path"))
+		render(w, templates, repositories, r, r.PathValue("repository"), r.PathValue("path"), writeToken)
 	})
-	return mux
+	if writeToken != "" {
+		mux.HandleFunc("POST "+repositoryPrefix+"{repository}/annotations", func(w http.ResponseWriter, r *http.Request) {
+			addFromBrowser(w, r, repositories, writeToken)
+		})
+	}
+	return capabilityBootstrap(mux, writeToken)
 }
 
 func render(w http.ResponseWriter, templates *template.Template,
-	repositories *repository.Set, named, requested string,
+	repositories *repository.Set, request *http.Request, named, requested, writeToken string,
 ) {
 	chosen, found := repositories.ByID(named)
 	if !found {
@@ -202,13 +229,23 @@ func render(w http.ResponseWriter, templates *template.Template,
 		return
 	}
 
-	view, err := build(chosen.Store(), requested, servedLinks(chosen.ID))
+	repositorySnapshot, err := application.BuildSnapshot(chosen)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	view, err := build(repositorySnapshot, requested, servedLinks(chosen.ID))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	view.Repository = chosen.Display()
-	view.Repositories = switcher(repositories, chosen.ID)
+	view.Repositories = repositorySwitcher(repositories, chosen.ID)
+	if hasCapability(request, writeToken) {
+		view.WriteToken = writeToken
+	}
+	view.CreatedID = request.URL.Query().Get("created")
+	view.WriteWarning = request.URL.Query().Get("warning")
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := templates.ExecuteTemplate(w, "page.html", view); err != nil {
@@ -216,8 +253,100 @@ func render(w http.ResponseWriter, templates *template.Template,
 	}
 }
 
-// switcher is empty for a single repository.
-func switcher(repositories *repository.Set, current string) []repositoryLink {
+func newCapability() (string, error) {
+	var entropy [32]byte
+	if _, err := rand.Read(entropy[:]); err != nil {
+		return "", fmt.Errorf("creating UI write capability: %w", err)
+	}
+	return hex.EncodeToString(entropy[:]), nil
+}
+
+func capabilityBootstrap(next http.Handler, writeToken string) http.Handler {
+	if writeToken == "" {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		given := r.URL.Query().Get(capabilityQuery)
+		if r.Method == http.MethodGet && sameSecret(given, writeToken) {
+			//nolint:gosec
+			http.SetCookie(w, &http.Cookie{
+				Name: capabilityCookie, Value: writeToken, Path: "/", HttpOnly: true,
+				SameSite: http.SameSiteStrictMode,
+			})
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func hasCapability(request *http.Request, writeToken string) bool {
+	if writeToken == "" {
+		return false
+	}
+	cookie, err := request.Cookie(capabilityCookie)
+	return err == nil && sameSecret(cookie.Value, writeToken)
+}
+
+func sameSecret(left, right string) bool {
+	return len(left) == len(right) && subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1
+}
+
+func addFromBrowser(w http.ResponseWriter, request *http.Request, repositories *repository.Set, writeToken string) {
+	if !sameOrigin(request) || !hasCapability(request, writeToken) {
+		http.Error(w, "write capability or same-origin request missing", http.StatusForbidden)
+		return
+	}
+	request.Body = http.MaxBytesReader(w, request.Body, maxMutationBody)
+	if err := request.ParseForm(); err != nil {
+		http.Error(w, "invalid annotation form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !sameSecret(request.Form.Get("capability"), writeToken) {
+		http.Error(w, "CSRF token mismatch", http.StatusForbidden)
+		return
+	}
+	entry, found := repositories.ByID(request.PathValue("repository"))
+	if !found {
+		http.Error(w, "repository not found", http.StatusNotFound)
+		return
+	}
+	kind, err := store.ParseKind(request.Form.Get("kind"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	author, err := provenance.IdentityFromGit(entry.Root)
+	if err != nil {
+		http.Error(w, "reading human identity: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	mutation, err := application.NewService(entry).Add(application.AddInput{
+		File: request.Form.Get("file"), Excerpt: request.Form.Get("excerpt"),
+		Kind: kind, Body: request.Form.Get("body"), Author: *author,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	query := url.Values{"created": []string{mutation.Record.ID}}
+	if len(mutation.Warnings) > 0 {
+		query.Set("warning", strings.Join(mutation.Warnings, "; "))
+	}
+	target := repositoryPrefix + entry.ID + "/f/" + escapedFilePath(mutation.Record.File) + "?" + query.Encode()
+	http.Redirect(w, request, target, http.StatusSeeOther)
+}
+
+func sameOrigin(request *http.Request) bool {
+	origin := request.Header.Get("Origin")
+	if origin == "" {
+		return false
+	}
+	parsed, err := url.Parse(origin)
+	return err == nil && parsed.Scheme == "http" && parsed.Host == request.Host
+}
+
+func repositorySwitcher(repositories *repository.Set, current string) []repositoryLink {
 	if repositories.Len() < 2 {
 		return nil
 	}
