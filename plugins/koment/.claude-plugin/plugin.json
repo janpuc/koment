@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "koment",
   "displayName": "koment",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Keep code rationale outside source comments and enforce the repository's koment procedure.",
   "author": {
     "name": "Jan Pucilowski",
@@ -11,5 +11,10 @@
   "homepage": "https://github.com/janpuc/koment",
   "repository": "https://github.com/janpuc/koment",
   "license": "MIT",
-  "keywords": ["annotations", "comments", "mcp", "code-quality"]
+  "keywords": [
+    "annotations",
+    "comments",
+    "mcp",
+    "code-quality"
+  ]
 }

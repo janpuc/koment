@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0](https://github.com/janpuc/koment/compare/v0.2.0...v0.3.0) (2026-08-04)
+
+
+### Features
+
+* add local writes and policy enforcement ([#20](https://github.com/janpuc/koment/issues/20)) ([2829410](https://github.com/janpuc/koment/commit/2829410405f9e1bbbdb797079601ab2ef24bcf9d))
+* distribute koment through package managers, marketplaces and editors ([#21](https://github.com/janpuc/koment/issues/21)) ([9d5f421](https://github.com/janpuc/koment/commit/9d5f421337f9681286f43376d418a7732a204542))
+* reset annotation records and anchors ([#19](https://github.com/janpuc/koment/issues/19)) ([2084861](https://github.com/janpuc/koment/commit/208486110e29da25e515684b3917ff94ce819bbf))
+
+
+### Bug Fixes
+
+* keep the chart README generatable across a version bump ([#22](https://github.com/janpuc/koment/issues/22)) ([4139feb](https://github.com/janpuc/koment/commit/4139feb2ae984c71422c4a4dc3ec18fe3a271b3d))
+* stop deleting the helm test pod before its logs are read ([#23](https://github.com/janpuc/koment/issues/23)) ([2ff1ed4](https://github.com/janpuc/koment/commit/2ff1ed471065e23cd09057197ed8d26400b76168))
+
+
+### Documentation
+
+* reset architecture for vNext ([#17](https://github.com/janpuc/koment/issues/17)) ([1d12296](https://github.com/janpuc/koment/commit/1d122963f024f48ed04833c6148369f92bbdebbc))
+
+
+### Continuous Integration
+
+* exercise the setup action against a published release ([#15](https://github.com/janpuc/koment/issues/15)) ([c5ad926](https://github.com/janpuc/koment/commit/c5ad926365542b1db0ebec343978d5b9a5b3e21a))
+* name every job after its id and stop paying for setup twice ([#24](https://github.com/janpuc/koment/issues/24)) ([963b574](https://github.com/janpuc/koment/commit/963b57417318160647448f2b81712db83ea5dcde))
+
 ## [0.2.0](https://github.com/janpuc/koment/compare/v0.1.2...v0.2.0) (2026-08-03)
 
 
