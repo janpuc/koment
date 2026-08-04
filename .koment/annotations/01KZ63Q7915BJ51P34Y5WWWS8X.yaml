@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ63Q7915BJ51P34Y5WWWS8X
+file: charts/koment/templates/tests/service.yaml
+kind: gotcha
+body: |-
+  hook-succeeded is deliberately absent. CI runs `helm test --logs`, which
+  reads the pod after the hook finishes, and deleting it on success races that
+  read: the hook reports Succeeded and the command then fails with "pods not
+  found". before-hook-creation still cleans up, one run later, and leaves a
+  failed pod behind to inspect.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: '    helm.sh/hook-delete-policy: before-hook-creation'
+  before: |2-
+      labels: {{- include "koment.labels" . | nindent 4 }}
+      annotations:
+        helm.sh/hook: test
+  after: |-
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+  last_seen_line: 8
+git:
+  commit: 4139feb2ae984c71422c4a4dc3ec18fe3a271b3d
+  path: charts/koment/templates/tests/service.yaml
+  line: 8
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config
