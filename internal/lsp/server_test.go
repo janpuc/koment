@@ -173,3 +173,65 @@ func responseByID(t *testing.T, messages []rpcMessage, id string) rpcMessage {
 	t.Fatalf("response %s not found in %#v", id, messages)
 	return rpcMessage{}
 }
+
+// A Go nil slice marshals to JSON null, and every list this server sends is
+// declared by LSP as an array. A client that trusts the protocol calls .map on
+// the result, so null reaches it as a TypeError rather than an empty view. The
+// assertion has to read the wire, because the Go value is indistinguishable.
+func TestListsReachTheWireAsArraysAndNeverAsNull(t *testing.T) {
+	root, uri, source := lspRepository(t, "package sample\n\nfunc run() {\n\tretry()\n}\n")
+	_ = root
+
+	var input bytes.Buffer
+	writeTestMessage(t, &input, map[string]any{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": map[string]any{}})
+	writeTestMessage(t, &input, map[string]any{
+		"jsonrpc": "2.0", "method": "textDocument/didOpen",
+		"params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "go", "version": 1, "text": source}},
+	})
+	writeTestMessage(t, &input, map[string]any{
+		"jsonrpc": "2.0", "id": 2, "method": "textDocument/codeAction",
+		"params": map[string]any{
+			"textDocument": map[string]string{"uri": uri},
+			"range":        map[string]any{"start": map[string]int{"line": 0, "character": 0}, "end": map[string]int{"line": 0, "character": 0}},
+			"context":      map[string]any{"diagnostics": []any{}},
+		},
+	})
+	writeTestMessage(t, &input, map[string]any{
+		"jsonrpc": "2.0", "id": 3, "method": "textDocument/codeLens",
+		"params": map[string]any{"textDocument": map[string]string{"uri": uri}},
+	})
+	writeTestMessage(t, &input, map[string]any{"jsonrpc": "2.0", "id": 4, "method": "shutdown"})
+	writeTestMessage(t, &input, map[string]any{"jsonrpc": "2.0", "method": "exit"})
+
+	var output bytes.Buffer
+	if err := Run(context.Background(), &input, &output, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	messages := readTestMessages(t, &output)
+
+	for _, id := range []string{"2", "3"} {
+		if got := string(responseByID(t, messages, id).Result); got == "null" {
+			t.Errorf("response %s carries null; LSP declares it an array and a client calling .map on it throws", id)
+		}
+	}
+
+	published := 0
+	for _, message := range messages {
+		if message.Method != "textDocument/publishDiagnostics" {
+			continue
+		}
+		published++
+		var params struct {
+			Diagnostics json.RawMessage `json:"diagnostics"`
+		}
+		if err := json.Unmarshal(message.Params, &params); err != nil {
+			t.Fatal(err)
+		}
+		if string(params.Diagnostics) == "null" {
+			t.Error("publishDiagnostics carries null diagnostics; the editor client throws before it can render anything")
+		}
+	}
+	if published == 0 {
+		t.Fatal("no diagnostics were published, so this proves nothing")
+	}
+}

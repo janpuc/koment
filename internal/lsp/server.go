@@ -304,7 +304,7 @@ func (s *server) codeActions(raw json.RawMessage) (any, *rpcError, error) {
 	if err := json.Unmarshal(raw, &params); err != nil {
 		return nil, nil, err
 	}
-	var actions []any
+	actions := []any{}
 	for _, problem := range params.Context.Diagnostics {
 		if problem.Code != "koment.comment" {
 			continue
