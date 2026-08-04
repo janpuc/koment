@@ -53,7 +53,7 @@ async function activate(context) {
     });
     client.notify('initialized', {});
   } catch (error) {
-    showServerError(error);
+    showStartupError(error);
     return;
   }
 
@@ -148,7 +148,7 @@ function isFileDocument(document) {
 
 function publishDiagnostics(params) {
   const uri = vscode.Uri.parse(params.uri);
-  const converted = params.diagnostics.map((problem) => {
+  const converted = (params.diagnostics ?? []).map((problem) => {
     const diagnostic = new vscode.Diagnostic(
       toRange(problem.range), problem.message, toDiagnosticSeverity(problem.severity)
     );
@@ -213,7 +213,7 @@ async function provideCodeLenses(document) {
   const lenses = await client.request('textDocument/codeLens', {
     textDocument: { uri: document.uri.toString() }
   });
-  return lenses.map((lens) => new vscode.CodeLens(toRange(lens.range), lens.command));
+  return (lenses ?? []).map((lens) => new vscode.CodeLens(toRange(lens.range), lens.command));
 }
 
 async function provideCodeActions(document, range, context) {
@@ -222,7 +222,7 @@ async function provideCodeActions(document, range, context) {
     range: fromRange(range),
     context: { diagnostics: context.diagnostics.map((problem) => problem.komentRaw).filter(Boolean) }
   });
-  return response.map((raw) => {
+  return (response ?? []).map((raw) => {
     const action = new vscode.CodeAction(raw.title, vscode.CodeActionKind.QuickFix);
     action.command = raw.command;
     action.isPreferred = raw.title === 'Convert to koment';
@@ -244,7 +244,7 @@ async function refreshAnnotations(document) {
     return;
   }
   const maximum = vscode.workspace.getConfiguration('koment').get('inlineMaxLength', 100);
-  const decorations = items.map((item) => {
+  const decorations = (items ?? []).map((item) => {
     const body = oneLine(item.body, maximum);
     const status = item.status === 'ok' ? '💬' : `💬 ${item.status}`;
     const hoverMessage = new vscode.MarkdownString(`**${item.kind}** · \`${item.status}\`\n\n${item.body}`);
@@ -409,11 +409,16 @@ function showAnnotation(item) {
   vscode.window.showInformationMessage(`${item.kind} · ${item.status}\n\n${item.body}${warning}`);
 }
 
-function showServerError(error) {
+function showStartupError(error) {
   output?.appendLine(error.stack ?? error.message);
   vscode.window.showErrorMessage(
     `koment could not start: ${error.message}. Install a released koment binary or set koment.binaryPath.`
   );
+}
+
+function showServerError(error) {
+  output?.appendLine(error.stack ?? error.message);
+  vscode.window.showErrorMessage(`koment stopped responding: ${error.message}. See the koment output channel.`);
 }
 
 function toDiagnosticSeverity(value) {

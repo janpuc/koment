@@ -123,7 +123,7 @@ func documentDiagnostics(file workspaceFile) ([]diagnostic, error) {
 	if err != nil {
 		return nil, err
 	}
-	var diagnostics []diagnostic
+	diagnostics := []diagnostic{}
 	for _, item := range items {
 		switch anchor.Status(item.Status) {
 		case anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned:
