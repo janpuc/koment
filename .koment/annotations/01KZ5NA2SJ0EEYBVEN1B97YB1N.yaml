@@ -16,16 +16,16 @@ anchor:
   scope: excerpt
   excerpt: |2-
           - setup-action
-          - workflow-lint
+          - test
   before: |2-
-          - go-test
-          - go-vulncheck
           - helm
+          - lint
+          - quality
   after: |2-
         runs-on: ubuntu-24.04
         permissions: {}
         steps:
-  last_seen_line: 428
+  last_seen_line: 460
 git:
   commit: 63564ad3ead1158413c1431995c34448d6fc9edd
   path: .github/workflows/ci.yml

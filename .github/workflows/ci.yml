@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  go-quality:
-    name: Go Quality
+  quality:
+    name: quality
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -67,7 +67,13 @@ jobs:
       - name: Check agent adapters
         run: mise run agent-policy
 
-  go-lint:
+      - name: Lint and audit workflows
+        run: mise run workflow-lint
+
+      - name: Run govulncheck
+        run: mise run vulncheck
+
+  lint:
     name: lint
     runs-on: ubuntu-24.04
     permissions:
@@ -102,8 +108,8 @@ jobs:
       - name: Run linter
         run: mise run lint
 
-  go-test:
-    name: Go Test
+  test:
+    name: test
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -134,48 +140,8 @@ jobs:
       - name: Report coverage
         run: go tool cover -func=coverage.out | tail -1
 
-  go-vulncheck:
-    name: Go Vulncheck
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Mise
-        uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
-        with:
-          experimental: true
-          install_args: --locked
-
-      - name: Run govulncheck
-        run: mise run vulncheck
-
-  workflow-lint:
-    name: Workflow Lint
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Mise
-        uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
-        with:
-          experimental: true
-          install_args: --locked
-
-      - name: Lint and audit workflows
-        run: mise run workflow-lint
-
   container:
-    name: container build
+    name: container
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -274,7 +240,7 @@ jobs:
           helm test koment --logs --timeout 2m
 
   setup-action:
-    name: Setup Action (${{ matrix.os }})
+    name: setup-action (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -304,7 +270,7 @@ jobs:
           koment version | grep -q "$INSTALLED_VERSION"
 
   windows-archive:
-    name: Windows Archive (advisory)
+    name: windows-archive (advisory)
     runs-on: windows-2025
     permissions:
       contents: read
@@ -358,7 +324,7 @@ jobs:
           }
 
   helm:
-    name: helm chart
+    name: helm
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -381,7 +347,7 @@ jobs:
         run: mise run helm-template
 
   editor:
-    name: VS Code Extension
+    name: editor
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -397,6 +363,21 @@ jobs:
           experimental: true
           install: false
 
+      - name: Install the pinned Go toolchain
+        run: |
+          set -euo pipefail
+          mise install go --locked
+          echo "$(mise where go)/bin" >> "$GITHUB_PATH"
+
+      - name: Cache cross-compilation
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-cross-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-go-cross-
+
       - name: Install locked editor tools
         run: mise --cd editors/vscode install --locked
 
@@ -409,6 +390,7 @@ jobs:
       - name: Build the archives the extension bundles
         run: |
           set -euo pipefail
+          test "$(go env GOVERSION)" = "go$(mise config get tools.go)"
           version=0.0.0-ci
           mkdir -p archives
           cp LICENSE README.md archives/
@@ -466,19 +448,17 @@ jobs:
           fi
           echo "$universal: no binary, falls back to PATH"
 
-  test:
+  ci:
     if: ${{ always() }}
-    name: test
+    name: ci
     needs:
       - container
       - editor
-      - go-lint
-      - go-quality
-      - go-test
-      - go-vulncheck
       - helm
+      - lint
+      - quality
       - setup-action
-      - workflow-lint
+      - test
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
