@@ -1,40 +1,41 @@
 image:
   repository: ghcr.io/janpuc/koment
-  # Defaults to the chart's appVersion, which release-please keeps in step.
   tag: ""
+  digest: ""
   pullPolicy: IfNotPresent
 
-# What the container serves. Only read-only surfaces are supported: ADR 0011
-# makes the unauthenticated posture conditional on nothing being writable, and
-# the chart deploys no authentication.
-#   ui              the web view
-#   mcp-http        MCP over HTTP, JSON responses
-#   mcp-streamable  MCP over HTTP, server-sent events
-mode: ui
-
-# The repository koment serves. It is mounted rather than baked into the image,
-# so one image serves any checkout.
-repository:
-  # existingClaim mounts a PVC you manage. Populating it is your job — koment
-  # does not clone.
-  existingClaim: ""
-  # Or an emptyDir plus an init container that clones. Credentials for a
-  # private repository are your responsibility.
-  clone:
-    enabled: false
-    url: ""
-    ref: main
-    image: alpine/git:latest
-
 replicaCount: 1
+
+repositories:
+  - id: koment
+    name: koment
+    provider: github
+    remote: janpuc/koment
+    defaultBranch: main
+    default: true
+
+syncInterval: 1m
+
+github:
+  existingSecret: ""
+  tokenKey: github-token
+
+auth:
+  trustedProxies:
+    - 127.0.0.1/32
+  humanWrites: false
+  existingSecret: ""
+  credentialsKey: credentials.yaml
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
 
 service:
   type: ClusterIP
   port: 8080
 
-# Metrics are off unless enabled, and always on a port of their own. The
-# serving port is unauthenticated and ingress-facing; /metrics must never
-# inherit that exposure (ADR 0020).
 metrics:
   enabled: false
   port: 9090
@@ -43,15 +44,25 @@ metrics:
     interval: 30s
     scrapeTimeout: 10s
     labels: {}
-  # A ConfigMap the Grafana sidecar discovers by label.
   dashboard:
     enabled: false
     label: grafana_dashboard
     labelValue: "1"
 
-# Anything here is passed to the container as an environment variable. Every
-# flag has a KOMENT_ equivalent, so this covers the whole surface.
-env: {}
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+networkPolicy:
+  enabled: false
+  ingress: []
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
 
 resources:
   requests:
@@ -60,7 +71,6 @@ resources:
   limits:
     memory: 128Mi
 
-# koment reads files and serves HTTP. It needs nothing else.
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
@@ -75,14 +85,15 @@ securityContext:
   capabilities:
     drop: [ALL]
 
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-  hosts: []
-  tls: []
-
 nodeSelector: {}
 tolerations: []
 affinity: {}
+topologySpreadConstraints: []
 podAnnotations: {}
+
+tests:
+  image:
+    repository: curlimages/curl
+    tag: "8.16.0"
+    digest: sha256:463eaf6072688fe96ac64fa623fe73e1dbe25d8ad6c34404a669ad3ce1f104b6
+    pullPolicy: IfNotPresent

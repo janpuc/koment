@@ -137,8 +137,14 @@ internal/listen/     bind address resolution, shared by both servers
 internal/config/     KOMENT_* environment fallback for every flag
 internal/metrics/    Prometheus instrumentation
 internal/mcp/        MCP server — stdio and HTTP
+internal/lsp/        editor-neutral diagnostics, views and mutations over LSP
+internal/server/     authenticated commit-snapshot UI and MCP service
+internal/serving/    atomic multi-repository catalog and synchronization
 internal/ui/         web view and static export
 charts/koment/       Helm chart
+editors/vscode/      dependency-free runtime client for koment lsp
+plugins/koment/      Claude marketplace plugin, MCP and completion hooks
+packaging/           release-derived Homebrew, Scoop and WinGet metadata
 workspace/           maintained session package and independent koment store
 ```
 
@@ -182,6 +188,12 @@ turns them into a version and a changelog.
      `koment_<version>_checksums.txt` the setup action verifies against
    - `ghcr.io/janpuc/koment:<version>` — multi-arch, distroless, non-root, SBOM
    - `oci://ghcr.io/janpuc/charts/koment` — the Helm chart
+   - one signed VSIX, published to VS Code Marketplace and Open VSX when the
+     owner tokens are configured
+   - MCP Registry metadata through GitHub OIDC and a repository-hosted Claude
+     marketplace plugin
+   - generated Homebrew, Scoop and WinGet submission metadata derived from the
+     same archive checksums
 
 The binaries are not optional decoration: `janpuc/koment@v0.2.0` downloads them, so
 a release that fails to attach them breaks every workflow that uses the action

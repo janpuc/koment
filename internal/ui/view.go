@@ -9,6 +9,8 @@ import (
 	"github.com/janpuc/koment/internal/store"
 )
 
+const sourceURL = "https://github.com/janpuc/koment"
+
 type view struct {
 	Total        int
 	Tally        []tallyEntry
@@ -25,10 +27,13 @@ type view struct {
 	Script       string
 	LogoSVG      string
 	LogoPNG      string
+	SourceURL    string
 	Snapshot     *snapshot
 	WriteToken   string
+	CanWrite     bool
 	CreatedID    string
 	WriteWarning string
+	ReviewURL    string
 }
 
 type snapshot struct {
@@ -123,7 +128,7 @@ func build(repositorySnapshot *application.RepositorySnapshot, requested string,
 	if len(repositorySnapshot.Files) == 0 {
 		return &view{
 			Empty: true, Stylesheet: how.stylesheet, Script: how.script,
-			Home: how.home, LogoSVG: how.logoSVG, LogoPNG: how.logoPNG,
+			Home: how.home, LogoSVG: how.logoSVG, LogoPNG: how.logoPNG, SourceURL: sourceURL,
 		}, nil
 	}
 
@@ -139,6 +144,7 @@ func build(repositorySnapshot *application.RepositorySnapshot, requested string,
 		Script:     how.script,
 		LogoSVG:    how.logoSVG,
 		LogoPNG:    how.logoPNG,
+		SourceURL:  sourceURL,
 	}
 	counts := map[anchor.Status]int{}
 	listed := make([]entry, 0, len(repositorySnapshot.Files))

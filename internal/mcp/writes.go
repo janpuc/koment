@@ -50,10 +50,19 @@ type AcknowledgeCommentInput struct {
 }
 
 type MutationOutput struct {
-	Repository string         `json:"repository"`
-	Path       string         `json:"path"`
-	Record     MutationRecord `json:"record"`
-	Warnings   []string       `json:"warnings,omitempty"`
+	Repository string          `json:"repository"`
+	Path       string          `json:"path"`
+	Record     MutationRecord  `json:"record"`
+	Warnings   []string        `json:"warnings,omitempty"`
+	Review     *MutationReview `json:"review,omitempty"`
+}
+
+type MutationReview struct {
+	BaseCommit  string `json:"base_commit"`
+	Branch      string `json:"branch"`
+	Commit      string `json:"commit"`
+	PullRequest int    `json:"pull_request"`
+	URL         string `json:"url"`
 }
 
 type MutationRecord struct {

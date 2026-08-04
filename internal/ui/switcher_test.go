@@ -91,6 +91,11 @@ func TestTheSwitcherOffersEveryRepositoryAndMarksTheCurrentOne(t *testing.T) {
 	if !strings.Contains(page, "<noscript>") || !strings.Contains(page, `href="/r/web/"`) {
 		t.Error("there is no scriptless way to change repository")
 	}
+	panel := strings.Index(page, `class="panel-head"`)
+	switcher := strings.Index(page, `class="switcher"`)
+	if panel < 0 || switcher < panel {
+		t.Error("the repository switcher is not in the top panel header")
+	}
 }
 
 func TestASingleRepositoryGetsNoSwitcher(t *testing.T) {

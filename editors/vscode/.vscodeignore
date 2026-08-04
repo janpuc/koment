@@ -1,0 +1,5 @@
+protocol.test.js
+mise.lock
+mise.toml
+package-lock.json
+*.vsix

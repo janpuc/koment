@@ -30,12 +30,13 @@ Build snapshots differently by tier:
 
 - local commands read the current working tree directly;
 - static publishing builds one immutable snapshot per invocation;
-- served deployments ingest a commit into a transactional Postgres generation.
+- served deployments build an immutable snapshot and search index from one
+  provider commit, then atomically replace the active in-memory pointer.
 
 Remove the current SQLite index, `koment index` and the claim that `koment
 export` can recover Git from a derived cache. Local search uses an in-memory
-index built from the snapshot. Postgres is introduced again only with the
-served snapshot schema.
+index built from the snapshot. Served search uses the same disposable shape and
+does not introduce a database.
 
 ## Consequences
 
@@ -44,8 +45,10 @@ served snapshot schema.
   files.
 - Local use loses a persistent cache but also loses a large SQLite dependency
   and invalidation protocol.
-- Postgres serving cannot land as an isolated storage package; ingestion and
-  the shared snapshot contract must exist first.
+- A failed served refresh leaves the previous complete snapshot active rather
+  than exposing a partially built repository.
+- Restarting a served process rebuilds snapshots from Git before readiness; no
+  cache survives as an alternative recovery source.
 - Git remains the only recovery source for annotations.
 
 ## Alternatives rejected
@@ -53,11 +56,12 @@ served snapshot schema.
 - **Repair and wire the current SQLite/Postgres index.** That preserves code but
   carries a local cache and live-filesystem invalidation model into a served
   architecture that needs commit consistency.
+- **Store served generations and full-text search in Postgres.** Transactions
+  coordinate replicas, but every row is reconstructible from a named Git
+  commit. It adds migrations, backup expectations and an operational dependency
+  before measured repository size or query latency justifies one.
 - **Let each surface read YAML independently.** Simple locally, but duplicated
   policy has already produced materially different answers.
-- **Store only annotations in Postgres and read source from pod checkouts.** Two
-  replicas can serve different commits while sharing one index, so a database
-  row would not identify the source it describes.
 - **Make the database authoritative and export back to Git.** It reverses the
   product's review and durability model and makes a stale read model a recovery
   source.

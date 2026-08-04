@@ -145,12 +145,14 @@ type RepositorySummary struct {
 	Name          string         `json:"name"`
 	DefaultBranch string         `json:"default_branch,omitempty"`
 	CloneURL      string         `json:"clone_url,omitempty"`
+	Commit        string         `json:"commit,omitempty"`
 	Files         int            `json:"files"`
 	Annotations   map[string]int `json:"annotations"`
 }
 
 type GetOutput struct {
 	Repository  string       `json:"repository"`
+	Commit      string       `json:"commit,omitempty"`
 	File        string       `json:"file"`
 	Annotations []Annotation `json:"annotations"`
 }
@@ -167,6 +169,7 @@ type SearchOutput struct {
 
 type Annotation struct {
 	Repository  string            `json:"repository"`
+	Commit      string            `json:"commit,omitempty"`
 	File        string            `json:"file"`
 	ID          string            `json:"id"`
 	Kind        string            `json:"kind"`

@@ -13,6 +13,26 @@
         {
           "type": "generic",
           "path": "charts/koment/Chart.yaml"
+        },
+        {
+          "type": "json",
+          "path": "editors/vscode/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/koment/.claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.packages[0].version"
         }
       ]
     }

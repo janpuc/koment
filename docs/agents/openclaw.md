@@ -55,7 +55,7 @@ koment mcp --http 8765
 
 There is no authentication on the current HTTP transport. That is transitional
 behaviour; the approved served tier authenticates every non-loopback request
-([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
+([ADR 0105](../decisions/0105-authenticated-writes-materialize-through-git.md)).
 
 ## Timeouts
 

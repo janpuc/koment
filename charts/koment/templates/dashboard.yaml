@@ -1,9 +1,4 @@
 {{- if and .Values.metrics.enabled .Values.metrics.dashboard.enabled }}
-{{- /*
-  The Grafana sidecar discovers dashboards by label rather than by name, so the
-  label is the whole interface here. It is configurable because the label a
-  cluster uses is set on the Grafana side, not this one.
-*/}}
 apiVersion: v1
 kind: ConfigMap
 metadata:

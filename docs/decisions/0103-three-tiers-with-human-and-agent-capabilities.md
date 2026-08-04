@@ -26,7 +26,8 @@ Support three explicit tiers over the shared snapshot and application service:
   `annotations.json` snapshots; always read-only, with one repository or a
   configured set whose commits remain independently visible.
 - **Served:** one authenticated `koment serve` process exposing human UI and MCP
-  for many repositories, with remote writes delegated to the outbox.
+  for many repositories, with remote writes materialized through reviewed Git
+  pull requests.
 
 The local UI offers `--write` only on loopback and protects browser mutations
 with a session capability, same-origin checks and CSRF protection. stdio MCP

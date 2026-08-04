@@ -3,6 +3,7 @@ package application
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,6 +11,35 @@ import (
 	"github.com/janpuc/koment/internal/repository"
 	"github.com/janpuc/koment/internal/store"
 )
+
+func TestAssembleSnapshotResolvesProviderContentWithoutFilesystemAccess(t *testing.T) {
+	record := testRecord("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "remote.go", "var Remote = true", 3)
+	generated := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	snapshot, err := AssembleSnapshot(SnapshotInput{
+		Repository:  RepositoryIdentity{ID: "remote", Name: "Remote"},
+		Commit:      strings.Repeat("a", 40),
+		GeneratedAt: generated,
+		Records:     []store.Annotation{record},
+		Sources:     map[string][]byte{"remote.go": []byte("package sample\n\nvar Remote = true\n")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snapshot.Commit != strings.Repeat("a", 40) || !snapshot.GeneratedAt.Equal(generated) {
+		t.Fatalf("snapshot metadata = %#v", snapshot)
+	}
+	if len(snapshot.Files) != 1 || snapshot.Files[0].Annotations[0].Status != anchor.StatusOK {
+		t.Fatalf("files = %#v", snapshot.Files)
+	}
+}
+
+func TestAssembleSnapshotRejectsDuplicateRecordIdentity(t *testing.T) {
+	record := testRecord("01JQ8ZK3M4N5P6R7S8T9V0W1X2", "remote.go", "var Remote = true", 3)
+	_, err := AssembleSnapshot(SnapshotInput{Records: []store.Annotation{record, record}})
+	if err == nil || !strings.Contains(err.Error(), "duplicate annotation id") {
+		t.Fatalf("err = %v", err)
+	}
+}
 
 func TestSnapshotBuildsEveryStatusFromOneRead(t *testing.T) {
 	root := t.TempDir()

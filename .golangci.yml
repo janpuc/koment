@@ -6,8 +6,6 @@ run:
 
 linters:
   enable:
-    # AGENTS.md section 5 forbids swallowing an error to keep going. A reviewer
-    # will not catch every one; this does.
     - errcheck
     - errorlint
     - staticcheck
@@ -19,25 +17,16 @@ linters:
     - bodyclose
     - noctx
     - copyloopvar
-    # koment ships a network listener now.
     - gosec
     - revive
 
-  # noctx wants a context on net.Listen, exec.Command and http.NewRequest.
-  # Every one of those here lives for the process lifetime of a CLI that exits
-  # when it is done, so the plumbing would add ceremony and cancel nothing.
   disable:
     - noctx
 
   settings:
     errcheck:
       check-type-assertions: true
-      # `_ = f()` is a deliberate, reviewable discard. What must be caught is
-      # the accidental unchecked call, which is what errcheck flags by default.
       check-blank: false
-      # A failed write to a terminal is not actionable and not recoverable:
-      # there is nowhere left to report it. Errors that can be acted on are
-      # checked, which is what AGENTS.md section 5 is about.
       exclude-functions:
         - fmt.Fprint
         - fmt.Fprintf
@@ -46,66 +35,47 @@ linters:
       enable-all: true
       disable:
         - fieldalignment
-        # `if err := f(); err != nil` shadows by construction and is the
-        # idiom the whole standard library is written in.
         - shadow
     revive:
       rules:
         - name: exported
           disabled: true
-    gosec:
-      excludes:
-        # File paths are user-supplied by design: koment reads the files you
-        # point it at. Traversal is prevented by store.validSourcePath, which
-        # has its own tests, rather than by refusing variable paths.
-        - G304
-        # 0o644 on records and 0o755 on directories is intended; these are
-        # source files meant to be read and reviewed like any other.
-        - G301
-        - G306
-        - G302
-        # Every argument is constructed in this package; none is user input.
-        - G204
-        # Shutdown deliberately needs a context that outlives the cancelled
-        # one it is reacting to.
-        - G118
-
   exclusions:
     rules:
-      # Test fixtures deliberately construct invalid and hostile input.
       - path: _test\.go
         linters:
           - gosec
           - errcheck
-
-      # G701/G202 flag the query builder in internal/index, which concatenates
-      # only code-chosen fragments: a literal table prefix, "?" placeholders
-      # generated from an int count, and a %d LIMIT on an int. Every value a
-      # caller supplies is bound through args and never reaches the string.
-      # TestFilterValuesAreBoundNotInterpolated enforces that rather than
-      # leaving it as a claim in this comment.
-      - path: internal/index/
-        text: "G701|G202"
-        linters:
-          - gosec
-
-      # G703 flags reading the file KOMENT_CONFIG names. That path is
-      # operator-supplied configuration, not caller input: anyone who can set
-      # the environment already controls the process. Refusing a variable path
-      # would mean refusing to be configured.
       - path: internal/repository/
         text: "G703|G304"
         linters:
           - gosec
-
-      # G703 traces a URL path into os.ReadFile and cannot see through
-      # store.SourcePath, which cleans the path and refuses anything absolute
-      # or escaping the repository root before joining it. Serving a file the
-      # reader named is the whole job, so a variable path is not the defect.
-      # TestAServedPathCannotEscapeTheRepository enforces this rather than
-      # leaving it as a claim in this comment.
       - path: internal/ui/
         text: "G703"
+        linters:
+          - gosec
+      - path: internal/anchor/
+        text: "G304"
+        linters:
+          - gosec
+      - path: internal/auth/
+        text: "G304"
+        linters:
+          - gosec
+      - path: internal/provenance/
+        text: "G204"
+        linters:
+          - gosec
+      - path: internal/server/configuration\.go
+        text: "G304"
+        linters:
+          - gosec
+      - path: internal/(mcp|metrics|server|ui)/
+        text: "G118"
+        linters:
+          - gosec
+      - path: internal/ui/export\.go
+        text: "G301|G306"
         linters:
           - gosec
 

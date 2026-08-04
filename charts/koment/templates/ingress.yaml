@@ -1,8 +1,4 @@
 {{- if .Values.ingress.enabled }}
-{{- /*
-  koment has no authentication. Exposing it through an ingress publishes every
-  annotation in the repository to anyone who can reach the host. ADR 0011.
-*/}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

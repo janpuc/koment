@@ -59,7 +59,10 @@ func koment(t *testing.T, args ...string) result {
 	unreachable := func(name string) Server {
 		return func([]string, io.Writer) error { t.Fatalf("%s must not be reached", name); return nil }
 	}
-	code := Run(args, env, Servers{MCP: unreachable("mcp"), UI: unreachable("ui"), Site: unreachable("site")})
+	code := Run(args, env, Servers{
+		MCP: unreachable("mcp"), UI: unreachable("ui"), Site: unreachable("site"),
+		Serve: unreachable("serve"), LSP: unreachable("lsp"),
+	})
 	return result{code: code, stdout: stdout.String(), stderr: stderr.String()}
 }
 

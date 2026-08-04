@@ -12,8 +12,10 @@ koment comments convert <file> --excerpt <comment> [--kind <kind>]
 koment comments acknowledge <file> --excerpt <comment> --body <text|-> --acknowledge-inline-comment
 koment agents install|check
 koment ui [--listen <addr>] [--write]
+koment serve --config <repositories.yaml>
 koment site --out <dir>                  # render a repository snapshot to static HTML
 koment mcp [--write | --http <addr> | --streamable-http <addr>]
+koment lsp
 koment version
 ```
 
@@ -210,6 +212,48 @@ are always read-only.
 
 With several repositories configured, an ambiguous `koment_get` fails and names
 the candidates instead of picking one.
+
+The `/mcp` route on `koment serve` is a separate authenticated surface over the
+same protocol. Scoped writers receive `koment_add`; a successful call includes
+the reviewed Git branch, commit and pull-request URL.
+
+## serve
+
+The database-free multi-repository service. It synchronizes each configured
+GitHub branch to one immutable commit, builds the complete snapshot away from
+requests and atomically replaces the active repository only after validation.
+
+```sh
+koment serve --config repositories.yaml
+koment serve --config repositories.yaml \
+  --credentials-file credentials.yaml \
+  --github-token-file github-token \
+  --listen 0.0.0.0:8080
+```
+
+`/`, `/mcp`, `/livez` and `/readyz` share the application listener. Source,
+rationale, UI and MCP require authentication on a non-loopback address;
+liveness and readiness remain public. `--metrics` starts an independent
+listener. Forwarded human identity is accepted only from `--trusted-proxies`.
+Bearer files contain SHA-256 token hashes, repository scopes and `read` or
+`write` permissions; provider tokens are read from files and never from chart
+values.
+
+Remote writes create review pull requests and never edit a replica or push the
+default branch. A failed refresh keeps the previous complete snapshot and makes
+readiness fail until synchronization recovers.
+
+## lsp
+
+`koment lsp` runs the editor-neutral Language Server Protocol process over
+stdio. It supports full-document synchronization, diagnostics, hover, code
+lenses, quick fixes and execute commands for add, reanchor, comment conversion
+and explicit inline acknowledgement. Each document discovers its own repository,
+so multi-root workspaces cannot cross their mutation boundary.
+
+The reference VS Code extension starts this command automatically. Other editor
+clients can consume the standard LSP methods directly; rich virtual inline text
+is an editor presentation feature and never changes the source buffer.
 
 ---
 

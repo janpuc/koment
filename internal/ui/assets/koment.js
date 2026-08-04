@@ -8,38 +8,133 @@
     });
   }
 
-  siftFiles();
+  setupSearch();
   alignNotes();
 
-  function siftFiles() {
-    var box = document.querySelector("[data-sift]");
+  function setupSearch() {
+    var dialog = document.querySelector("[data-search-dialog]");
+    var trigger = document.querySelector("[data-search-open]");
+    var close = document.querySelector("[data-search-close]");
+    var input = document.querySelector("[data-search-input]");
+    var results = document.querySelector("[data-search-results]");
     var tree = document.querySelector("[data-tree]");
-    if (!box || !tree) return;
+    if (!dialog || !trigger || !close || !input || !results || !tree) return;
 
     var files = Array.prototype.slice.call(tree.querySelectorAll(".file"));
-    var dirs = Array.prototype.slice.call(tree.querySelectorAll(".dir"));
-    var wasOpen = null;
+    var shortcut = document.querySelector("[data-search-shortcut]");
+    var platform = navigator.userAgentData && navigator.userAgentData.platform || navigator.platform || navigator.userAgent;
+    var apple = /Mac|iPhone|iPad|iPod/i.test(platform);
+    var selected = 0;
+    var rendered = [];
+    var returnFocus = null;
 
-    box.addEventListener("input", function () {
-      var needle = box.value.trim().toLowerCase();
+    shortcut.textContent = apple ? "⌘K" : "Ctrl K";
+    trigger.hidden = false;
 
-      if (needle && wasOpen === null) {
-        wasOpen = dirs.map(function (dir) { return dir.open; });
+    function editing(target) {
+      if (!target) return false;
+      var name = target.tagName;
+      return target.isContentEditable || name === "INPUT" || name === "TEXTAREA" || name === "SELECT";
+    }
+
+    function matches() {
+      var needle = input.value.trim().toLowerCase();
+      var found = files.filter(function (file) {
+        return !needle || file.dataset.search.indexOf(needle) !== -1;
+      }).slice(0, 50);
+
+      results.replaceChildren();
+      rendered = found.map(function (file, index) {
+        var result = document.createElement("a");
+        var dot = document.createElement("span");
+        var path = document.createElement("span");
+        var meta = document.createElement("span");
+
+        result.className = "search-result";
+        result.href = file.href;
+        result.setAttribute("role", "option");
+        dot.className = "dot " + file.dataset.status;
+        path.className = "search-result-path";
+        path.textContent = file.dataset.path;
+        meta.className = "search-result-meta";
+        meta.textContent = file.dataset.count + (file.dataset.count === "1" ? " annotation" : " annotations");
+        result.append(dot, path, meta);
+        results.appendChild(result);
+        if (index === selected) result.classList.add("selected");
+        result.addEventListener("mousemove", function () { select(index); });
+        return result;
+      });
+
+      if (!rendered.length) {
+        var empty = document.createElement("p");
+        empty.className = "search-empty";
+        empty.textContent = "No matching annotations";
+        results.appendChild(empty);
       }
+      selected = Math.min(selected, Math.max(rendered.length - 1, 0));
+      select(selected);
+    }
 
-      files.forEach(function (file) {
-        var match = !needle || file.dataset.search.indexOf(needle) !== -1;
-        file.hidden = !match;
+    function select(index) {
+      if (!rendered.length) return;
+      selected = (index + rendered.length) % rendered.length;
+      rendered.forEach(function (result, candidate) {
+        var current = candidate === selected;
+        result.classList.toggle("selected", current);
+        result.setAttribute("aria-selected", current ? "true" : "false");
       });
+      rendered[selected].scrollIntoView({ block: "nearest" });
+    }
 
-      dirs.forEach(function (dir, i) {
-        var showing = dir.querySelector(".file:not([hidden])");
-        dir.hidden = needle ? !showing : false;
-        dir.open = needle ? true : (wasOpen ? wasOpen[i] : dir.open);
-      });
+    function openSearch() {
+      if (dialog.open) return;
+      returnFocus = document.activeElement;
+      selected = 0;
+      input.value = "";
+      matches();
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+      input.focus();
+    }
 
-      if (!needle) wasOpen = null;
+    function closeSearch() {
+      if (!dialog.open) return;
+      if (typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+      if (returnFocus && typeof returnFocus.focus === "function") returnFocus.focus();
+    }
+
+    trigger.addEventListener("click", openSearch);
+    close.addEventListener("click", closeSearch);
+    input.addEventListener("input", function () { selected = 0; matches(); });
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        select(selected + (event.key === "ArrowDown" ? 1 : -1));
+      }
+      if (event.key === "Enter" && rendered[selected]) {
+        event.preventDefault();
+        rendered[selected].click();
+      }
     });
+    dialog.addEventListener("click", function (event) {
+      if (event.target === dialog) closeSearch();
+    });
+    dialog.addEventListener("close", function () {
+      if (returnFocus && typeof returnFocus.focus === "function") returnFocus.focus();
+    });
+    document.addEventListener("keydown", function (event) {
+      var modifier = apple ? event.metaKey : event.ctrlKey;
+      if ((modifier && event.key.toLowerCase() === "k") || (event.key === "/" && !editing(event.target))) {
+        event.preventDefault();
+        openSearch();
+      } else if (event.key === "Escape" && dialog.open) {
+        event.preventDefault();
+        closeSearch();
+      }
+    });
+
+    matches();
   }
 
   function alignNotes() {

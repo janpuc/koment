@@ -188,7 +188,15 @@ func (s *Store) Load(id string) (_ *Annotation, returnedError error) {
 	if err != nil {
 		return nil, err
 	}
+	return DecodeAnnotation(id, content)
+}
 
+// DecodeAnnotation validates one record read from a non-filesystem source.
+func DecodeAnnotation(id string, content []byte) (*Annotation, error) {
+	name, err := recordName(id)
+	if err != nil {
+		return nil, err
+	}
 	var annotation Annotation
 	decoder := yaml.NewDecoder(strings.NewReader(string(content)))
 	decoder.KnownFields(true)
@@ -212,10 +220,11 @@ func (s *Store) Load(id string) (_ *Annotation, returnedError error) {
 }
 
 func (s *Store) Save(annotation *Annotation) (returnedError error) {
-	if err := annotation.Validate(); err != nil {
+	name, err := recordName(annotation.ID)
+	if err != nil {
 		return err
 	}
-	name, err := recordName(annotation.ID)
+	encoded, err := EncodeAnnotation(annotation)
 	if err != nil {
 		return err
 	}
@@ -228,17 +237,24 @@ func (s *Store) Save(annotation *Annotation) (returnedError error) {
 		return fmt.Errorf("creating %s: %w", filepath.Join(DirName, annotationsDir), err)
 	}
 
+	return writeAtomically(root, name, encoded)
+}
+
+func EncodeAnnotation(annotation *Annotation) ([]byte, error) {
+	if err := annotation.Validate(); err != nil {
+		return nil, err
+	}
 	var encoded strings.Builder
 	encoded.WriteString(schemaDirective)
 	encoder := yaml.NewEncoder(&encoded)
 	encoder.SetIndent(yamlIndent)
 	if err := encoder.Encode(annotation); err != nil {
-		return fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
+		return nil, fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
 	}
 	if err := encoder.Close(); err != nil {
-		return fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
+		return nil, fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
 	}
-	return writeAtomically(root, name, []byte(encoded.String()))
+	return []byte(encoded.String()), nil
 }
 
 func writeAtomically(root *os.Root, name string, content []byte) error {

@@ -243,6 +243,7 @@ func render(w http.ResponseWriter, templates *template.Template,
 	view.Repositories = repositorySwitcher(repositories, chosen.ID)
 	if hasCapability(request, writeToken) {
 		view.WriteToken = writeToken
+		view.CanWrite = true
 	}
 	view.CreatedID = request.URL.Query().Get("created")
 	view.WriteWarning = request.URL.Query().Get("warning")

@@ -60,32 +60,32 @@ copy](docs/publishing.md).
 
 Anchoring is by **excerpt**, never by line number — line numbers rot on the next
 edit above them. The commit hash *is* recorded, but only to reconstruct history;
-it never decides whether an annotation still applies. Two questions, two
-mechanisms ([ADR 0100](docs/decisions/0100-one-git-record-per-annotation.md)).
+it never decides whether an annotation still applies. Those are two different
+questions with two different mechanisms.
 
-Network transports are read-only. A local `koment ui --write` session can add
-human-authored rationale through a one-time loopback capability, and
-`koment mcp --write` exposes agent mutations over stdio only. Published sites
-and HTTP MCP never write to a checkout.
+Local writes change the checkout you are already reviewing. Served writes never
+touch a replica or push a default branch: they create an exact annotation on a
+deterministic branch and return only after its pull request exists. Static
+publications remain immutable and read-only.
 
 ## Three ways to run it
 
 Pick one. Each is a place to stop, not a step you have to take, and **moving
 between them is not a migration** — all three read the same `.koment/` in git,
-so there is nothing to export, import or back up
-([ADR 0103](docs/decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
+so there is nothing to export, import or back up.
 
 | | you run | you get |
 |---|---|---|
 | **local** | the CLI, `koment ui --write`, and `koment mcp --write` | humans and agents read and write the same checked records. Nothing to host. |
 | **published** | [one workflow file](docs/publishing.md) → GitHub Pages | everyone reads the annotations in a browser. No server, no auth to design, no cost. |
-| **served** | the container or the [Helm chart](#kubernetes) | the live working tree, several repositories, search across them, metrics |
+| **served** | the container or the [Helm chart](#kubernetes) | authenticated, commit-stamped GitHub snapshots for several repositories, cross-repository search, reviewed annotation PRs, metrics |
 
 ## Quick start
 
 Install from the [latest release](https://github.com/janpuc/koment/releases/latest).
 Every release carries checksum-listed binaries for Linux, macOS and Windows on
-amd64 and arm64. If you use mise, its GitHub backend installs the same release:
+amd64 and arm64. The setup Action, mise, container, Helm chart, editor package,
+and registry metadata all consume those same release artifacts. With mise:
 
 ```bash
 mise use -g github:janpuc/koment
@@ -109,38 +109,35 @@ Now edit that line and run `koment check` again. It fails — because the reason
 you wrote no longer describes the code, and silently keeping it is exactly how
 comments rot.
 
-Or run the viewer against a checkout with the container:
-
-```bash
-docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
-```
-
 ## Several repositories
 
-One deployment serves many. Identity is assigned, so a repository that moves
-keeps its annotations and snapshot identity
-([ADR 0104](docs/decisions/0104-transactional-multi-repository-snapshots.md)):
+One deployment serves many. Identity is assigned independently of provider path,
+and every refresh resolves a branch to one immutable commit before replacing a
+repository's active snapshot:
 
 ```yaml
-# KOMENT_CONFIG=/etc/koment.yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/server.schema.json
 repositories:
-  - id: payments          # assigned once; never derived from the path
+  - id: payments
     name: Payments API
-    root: /repos/payments
-    clone_url: https://github.com/you/payments
+    provider: github
+    remote: you/payments
     default_branch: main
+    default: true
   - id: web
-    root: /repos/web
+    name: Customer Web
+    provider: github
+    remote: you/web
+    default_branch: main
 ```
 
-Or, for a container with a couple of mounts and nothing else to say:
+The service starts only when a non-loopback listener has either trusted-proxy
+identity or scoped bearer credentials. Private repositories and reviewed writes
+also require a GitHub token. The [Helm chart documentation](charts/koment/README.md)
+shows the secret formats and boundary.
 
-```bash
-KOMENT_REPOS=payments=/repos/payments,web=/repos/web
-```
-
-A single repository needs none of this — koment finds it by walking up from the
-working directory, exactly as before.
+Local commands need none of this configuration — koment finds the owning
+checkout by walking up from the working directory.
 
 ## Kubernetes
 
@@ -148,44 +145,65 @@ koment publishes an **OCI** Helm chart to `oci://ghcr.io/janpuc/charts/koment`:
 
 ```bash
 helm install koment oci://ghcr.io/janpuc/charts/koment \
-  --set repository.clone.enabled=true \
-  --set repository.clone.url=https://github.com/you/your-repo \
+  --set repositories[0].remote=you/your-repo \
   --set metrics.enabled=true \
   --set metrics.serviceMonitor.enabled=true \
   --set metrics.dashboard.enabled=true
 ```
 
-Metrics land on a **separate port** from the serving one — the serving port is
-unauthenticated and ingress-facing, and `/metrics` must not inherit that
-([ADR 0103](docs/decisions/0103-three-tiers-with-human-and-agent-capabilities.md)). The
-chart ships a Grafana dashboard the sidecar discovers by label. Its headline
-panel is drift over time, which is the one question `koment check` cannot answer,
-because it only ever sees one moment.
+The application port authenticates source, rationale, UI and MCP; only liveness
+and readiness are public. Metrics use a separate listener so an ingress cannot
+accidentally expose them with application authentication. The chart includes a
+Grafana dashboard, ServiceMonitor, hardened pod defaults, optional NetworkPolicy
+and disruption controls, and a digest-pinned `helm test` probe.
 
 ## Configuration
 
-Every flag can be set from the environment, which is how you configure the
-container. `--flag-name` becomes `KOMENT_FLAG_NAME`, and an explicit flag always
-wins.
+Every flag can be set from the environment. `--flag-name` becomes
+`KOMENT_FLAG_NAME`, and an explicit flag always wins.
 
 | | |
 |---|---|
-| `KOMENT_REPO` | one repository; defaults to the working directory |
-| `KOMENT_REPOS` | several: `api=/repos/api,web=/repos/web` |
-| `KOMENT_CONFIG` | a YAML registry, for per-repository settings |
-| `KOMENT_LISTEN` | address for `koment ui` |
-| `KOMENT_HTTP` | address for `koment mcp --http` |
-| `KOMENT_STREAMABLE_HTTP` | address for `koment mcp --streamable-http` |
-| `KOMENT_WRITE` | enable local UI or stdio MCP mutation capabilities |
-| `KOMENT_METRICS` | address for the metrics listener; off unless set |
-| `KOMENT_OUT` | output directory for `koment site` |
-| `KOMENT_REPOSITORY_LINKS` | contextual repository switcher for a grouped static publication |
+| `KOMENT_CONFIG` | strict served repository YAML |
+| `KOMENT_CREDENTIALS_FILE` | secret file of SHA-256 bearer hashes and repository scopes |
+| `KOMENT_GITHUB_TOKEN_FILE` | provider token file for private reads and reviewed writes |
+| `KOMENT_LISTEN` | local UI or unified service address |
+| `KOMENT_HUMAN_WRITES` | allow identities from the trusted OIDC proxy to create reviewed annotations |
+| `KOMENT_TRUSTED_PROXIES` | CIDRs allowed to assert forwarded human identity |
+| `KOMENT_SYNC_INTERVAL` | provider snapshot refresh interval |
+| `KOMENT_METRICS` | separate metrics listener; off unless set |
+| `KOMENT_WRITE` | enable local UI or stdio MCP mutations |
+| `KOMENT_OUT` | static publication output directory |
 
 Git is the only authoritative record. Local reads resolve the YAML directly
 against the working tree; disposable read models cannot restore or overwrite
 Git.
 
 `koment <command> --help` lists every flag alongside its variable.
+
+## Work where the code lives
+
+The reference [VS Code extension](editors/vscode/README.md) starts `koment lsp`,
+renders annotation bodies as virtual inline text, reports drift and prohibited
+comments as diagnostics, and adds native add, reanchor, convert and explicit
+acknowledgement actions. The prose is never inserted into the source buffer.
+Every release attaches a signed VSIX; the same VSIX is published to the VS Code
+Marketplace and Open VSX when the repository publisher tokens are configured.
+
+Other editors can use the standard hover, diagnostics, code-lens, code-action
+and execute-command surface from `koment lsp` without reimplementing storage or
+anchoring.
+
+Claude Code can install the repository's own project-scoped marketplace plugin:
+
+```text
+/plugin marketplace add janpuc/koment
+/plugin install koment@janpuc-tools
+```
+
+It bundles writable MCP configuration, injects the strict procedure at session
+start and runs the policy gate before Claude can finish a turn. Install a
+released `koment` binary and run `koment agents install` in the repository first.
 
 ## Give it to your agents
 
@@ -208,11 +226,15 @@ Write mode adds four tools:
 - **`koment_convert_comment`** — record a comment as rationale, then remove it
 - **`koment_acknowledge_comment`** — retain an exceptional comment only after an explicit acknowledgement
 
+Those four mutation tools operate on a local checkout. The authenticated served
+MCP surface exposes `koment_add` and returns the deterministic branch, commit and
+pull-request URL; source-mutating conversion and reanchor stay local so the
+service cannot overwrite an agent's separate worktree.
+
 Every annotation arrives with its resolution status *and* its repository, so a
 stale one is never presented as current and a result is never detached from its
 scope. When a path exists in several repositories `koment_get` **refuses and
-names the candidates** rather than guessing
-([ADR 0104](docs/decisions/0104-transactional-multi-repository-snapshots.md)).
+names the candidates** rather than guessing.
 
 | | | |
 |---|---|---|
@@ -250,17 +272,15 @@ switcher; there is no selector landing page.
 - **[Publishing](docs/publishing.md)** — the copy-paste workflow, and moving to a served instance later
 - **[Bootstrap](docs/bootstrap.md)** — what it is, the data model, running it, releases
 - **[Getting started](docs/quickstart.md)** · **[Writing good annotations](docs/annotating.md)** · **[CLI reference](docs/cli.md)** · **[CI](docs/ci.md)**
-- **[Decisions](docs/decisions/)** — why it is built this way, and what was rejected
 
 ## What koment is not
 
-- **Not a replacement for ADRs.** Project-wide decisions belong in a decision
-  record; koment holds knowledge bound to a *place* in the code.
+- **Not general project documentation.** koment holds knowledge bound to a
+  *place* in the code; broad project guidance belongs in the documentation
+  system your team already uses.
 - **Not a memory system.** A consolidating store paraphrases, merges and
-  eventually forgets. koment is a record, not a belief
-  ([ADR 0100](docs/decisions/0100-one-git-record-per-annotation.md)).
-- **Not line-precise.** Anchors are snippets
-  ([ADR 0101](docs/decisions/0101-fail-ambiguous-anchor-resolution.md)).
+  eventually forgets. koment is a record, not a belief.
+- **Not line-precise.** Anchors are snippets.
 
 ## Prior art
 

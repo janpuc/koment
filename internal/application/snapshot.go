@@ -47,6 +47,16 @@ type AnnotationView struct {
 	Warning     string
 }
 
+// SnapshotInput is a complete repository read from one source revision.
+type SnapshotInput struct {
+	Repository  RepositoryIdentity
+	Commit      string
+	Dirty       bool
+	GeneratedAt time.Time
+	Records     []store.Annotation
+	Sources     map[string][]byte
+}
+
 // BuildSnapshot reads every annotation and annotated source file once.
 func BuildSnapshot(entry repository.Repository) (*RepositorySnapshot, error) {
 	annotations := entry.Store()
@@ -54,10 +64,51 @@ func BuildSnapshot(entry repository.Repository) (*RepositorySnapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(records, func(left, right int) bool { return records[left].ID < records[right].ID })
-
-	grouped := make(map[string][]store.Annotation)
+	sources := make(map[string][]byte)
 	for _, record := range records {
+		if _, loaded := sources[record.File]; loaded {
+			continue
+		}
+		content, readErr := annotations.ReadSource(record.File)
+		switch {
+		case errors.Is(readErr, fs.ErrNotExist):
+		case readErr != nil:
+			return nil, readErr
+		default:
+			sources[record.File] = content
+		}
+	}
+
+	input := SnapshotInput{
+		Repository: RepositoryIdentity{
+			ID: entry.ID, Name: entry.Display(), CloneURL: entry.CloneURL,
+			DefaultBranch: entry.DefaultBranch,
+		},
+		GeneratedAt: time.Now().UTC(), Records: records, Sources: sources,
+	}
+	if commit, commitErr := provenance.HeadCommit(entry.Root); commitErr == nil {
+		input.Commit = commit
+		input.Dirty = provenance.TreeIsDirty(entry.Root)
+	} else if !errors.Is(commitErr, provenance.ErrNoGit) {
+		return nil, commitErr
+	}
+	return AssembleSnapshot(input)
+}
+
+// AssembleSnapshot resolves a complete source revision without performing I/O.
+func AssembleSnapshot(input SnapshotInput) (*RepositorySnapshot, error) {
+	records := append([]store.Annotation(nil), input.Records...)
+	sort.Slice(records, func(left, right int) bool { return records[left].ID < records[right].ID })
+	grouped := make(map[string][]store.Annotation)
+	seen := make(map[string]struct{}, len(records))
+	for _, record := range records {
+		if err := record.Validate(); err != nil {
+			return nil, err
+		}
+		if _, duplicate := seen[record.ID]; duplicate {
+			return nil, errors.New("duplicate annotation id " + record.ID)
+		}
+		seen[record.ID] = struct{}{}
 		grouped[record.File] = append(grouped[record.File], record)
 	}
 	paths := make([]string, 0, len(grouped))
@@ -65,33 +116,24 @@ func BuildSnapshot(entry repository.Repository) (*RepositorySnapshot, error) {
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
-
-	snapshot := &RepositorySnapshot{
-		GeneratedAt: time.Now().UTC(),
-		Repository: RepositoryIdentity{
-			ID: entry.ID, Name: entry.Display(), CloneURL: entry.CloneURL,
-			DefaultBranch: entry.DefaultBranch,
-		},
+	generatedAt := input.GeneratedAt
+	if generatedAt.IsZero() {
+		generatedAt = time.Now().UTC()
 	}
-	if commit, commitErr := provenance.HeadCommit(entry.Root); commitErr == nil {
-		snapshot.Commit = commit
-		snapshot.Dirty = provenance.TreeIsDirty(entry.Root)
-	} else if !errors.Is(commitErr, provenance.ErrNoGit) {
-		return nil, commitErr
+	snapshot := &RepositorySnapshot{
+		Repository: input.Repository, Commit: input.Commit, Dirty: input.Dirty,
+		GeneratedAt: generatedAt,
 	}
 
 	for _, path := range paths {
-		file := FileSnapshot{Path: path, Exists: true}
-		file.Content, err = annotations.ReadSource(path)
-		switch {
-		case errors.Is(err, fs.ErrNotExist):
-			file.Exists = false
+		content, exists := input.Sources[path]
+		file := FileSnapshot{Path: path, Exists: exists}
+		if !exists {
 			for _, record := range grouped[path] {
 				file.Annotations = append(file.Annotations, describe(anchor.ResolveOrphaned(record)))
 			}
-		case err != nil:
-			return nil, err
-		default:
+		} else {
+			file.Content = append([]byte(nil), content...)
 			for _, record := range grouped[path] {
 				file.Annotations = append(file.Annotations, describe(anchor.Resolve(record, file.Content)))
 			}

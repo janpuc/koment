@@ -39,34 +39,16 @@
       <span class="tally-count">{{.Total}} annotation{{if ne .Total 1}}s{{end}}</span>
     </div>
 
-    {{if .Repositories}}
-    <div class="switcher">
-      <label for="repo-select">Repository</label>
-      <select id="repo-select" data-switcher>
-        {{range .Repositories}}
-          <option value="{{.Href}}"{{if .Current}} selected{{end}}>{{.Name}}</option>
-        {{end}}
-      </select>
-      <noscript>
-        <ul class="switcher-plain">
-          {{range .Repositories}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Name}}</a></li>{{end}}
-        </ul>
-      </noscript>
-    </div>
-    {{end}}
-
     <div class="pills">
       {{range .Tally}}<span class="pill {{.Status}}">{{.Count}} {{.Status}}</span>{{end}}
-    </div>
-
-    <div class="sift">
-      <input type="search" id="sift" placeholder="Search files and annotations" aria-label="Search files and annotations" data-sift autocomplete="off">
     </div>
 
     <div class="tree" data-tree>
       {{range .Tree}}{{template "node" .}}{{end}}
       {{range .Loose}}{{template "leaf" .}}{{end}}
     </div>
+
+    <a class="source-link" href="{{.SourceURL}}" target="_blank" rel="noreferrer">Source · janpuc/koment</a>
   </nav>
 
   <main class="panel">
@@ -78,9 +60,29 @@
         <h1>{{.File.Path}}</h1>
         {{if .File.Missing}}<span class="pill orphaned">file is gone</span>{{end}}
       {{end}}
+      <div class="panel-actions">
+        <button type="button" class="search-trigger" data-search-open hidden>
+          <span>Search</span><kbd data-search-shortcut>Ctrl K</kbd>
+        </button>
+        {{if .Repositories}}
+        <div class="switcher">
+          <label for="repo-select">Repository</label>
+          <select id="repo-select" data-switcher aria-label="Repository">
+            {{range .Repositories}}
+              <option value="{{.Href}}"{{if .Current}} selected{{end}}>{{.Name}}</option>
+            {{end}}
+          </select>
+          <noscript>
+            <ul class="switcher-plain">
+              {{range .Repositories}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Name}}</a></li>{{end}}
+            </ul>
+          </noscript>
+        </div>
+        {{end}}
+      </div>
     </div>
 
-    {{if .CreatedID}}<div class="write-result">Created annotation <code>{{.CreatedID}}</code>.</div>{{end}}
+    {{if .CreatedID}}<div class="write-result">Created annotation <code>{{.CreatedID}}</code>.{{if .ReviewURL}} <a href="{{.ReviewURL}}" target="_blank" rel="noreferrer">Open pull request</a>.{{end}}</div>{{end}}
     {{if .WriteWarning}}<div class="write-warning">{{.WriteWarning}}</div>{{end}}
 
     {{if .NotFound}}
@@ -93,11 +95,11 @@
         </div>
       {{end}}
 
-      {{if .WriteToken}}{{if not .File.Missing}}
+      {{if .CanWrite}}{{if not .File.Missing}}
         <details class="write-card">
           <summary>Add rationale</summary>
           <form method="post" action="{{.Home}}annotations">
-            <input type="hidden" name="capability" value="{{.WriteToken}}">
+            {{if .WriteToken}}<input type="hidden" name="capability" value="{{.WriteToken}}">{{end}}
             <input type="hidden" name="file" value="{{.File.Path}}">
             <label>Kind
               <select name="kind">
@@ -135,6 +137,24 @@
     {{end}}
   </main>
 </div>
+
+<dialog class="search-dialog" data-search-dialog aria-labelledby="search-title">
+  <div class="search-surface">
+    <div class="search-head">
+      <div>
+        <h2 id="search-title">Find an annotation</h2>
+        <p>Search file paths, rationale, kinds, and authors.</p>
+      </div>
+      <button type="button" class="search-close" data-search-close aria-label="Close search">Esc</button>
+    </div>
+    <label class="search-box">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input type="search" data-search-input placeholder="Type to search…" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="search-results" data-search-results role="listbox" aria-label="Matching annotated files"></div>
+    <div class="search-help"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></div>
+  </div>
+</dialog>
 {{end}}
 
 <script src="{{.Script}}" defer></script>
@@ -156,7 +176,7 @@
 {{end}}
 
 {{define "leaf"}}
-<a class="file" href="{{.Href}}" data-search="{{.Search}}"{{if .Current}} aria-current="page"{{end}}>
+<a class="file" href="{{.Href}}" data-search="{{.Search}}" data-path="{{.Path}}" data-count="{{.Count}}" data-status="{{.Worst}}"{{if .Current}} aria-current="page"{{end}}>
   <span class="dot {{.Worst}}"></span>
   <span class="name">{{.Name}}</span>
   <span class="count">{{.Count}}</span>

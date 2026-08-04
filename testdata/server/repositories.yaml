@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schema/server.schema.json
+repositories:
+  - id: koment
+    name: koment
+    provider: github
+    remote: janpuc/koment
+    default_branch: main
+    default: true

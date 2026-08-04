@@ -97,15 +97,21 @@ description = "Lint the Helm chart"
 run = "helm lint charts/koment"
 
 [tasks.helm-template]
-description = "Render every supported Helm mode"
+description = "Render the unified server and hardened optional resources"
 run = """
-for mode in ui mcp-http mcp-streamable; do
-  helm template koment charts/koment --set "mode=${mode}" >/dev/null
-done
-if helm template koment charts/koment --set mode=write >/dev/null 2>&1; then
-  exit 1
-fi
+helm template koment charts/koment >/dev/null
+helm template koment charts/koment \
+  --set metrics.enabled=true \
+  --set github.existingSecret=koment-provider \
+  --set auth.existingSecret=koment-agents \
+  --set auth.humanWrites=true \
+  --set networkPolicy.enabled=true \
+  --set podDisruptionBudget.enabled=true >/dev/null
 """
+
+[tasks.extension-test]
+description = "Test the dependency-free VS Code protocol client"
+run = "mise --cd editors/vscode run test"
 
 [hooks]
 postinstall = "lefthook install"

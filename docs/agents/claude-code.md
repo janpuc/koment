@@ -2,10 +2,21 @@
 
 ## Configure
 
+Install a released `koment` binary, enable the repository with `koment agents
+install`, then choose the repository marketplace plugin or the generated files
+below. The plugin adds the same writable MCP server plus strict session-start
+guidance and a Stop hook that refuses completion while policy fails:
+
+```text
+/plugin marketplace add janpuc/koment
+/plugin install koment@janpuc-tools
+```
+
+Install it at project scope. The completion hook expects a koment-enabled
+repository and should not run in unrelated workspaces.
+
 `koment agents install` writes this project configuration and the shared agent
 contract. The resulting `.mcp.json` contains:
-
-Create `.mcp.json` in your repository root:
 
 ```json
 {
@@ -18,8 +29,8 @@ Create `.mcp.json` in your repository root:
 }
 ```
 
-Commit it. Everyone who opens the repository — and every agent that runs in it —
-gets the tools with no further setup.
+Commit it. Everyone who opens the repository gets the same declaration after
+installing the released binary and accepting the repository trust boundary.
 
 Or add it from the command line:
 

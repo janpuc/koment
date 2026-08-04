@@ -107,19 +107,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    services:
-      postgres:
-        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
-        env:
-          POSTGRES_PASSWORD: koment
-          POSTGRES_DB: koment
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -142,8 +129,6 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run tests
-        env:
-          KOMENT_TEST_DATABASE_URL: postgres://postgres:koment@localhost:5432/koment?sslmode=disable
         run: mise run test
 
       - name: Report coverage
@@ -227,6 +212,54 @@ jobs:
       - name: Run binary
         run: docker run --rm koment:ci help
 
+      - name: Exercise unified service
+        run: |
+          set -euo pipefail
+          docker run --detach --name koment-ci-service \
+            --publish 127.0.0.1:18080:8080 \
+            --mount type=bind,src="$PWD/testdata/server/repositories.yaml",dst=/config/repositories.yaml,readonly \
+            koment:ci serve --config /config/repositories.yaml \
+              --listen 0.0.0.0:8080 --trusted-proxies 127.0.0.1/32
+          cleanup() {
+            docker logs koment-ci-service
+            docker rm --force koment-ci-service
+          }
+          trap cleanup EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/readyz; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:18080/livez
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/r/koment/)" = 401
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+
+      - name: Exercise Helm release
+        run: |
+          set -euo pipefail
+          diagnostics() {
+            kubectl get deployments,pods,services --all-namespaces
+            kubectl describe pods --namespace default
+            kubectl logs deployment/koment-koment --namespace default || true
+          }
+          trap diagnostics ERR
+          kind load docker-image koment:ci --name chart-testing
+          helm upgrade --install koment charts/koment \
+            --set image.repository=koment \
+            --set-string image.tag=ci \
+            --set image.pullPolicy=Never \
+            --wait --timeout 5m
+          helm test koment --logs --timeout 2m
+
   setup-action:
     name: Setup Action (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -280,11 +313,46 @@ jobs:
       - name: Render supported modes
         run: mise run helm-template
 
+  editor:
+    name: VS Code Extension
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          experimental: true
+          install: false
+
+      - name: Install locked editor tools
+        run: mise --cd editors/vscode install --locked
+
+      - name: Install editor packaging tools
+        run: mise --cd editors/vscode exec -- npm ci
+
+      - name: Test extension protocol
+        run: mise run extension-test
+
+      - name: Validate VSIX package
+        run: |
+          cp internal/ui/assets/koment-logo.png editors/vscode/icon.png
+          cp LICENSE editors/vscode/LICENSE
+          cd editors/vscode
+          npm pkg set icon=icon.png
+          npm run package -- --out /tmp/koment.vsix
+
   test:
     if: ${{ always() }}
     name: test
     needs:
       - container
+      - editor
       - go-lint
       - go-quality
       - go-test
