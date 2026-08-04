@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/janpuc/koment/compare/v0.3.0...v0.3.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* repair the three publish failures that emptied 0.3.0 ([#25](https://github.com/janpuc/koment/issues/25)) ([4a4f530](https://github.com/janpuc/koment/commit/4a4f530a7983cdd1c09c0403911f8a029cff0ebc))
+
 ## [0.3.0](https://github.com/janpuc/koment/compare/v0.2.0...v0.3.0) (2026-08-04)
 
 
