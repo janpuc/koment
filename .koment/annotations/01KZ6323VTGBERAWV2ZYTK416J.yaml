@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ6323VTGBERAWV2ZYTK416J
+file: charts/koment/README.md.gotmpl
+kind: anti-pattern
+body: |-
+  Do not add chart.versionBadge or chart.appVersionBadge back. They render the
+  Chart.yaml version into the generated README, and release-please bumps
+  Chart.yaml without running helm-docs, so the committed README goes stale on
+  every release. generate-check then fails on the release pull request itself,
+  which is the one pull request that cannot simply be amended. The chart
+  version belongs to Chart.yaml; a badge is a second copy of it that drifts.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: '{{ template "chart.typeBadge" . }}'
+  before: |
+    {{ template "chart.header" . }}
+  after: |2-
+
+    This chart runs the unified authenticated koment service. It reads immutable
+    GitHub commits directly through the Git data API; it needs no checkout, volume,
+  last_seen_line: 3
+git:
+  commit: 9d5f421337f9681286f43376d418a7732a204542
+  path: charts/koment/README.md.gotmpl
+  line: 3
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config
