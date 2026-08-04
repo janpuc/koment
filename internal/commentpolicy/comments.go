@@ -164,7 +164,43 @@ func AcknowledgementExcerpt(content []byte, comment SourceComment) (string, erro
 	return "", fmt.Errorf("the retained comment cannot be anchored uniquely; make the comment or surrounding code more specific")
 }
 
+// Detector finds the comment groups one language exposes and says which of them
+// its toolchain requires. koment ships one, and the interface exists so a
+// second language is an implementation rather than a rewrite (ADR 0114).
+type Detector interface {
+	Handles(file string) bool
+	Scan(file string, content []byte, configured policy.Policy) ([]SourceComment, []bool, error)
+}
+
+var detectors = []Detector{goDetector{}}
+
+func detectorFor(file string) Detector {
+	for _, candidate := range detectors {
+		if candidate.Handles(file) {
+			return candidate
+		}
+	}
+	return nil
+}
+
+// Detects reports whether any language koment understands claims this file.
+func Detects(file string) bool {
+	return detectorFor(file) != nil
+}
+
 func scan(file string, content []byte, configured policy.Policy) ([]SourceComment, []bool, error) {
+	detector := detectorFor(file)
+	if detector == nil {
+		return nil, nil, fmt.Errorf("no comment detector for %s", file)
+	}
+	return detector.Scan(file, content, configured)
+}
+
+type goDetector struct{}
+
+func (goDetector) Handles(file string) bool { return strings.HasSuffix(file, ".go") }
+
+func (goDetector) Scan(file string, content []byte, configured policy.Policy) ([]SourceComment, []bool, error) {
 	files := token.NewFileSet()
 	parsed, err := parser.ParseFile(files, file, content, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
@@ -328,7 +364,7 @@ func sourceFiles(root *os.Root, configured policy.Policy, requested []string) ([
 			if entry.IsDir() && (file == ".git" || file == ".koment" || configured.Excludes(file+"/placeholder")) {
 				return fs.SkipDir
 			}
-			if !entry.IsDir() && strings.HasSuffix(file, ".go") && !configured.Excludes(file) {
+			if !entry.IsDir() && Detects(file) && !configured.Excludes(file) {
 				seen[file] = true
 			}
 			return nil

@@ -29,9 +29,18 @@ exists (ADR 0112).
 ## Packaged
 
 **VS Code**, and through Open VSX also Cursor, Windsurf and VSCodium. It starts
-`koment lsp`, adds inline decorations and gutter status, and turns a freshly
-typed explanatory comment into an annotation. See
+`koment lsp` and gives rationale two surfaces (ADR 0114): an inline gloss after
+the annotated line saying that rationale exists, and a **koment panel** in the
+activity bar holding every annotation in the file with its complete body. Choose
+an entry to jump to its line. `koment: Toggle full annotation text inline`
+removes the inline truncation when you want the whole thing in place.
+
+It also turns a freshly typed explanatory comment into an annotation. See
 [the extension README](../../editors/vscode/README.md).
+
+Diagnostics carry only what fails `koment check` — `ambiguous`, `drifted`,
+`orphaned` and prohibited comments. A `moved` annotation resolves correctly, so
+it is shown in the gloss and the panel and never marks the code.
 
 The package for your platform **carries its own `koment` binary**, so installing
 the extension installs koment (ADR 0113). Linux, macOS and Windows are covered
