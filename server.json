@@ -3,7 +3,7 @@
   "name": "io.github.janpuc/koment",
   "title": "koment",
   "description": "Read and write checked code rationale stored outside source comments.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "websiteUrl": "https://github.com/janpuc/koment",
   "repository": {
     "url": "https://github.com/janpuc/koment",
@@ -13,20 +13,34 @@
     {
       "src": "https://raw.githubusercontent.com/janpuc/koment/main/internal/ui/assets/koment-logo.png",
       "mimeType": "image/png",
-      "sizes": ["128x128"]
+      "sizes": [
+        "128x128"
+      ]
     }
   ],
   "packages": [
     {
       "registryType": "oci",
       "identifier": "ghcr.io/janpuc/koment",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "runtimeHint": "docker",
       "runtimeArguments": [
-        {"type": "positional", "value": "run"},
-        {"type": "positional", "value": "--rm"},
-        {"type": "positional", "value": "--interactive"},
-        {"type": "positional", "value": "--user"},
+        {
+          "type": "positional",
+          "value": "run"
+        },
+        {
+          "type": "positional",
+          "value": "--rm"
+        },
+        {
+          "type": "positional",
+          "value": "--interactive"
+        },
+        {
+          "type": "positional",
+          "value": "--user"
+        },
         {
           "type": "positional",
           "value": "{host_user}",
@@ -38,7 +52,10 @@
             }
           }
         },
-        {"type": "positional", "value": "--mount"},
+        {
+          "type": "positional",
+          "value": "--mount"
+        },
         {
           "type": "positional",
           "value": "type=bind,src={repository},dst=/workspace",
@@ -50,12 +67,24 @@
             }
           }
         },
-        {"type": "positional", "value": "--workdir"},
-        {"type": "positional", "value": "/workspace"}
+        {
+          "type": "positional",
+          "value": "--workdir"
+        },
+        {
+          "type": "positional",
+          "value": "/workspace"
+        }
       ],
       "packageArguments": [
-        {"type": "positional", "value": "mcp"},
-        {"type": "positional", "value": "--write"}
+        {
+          "type": "positional",
+          "value": "mcp"
+        },
+        {
+          "type": "positional",
+          "value": "--write"
+        }
       ],
       "transport": {
         "type": "stdio"
