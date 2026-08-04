@@ -21,7 +21,19 @@ mise run agent-policy
 `.mise/config.toml` and `.mise/mise.lock` are the toolchain source of truth.
 The Go version there must match `go.mod`. `mise install` also installs the
 Lefthook pre-commit checks. CI runs these tasks plus the setup action, container
-and Helm smoke checks, then reports one required `test` status.
+and Helm smoke checks, then reports one required `ci` status; every job is named
+after its id, so a red check names the job that produced it.
+
+## Working on koment inside koment
+
+`mise install` puts a released `koment` on `PATH`, which is what `.mcp.json` and
+`.vscode/mcp.json` invoke. Opening the repository in VS Code recommends the
+`janpuc.koment` extension; it carries its own binary, so it needs nothing else.
+
+Both of those run the **released** koment. The gates do not: `mise run
+annotations`, `comments` and `agent-policy` all run `go run ./cmd/koment`, so
+they judge the tree you are editing. Expect the two to disagree while you are
+changing the record format or a mutation surface — CI is the one that is right.
 
 ## Layout
 

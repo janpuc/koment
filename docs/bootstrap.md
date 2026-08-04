@@ -108,11 +108,12 @@ mise run comments
 mise run agent-policy
 ```
 
-The committed lock file pins Go and every project tool for local shells and CI.
-Lefthook is installed by `mise install` and checks formatting, annotations,
-comment policy and agent adapters before a commit. CI runs the same tasks plus
-the setup action, container and Helm smoke checks behind one required `test`
-status.
+The committed lock file pins Go and every project tool for local shells and CI,
+including a released `koment` so the MCP configuration in `.mcp.json` and
+`.vscode/mcp.json` resolves. Lefthook is installed by `mise install` and checks
+formatting, annotations, comment policy and agent adapters before a commit. CI
+runs the same tasks plus the setup action, container and Helm smoke checks
+behind one required `ci` status.
 
 Try the tool on itself:
 
