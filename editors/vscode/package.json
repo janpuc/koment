@@ -53,7 +53,7 @@
   },
   "pricing": "Free",
   "scripts": {
-    "test": "node --test protocol.test.js",
+    "test": "node --test protocol.test.js binary.test.js",
     "package": "vsce package"
   },
   "devDependencies": {
@@ -92,8 +92,8 @@
       "properties": {
         "koment.binaryPath": {
           "type": "string",
-          "default": "koment",
-          "description": "Path to the released koment binary available in the workspace environment."
+          "default": "",
+          "description": "Path to a koment binary. Leave empty to use the one bundled with this extension, falling back to `koment` on PATH when the universal package is installed."
         },
         "koment.inlineMaxLength": {
           "type": "integer",
@@ -109,5 +109,6 @@
         }
       }
     }
-  }
+  },
+  "icon": "icon.png"
 }

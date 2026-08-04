@@ -73,9 +73,11 @@ This table is the honest boundary between implemented and planned behavior.
 | Database index | local prototype removed | none; served snapshots and search remain rebuildable in memory |
 | Remote authoring | authenticated creation materializes exact records through reviewed Git pull requests | implemented for creation; source-mutating operations remain local |
 | Agent policy | strict policy, generated client adapters, hooks and CI gate implemented | implemented |
-| Operational toolchain | mise, Lefthook, Renovate and security gates implemented | implemented |
+| Operational toolchain | mise, Lefthook, generated chart documentation and security gates implemented; the Renovate preset is committed and awaits app installation | implemented |
 | Helm and release | hardened chart, Kind E2E, signed canonical artifacts and SBOM/provenance implemented | implemented |
 | End-user distribution | releases, setup Action, mise, Claude marketplace, MCP metadata, VS Code/Open VSX package, and generated package-manager manifests | external catalog and publisher account acceptance pending |
+| Editor distribution | seven signed packages per release — six carrying the platform's canonical binary, one universal — ordered after the binaries job, with opt-in marketplace publication and LSP configuration for every other editor | implemented; marketplace publication awaits publisher accounts |
+| Windows | archives, checksums, signatures and package manifests ship; an advisory job installs and runs the published archive | supported and non-gating by decision (ADR 0111) |
 | Maintained workspace | builds, tests, publishes and carries current annotations | implemented |
 
 ## Annotation record
@@ -620,9 +622,11 @@ not claim that repository files can control an arbitrary process.
 
 ### 1. Operational floor — implemented
 
-The pinned konflate-style toolchain, local hooks, Renovate baseline, workflow
-audit, vulnerability scan and aggregate CI status are in place. The existing
-race suite remains mandatory.
+The pinned konflate-style toolchain, local hooks, the shared Renovate preset,
+workflow audit, vulnerability scan and aggregate CI status are in place. The
+existing race suite remains mandatory. Renovate raises no pull request until the
+app is installed on the repository, which is an account action rather than a
+repository one.
 
 ### 2. Record and anchor reset — implemented
 

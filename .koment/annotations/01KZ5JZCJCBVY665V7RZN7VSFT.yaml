@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5JZCJCBVY665V7RZN7VSFT
+file: charts/koment/values.yaml
+kind: gotcha
+body: |-
+  These belong to the pinned digest, not to curl in general. The
+  curlimages/curl image declares USER as the name curl_user, and Kubernetes
+  refuses to start a container with runAsNonRoot when it cannot prove the
+  image user is non-root, failing with CreateContainerConfigError before any
+  test runs. Pinning the numeric ids is what makes the hardened test pod
+  startable. Re-read them from the image if the digest above ever moves.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: '    runAsUser: 101'
+  before: |2-
+        # -- Numeric user id of the pinned test image. Kubernetes cannot verify
+        # `runAsNonRoot` against an image that names its user instead of numbering
+        # it, so the ids are pinned with the digest they belong to.
+  after: |2-
+        # -- Numeric group id of the pinned test image.
+        runAsGroup: 102
+  last_seen_line: 162
+git:
+  commit: 63564ad3ead1158413c1431995c34448d6fc9edd
+  path: charts/koment/values.yaml
+  line: 100
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

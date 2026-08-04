@@ -11,6 +11,8 @@ spec:
   restartPolicy: Never
   securityContext:
     runAsNonRoot: true
+    runAsUser: {{ .Values.tests.image.runAsUser }}
+    runAsGroup: {{ .Values.tests.image.runAsGroup }}
     seccompProfile:
       type: RuntimeDefault
   containers:

@@ -8,8 +8,10 @@ mutation actions.
 ## Configure
 
 Install the signed VSIX from a koment release, or use the VS Code Marketplace
-or Open VSX after the publisher channel is active. The extension requires the
-released `koment` binary on `PATH`; `koment.binaryPath` selects another location.
+or Open VSX after the publisher channel is active. The extension for your
+platform carries its own `koment` binary, so it needs nothing else installed.
+`koment.binaryPath` overrides it; the universal package carries no binary and
+falls back to `koment` on `PATH` (ADR 0113).
 
 `koment agents install` writes this project configuration and the matching
 Copilot instructions. The resulting `.vscode/mcp.json` contains:

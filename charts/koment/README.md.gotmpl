@@ -1,0 +1,53 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+This chart runs the unified authenticated koment service. It reads immutable
+GitHub commits directly through the Git data API; it needs no checkout, volume,
+database, migration, or application outbox.
+
+```sh
+helm install koment oci://ghcr.io/janpuc/charts/koment \
+  --namespace koment --create-namespace \
+  --set repositories[0].remote=example/project
+```
+
+The default repository is public `janpuc/koment`. Private reads and reviewed
+writes use an existing Secret rather than a token in Helm values:
+
+```sh
+kubectl -n koment create secret generic koment-provider \
+  --from-file=github-token=./github-token
+
+helm upgrade --install koment oci://ghcr.io/janpuc/charts/koment \
+  --namespace koment --create-namespace \
+  --set github.existingSecret=koment-provider
+```
+
+Agent credentials are another existing Secret. The file stores SHA-256 hashes,
+never bearer plaintext:
+
+```yaml
+version: 1
+tokens:
+  - name: coding-agent
+    sha256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    repositories: [koment]
+    permissions: [read, write]
+```
+
+Mount it with `auth.existingSecret`. Human identity comes from an OIDC proxy;
+set `auth.trustedProxies` to only that proxy's network. The default trusts only
+loopback and therefore fails closed for direct cluster traffic.
+
+The application port serves `/`, `/mcp`, `/livez`, and `/readyz`. Metrics use a
+separate listener and are enabled with `metrics.enabled=true`. The chart never
+places either secret in Pod environment variables or rendered manifests.
+
+`helm test <release>` verifies liveness, readiness, and the authenticated UI
+boundary with a digest-pinned client image. CI installs the chart into Kind
+against the image built from the pull request before running that test.
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "helm-docs.versionFooter" . }}

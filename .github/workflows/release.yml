@@ -270,7 +270,7 @@ jobs:
 
   editor:
     name: publish editor extension
-    needs: please
+    needs: [please, binaries]
     if: needs.please.outputs.released == 'true'
     runs-on: ubuntu-24.04
     permissions:
@@ -278,6 +278,7 @@ jobs:
       id-token: write
     env:
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      PUBLISH_EDITOR_MARKETPLACES: ${{ vars.PUBLISH_EDITOR_MARKETPLACES }}
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -295,43 +296,74 @@ jobs:
       - name: install editor packaging tools
         run: mise --cd editors/vscode exec -- npm ci
 
-      - name: package extension
+      - name: collect the canonical archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.please.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p archives
+          gh release download "$RELEASE_TAG" --dir archives \
+            --pattern 'koment_*.tar.gz' --pattern 'koment_*.zip' --pattern 'koment_*_checksums.txt'
+          ls -l archives
+
+      - name: package extension for every platform
         env:
           VERSION: ${{ needs.please.outputs.version }}
         run: |
-          mkdir -p dist
+          set -euo pipefail
           test "$(node -p "require('./editors/vscode/package.json').version")" = "$VERSION"
-          cp internal/ui/assets/koment-logo.png editors/vscode/icon.png
-          cp LICENSE editors/vscode/LICENSE
-          cd editors/vscode
-          npm pkg set icon=icon.png
-          npm run package -- --out "../../dist/koment-vscode_${VERSION}.vsix"
+          ./editors/vscode/package-vsix.sh "$VERSION" archives dist
 
       - name: install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - name: sign and attach extension
+      - name: sign and attach every extension package
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.please.outputs.tag }}
-          VERSION: ${{ needs.please.outputs.version }}
         run: |
-          cosign sign-blob --yes \
-            --bundle "dist/koment-vscode_${VERSION}.vsix.sigstore.json" \
-            "dist/koment-vscode_${VERSION}.vsix"
+          set -euo pipefail
+          for package in dist/koment-vscode_*.vsix; do
+            cosign sign-blob --yes --bundle "${package}.sigstore.json" "$package"
+          done
           gh release upload "$RELEASE_TAG" \
-            "dist/koment-vscode_${VERSION}.vsix" \
-            "dist/koment-vscode_${VERSION}.vsix.sigstore.json" \
+            dist/koment-vscode_*.vsix dist/koment-vscode_*.vsix.sigstore.json \
             --clobber
 
+      - name: report that marketplace publication is off
+        if: env.PUBLISH_EDITOR_MARKETPLACES != 'true'
+        run: |
+          echo "::notice::PUBLISH_EDITOR_MARKETPLACES is not 'true'." \
+               "The signed VSIX is attached to the release; no marketplace was updated."
+
       - name: publish to VS Code Marketplace
-        if: env.VSCE_PAT != ''
-        env:
-          VERSION: ${{ needs.please.outputs.version }}
-        run: editors/vscode/node_modules/.bin/vsce publish --packagePath "dist/koment-vscode_${VERSION}.vsix"
+        if: env.PUBLISH_EDITOR_MARKETPLACES == 'true'
+        run: |
+          set -euo pipefail
+          if [ -z "$VSCE_PAT" ]; then
+            echo "::error::marketplace publication is enabled but VSCE_PAT is unset"
+            exit 1
+          fi
+          for package in dist/koment-vscode_*.vsix; do
+            editors/vscode/node_modules/.bin/vsce publish --packagePath "$package"
+          done
 
       - name: publish to Open VSX
-        if: env.OVSX_PAT != ''
-        env:
-          VERSION: ${{ needs.please.outputs.version }}
-        run: editors/vscode/node_modules/.bin/ovsx publish "dist/koment-vscode_${VERSION}.vsix"
+        if: env.PUBLISH_EDITOR_MARKETPLACES == 'true'
+        run: |
+          set -euo pipefail
+          if [ -z "$OVSX_PAT" ]; then
+            echo "::error::marketplace publication is enabled but OVSX_PAT is unset"
+            exit 1
+          fi
+          publisher=$(node -p "require('./editors/vscode/package.json').publisher")
+          if curl --fail --silent --output /dev/null "https://open-vsx.org/api/${publisher}"; then
+            echo "Open VSX namespace ${publisher} already exists"
+          else
+            echo "creating Open VSX namespace ${publisher}"
+            editors/vscode/node_modules/.bin/ovsx create-namespace "$publisher"
+          fi
+          for package in dist/koment-vscode_*.vsix; do
+            editors/vscode/node_modules/.bin/ovsx publish "$package"
+          done

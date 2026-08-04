@@ -4,6 +4,7 @@ go = "1.26.5"
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.6.0"
 golangci-lint = "2.12.2"
 helm = "4.2.3"
+helm-docs = "1.14.2"
 lefthook = "2.1.10"
 zizmor = "1.29.0"
 
@@ -66,6 +67,7 @@ snapshot() {
 }
 snapshot >"$before"
 go generate ./...
+helm-docs --chart-search-root=charts
 snapshot >"$after"
 if ! cmp -s "$before" "$after"; then
   git status --short

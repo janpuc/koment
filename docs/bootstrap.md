@@ -175,29 +175,22 @@ before and after source pair and cannot be mistaken for maintained rationale.
 
 ## Publish a release
 
-Releases are a merge, not a ritual. Conventional commit subjects (`feat:`,
-`fix:`, `docs:`, …) are already required by AGENTS.md §8, and release-please
-turns them into a version and a changelog.
+**[docs/releasing.md](releasing.md) is the procedure, and it is mandatory.**
+Read it before you touch a release. What follows is orientation, not
+instructions.
 
-1. Merge work into `main` with conventional subjects.
-2. release-please opens or updates a release pull request with the next version
-   and the changelog. `charts/koment/Chart.yaml` is bumped in the same commit,
-   so the chart can never point at an image tag that does not exist.
-3. Merge that pull request. It tags the release, which triggers publishing:
-   - binaries for linux, macOS and Windows on amd64 and arm64, plus a
-     `koment_<version>_checksums.txt` the setup action verifies against
-   - `ghcr.io/janpuc/koment:<version>` — multi-arch, distroless, non-root, SBOM
-   - `oci://ghcr.io/janpuc/charts/koment` — the Helm chart
-   - one signed VSIX, published to VS Code Marketplace and Open VSX when the
-     owner tokens are configured
-   - MCP Registry metadata through GitHub OIDC and a repository-hosted Claude
-     marketplace plugin
-   - generated Homebrew, Scoop and WinGet submission metadata derived from the
-     same archive checksums
+A conventional commit subject decides the version, release-please turns merged
+subjects into a version and a changelog, and merging its pull request tags the
+release. The tag publishes signed binaries, the container image, the Helm chart,
+seven editor packages, MCP Registry metadata and generated package-manager
+submission files.
 
-The binaries are not optional decoration: `janpuc/koment@v0.2.0` downloads them, so
-a release that fails to attach them breaks every workflow that uses the action
-([ADR 0103](decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
+Two properties are worth carrying in your head before reading the procedure.
+Publication is ordered — canonical artifacts first, downstream channels second
+([ADR 0109](decisions/0109-distribute-authenticated-artifacts-instead-of-go-invocations.md))
+— so the extension cannot be built for a release whose binaries failed. And
+marketplace versions are permanent: nothing published can be replaced or
+withdrawn, only superseded by the next version.
 
 Nothing is published from an unmerged branch, and `main` requires a pull request
 with green CI, so there is no path to releasing something that did not pass.

@@ -2,6 +2,11 @@
 /dist/
 /bin/
 
+# Assembled into the extension at package time from the canonical release.
+/editors/vscode/bin/
+/editors/vscode/icon.png
+/editors/vscode/LICENSE
+
 *.test
 *.out
 coverage.*

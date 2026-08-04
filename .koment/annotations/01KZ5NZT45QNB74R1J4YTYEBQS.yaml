@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5NZT45QNB74R1J4YTYEBQS
+file: editors/vscode/package-vsix.sh
+kind: invariant
+body: |-
+  The bundled binary must be the archive the release signed, never a rebuild.
+  ADR 0109 rejected letting a channel build its own binary, because that lets
+  one channel ship something never signed or attested, and a marketplace
+  extension is a channel. This is why the release job depends on the binaries
+  job and downloads its output instead of running go build itself.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: verify() {
+  before: |
+    cp "$repository/LICENSE" "$extension/LICENSE"
+    cp "$repository/internal/ui/assets/koment-logo.png" "$extension/icon.png"
+  after: |2-
+      local archive=$1
+      (
+        cd "$archives"
+  last_seen_line: 25
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

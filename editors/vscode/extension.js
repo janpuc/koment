@@ -1,6 +1,7 @@
 'use strict';
 
 const vscode = require('vscode');
+const { ensureExecutable, resolveBinary } = require('./binary');
 const { ProtocolClient } = require('./protocol');
 
 let client;
@@ -24,10 +25,18 @@ async function activate(context) {
   context.subscriptions.push(output, diagnostics, annotationDecoration);
 
   const configuration = vscode.workspace.getConfiguration('koment');
-  const binary = configuration.get('binaryPath', 'koment');
+  const server = resolveBinary({
+    configured: configuration.get('binaryPath', ''),
+    extensionPath: context.extensionPath,
+    platform: process.platform
+  });
+  output.appendLine(`koment: starting ${server.command} (${server.source})`);
+  if (server.source === 'bundled') {
+    ensureExecutable(server.command);
+  }
   const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
   const cwd = workspaceFolders[0]?.uri.fsPath;
-  client = new ProtocolClient(binary, ['lsp'], {
+  client = new ProtocolClient(server.command, ['lsp'], {
     cwd,
     env: process.env,
     onStderr: (text) => output.append(text),

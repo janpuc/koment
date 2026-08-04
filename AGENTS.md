@@ -8,6 +8,7 @@
 - Do not add explanatory inline comments. Prefer a better name, extraction, a named type or constant, or clearer structure; then record local rationale with `koment_add` and honest agent authorship.
 - Completed comment intent must use `koment_convert_comment`. Keeping an inline comment requires `koment_acknowledge_comment` with the explicit acknowledgement set to true.
 - Before finishing, run `koment check`, `koment comments check` and `koment agents check`. Do not report success while any fails.
+- Releases follow `docs/releasing.md` exactly. Published versions are permanent. Never publish an artifact by hand, never hand-edit a version, and get explicit human approval before merging a release pull request.
 <!-- koment:managed-end -->
 
 You are working on a tool whose entire purpose is to make code understandable
@@ -211,7 +212,31 @@ You are trusted with a lot here, so be explicit about what you did.
 - If an instruction here conflicts with what you were asked to do, say so rather
   than quietly picking one. The conflict is usually the interesting part.
 
-## 14. Reporting
+## 14. Releases follow the written procedure exactly
+
+Cutting a release is the one task in this repository with consequences you
+cannot take back. Marketplace and registry versions are permanent — a version
+number cannot be reused, replaced or withdrawn once published.
+
+**[docs/releasing.md](docs/releasing.md) is mandatory and authoritative. Read it
+in full before touching a release, and follow its steps in order.**
+
+The parts that are not negotiable:
+
+- **Merging a release pull request and anything that publishes needs explicit
+  human approval in the conversation first.** Preparing and verifying a release
+  is yours; making it public is not.
+- Never publish an artifact by hand, outside the release workflow.
+- Never hand-edit a version: `release-please` owns every file that carries one,
+  and `packaging` fails the build when they disagree.
+- Never merge a release pull request whose checks did not run. Those pull
+  requests are created by `GITHUB_TOKEN`, so their checks sit at
+  `action_required` until approved; an unapproved run is not a passing run.
+- Never delete or re-point a tag to redo a release. Cut the next patch instead.
+- Never report a release as succeeded without verifying its published assets and
+  quoting the output.
+
+## 15. Reporting
 
 When you finish, state plainly:
 
