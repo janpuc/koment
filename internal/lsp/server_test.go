@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/janpuc/koment/internal/anchor"
 	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/policy"
 	"github.com/janpuc/koment/internal/repository"
@@ -233,5 +234,65 @@ func TestListsReachTheWireAsArraysAndNeverAsNull(t *testing.T) {
 	}
 	if published == 0 {
 		t.Fatal("no diagnostics were published, so this proves nothing")
+	}
+}
+
+// A koment diagnostic must mean the build is red. `moved` resolves uniquely and
+// passes `koment check`, so marking it put a squiggle under healthy code in
+// most files and taught readers to ignore the marker (ADR 0114).
+func TestOnlyFailingStatusesBecomeDiagnostics(t *testing.T) {
+	root, uri, source := lspRepository(t, "package sample\n\nfunc run() {\n\tretry()\n}\n")
+	service := application.NewService(repository.Repository{ID: "sample", Root: root})
+	if _, err := service.Add(application.AddInput{
+		File: "sample.go", Excerpt: "retry()", Kind: store.KindWhy, Body: "Upstream closes idle connections.",
+		Author: store.Author{Name: "Fixture", Kind: store.AuthorHuman, Source: store.FromExplicit},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	moved := "package sample\n\n// pushed down\n\nfunc run() {\n\tretry()\n}\n"
+	var input bytes.Buffer
+	writeTestMessage(t, &input, map[string]any{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": map[string]any{}})
+	writeTestMessage(t, &input, map[string]any{
+		"jsonrpc": "2.0", "method": "textDocument/didOpen",
+		"params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "go", "version": 1, "text": moved}},
+	})
+	writeTestMessage(t, &input, map[string]any{
+		"jsonrpc": "2.0", "id": 2, "method": "koment/annotations",
+		"params": map[string]any{"textDocument": map[string]string{"uri": uri}},
+	})
+	writeTestMessage(t, &input, map[string]any{"jsonrpc": "2.0", "id": 3, "method": "shutdown"})
+	writeTestMessage(t, &input, map[string]any{"jsonrpc": "2.0", "method": "exit"})
+	_ = source
+
+	var output bytes.Buffer
+	if err := Run(context.Background(), &input, &output, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	messages := readTestMessages(t, &output)
+
+	var items []annotationItem
+	if err := json.Unmarshal(responseByID(t, messages, "2").Result, &items); err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].Status != string(anchor.StatusMoved) {
+		t.Fatalf("this proves nothing unless the annotation actually moved: %#v", items)
+	}
+
+	for _, message := range messages {
+		if message.Method != "textDocument/publishDiagnostics" {
+			continue
+		}
+		var params struct {
+			Diagnostics []diagnostic `json:"diagnostics"`
+		}
+		if err := json.Unmarshal(message.Params, &params); err != nil {
+			t.Fatal(err)
+		}
+		for _, published := range params.Diagnostics {
+			if published.Code == "koment.moved" {
+				t.Error("a moved annotation is still published as a diagnostic; it passes koment check")
+			}
+		}
 	}
 }

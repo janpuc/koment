@@ -1,7 +1,9 @@
 'use strict';
 
 const vscode = require('vscode');
+const crypto = require('node:crypto');
 const { ensureExecutable, resolveBinary } = require('./binary');
+const { panelHTML } = require('./panel');
 const { ProtocolClient } = require('./protocol');
 
 let client;
@@ -13,6 +15,9 @@ const savedDocuments = new Set();
 const knownComments = new Map();
 const pendingCommentIntent = new Map();
 const refreshTimers = new Map();
+let panelView;
+let panelState = { items: [], file: '', uri: undefined };
+let inlineDetail = false;
 
 async function activate(context) {
   output = vscode.window.createOutputChannel('koment');
@@ -59,6 +64,7 @@ async function activate(context) {
 
   context.subscriptions.push(client.onNotification('textDocument/publishDiagnostics', publishDiagnostics));
   registerCommands(context);
+  registerPanel(context);
   registerLanguageFeatures(context);
   registerDocumentEvents(context);
   for (const document of vscode.workspace.textDocuments.filter(isFileDocument)) {
@@ -75,7 +81,8 @@ function registerCommands(context) {
     vscode.commands.registerCommand('koment.reanchor', reanchorAnnotation),
     vscode.commands.registerCommand('koment.convertComment', convertComment),
     vscode.commands.registerCommand('koment.acknowledgeComment', acknowledgeComment),
-    vscode.commands.registerCommand('koment.showAnnotation', showAnnotation)
+    vscode.commands.registerCommand('koment.showAnnotation', showAnnotation),
+    vscode.commands.registerCommand('koment.toggleInlineDetail', toggleInlineDetail)
   );
 }
 
@@ -243,8 +250,11 @@ async function refreshAnnotations(document) {
     output.appendLine(error.message);
     return;
   }
-  const maximum = vscode.workspace.getConfiguration('koment').get('inlineMaxLength', 100);
-  const decorations = (items ?? []).map((item) => {
+  const resolved = items ?? [];
+  setPanelContent(document, resolved);
+  const configured = vscode.workspace.getConfiguration('koment').get('inlineMaxLength', 100);
+  const maximum = inlineDetail ? Number.MAX_SAFE_INTEGER : configured;
+  const decorations = resolved.map((item) => {
     const body = oneLine(item.body, maximum);
     const status = item.status === 'ok' ? '💬' : `💬 ${item.status}`;
     const hoverMessage = new vscode.MarkdownString(`**${item.kind}** · \`${item.status}\`\n\n${item.body}`);
@@ -256,6 +266,70 @@ async function refreshAnnotations(document) {
   });
   for (const editor of vscode.window.visibleTextEditors.filter((value) => value.document.uri.toString() === document.uri.toString())) {
     editor.setDecorations(annotationDecoration, decorations);
+  }
+}
+
+function setPanelContent(document, items) {
+  panelState = {
+    items,
+    file: vscode.workspace.asRelativePath(document.uri),
+    uri: document.uri
+  };
+  renderPanel();
+}
+
+function renderPanel() {
+  if (!panelView) {
+    return;
+  }
+  panelView.webview.html = panelHTML({
+    items: panelState.items,
+    file: panelState.file,
+    nonce: crypto.randomBytes(16).toString('base64'),
+    styleNonce: crypto.randomBytes(16).toString('base64')
+  });
+}
+
+async function revealAnnotation(index) {
+  const item = panelState.items[index];
+  if (!item || !panelState.uri) {
+    return;
+  }
+  const document = await vscode.workspace.openTextDocument(panelState.uri);
+  const editor = await vscode.window.showTextDocument(document, { preserveFocus: false });
+  const range = toRange(item.range);
+  editor.selection = new vscode.Selection(range.start, range.start);
+  editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+}
+
+function registerPanel(context) {
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('koment.annotations', {
+      resolveWebviewView(view) {
+        panelView = view;
+        view.webview.options = { enableScripts: true };
+        view.webview.onDidReceiveMessage((message) => {
+          if (typeof message?.reveal === 'number') {
+            revealAnnotation(message.reveal);
+          }
+        });
+        view.onDidDispose(() => {
+          panelView = undefined;
+        });
+        renderPanel();
+      }
+    })
+  );
+}
+
+function toggleInlineDetail() {
+  inlineDetail = !inlineDetail;
+  vscode.window.setStatusBarMessage(
+    inlineDetail ? 'koment: showing full annotation bodies inline' : 'koment: annotation bodies shortened inline',
+    2000
+  );
+  for (const editor of vscode.window.visibleTextEditors) {
+    refreshAnnotations(editor.document);
   }
 }
 

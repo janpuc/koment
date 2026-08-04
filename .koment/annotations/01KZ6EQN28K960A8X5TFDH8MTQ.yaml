@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ6EQN28K960A8X5TFDH8MTQ
+file: editors/vscode/panel.js
+kind: why
+body: |-
+  Annotation bodies are prose written by whoever edits the repository, and
+  this renders them into a document with scripting enabled. Everything
+  reaching the markup goes through here first. The webview also declares
+  default-src none with per-render nonces, so even an escape that missed
+  something cannot load or run anything external.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: function escape(text) {
+  before: |2
+      orphaned: 'failing'
+    };
+  after: |2-
+      return String(text ?? '').replace(
+        /[&<>"']/g,
+        (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]
+  last_seen_line: 11
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

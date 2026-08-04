@@ -131,12 +131,6 @@ func documentDiagnostics(file workspaceFile) ([]diagnostic, error) {
 				Range: item.Range, Severity: 1, Code: "koment." + item.Status,
 				Source: "koment", Message: item.Warning, Data: map[string]string{"id": item.ID},
 			})
-		case anchor.StatusMoved:
-			diagnostics = append(diagnostics, diagnostic{
-				Range: item.Range, Severity: 3, Code: "koment.moved", Source: "koment",
-				Message: "Annotation resolves here but its recorded line moved; reanchor it to refresh provenance.",
-				Data:    map[string]string{"id": item.ID},
-			})
 		}
 	}
 	if filepath.Ext(file.relative) != ".go" {

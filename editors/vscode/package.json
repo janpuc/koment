@@ -53,7 +53,7 @@
   },
   "pricing": "Free",
   "scripts": {
-    "test": "node --test protocol.test.js binary.test.js",
+    "test": "node --test protocol.test.js binary.test.js panel.test.js",
     "package": "vsce package"
   },
   "devDependencies": {
@@ -77,6 +77,10 @@
       {
         "command": "koment.acknowledgeComment",
         "title": "koment: Keep inline comment with acknowledgement"
+      },
+      {
+        "command": "koment.toggleInlineDetail",
+        "title": "koment: Toggle full annotation text inline"
       }
     ],
     "keybindings": [
@@ -108,6 +112,25 @@
           "description": "Offer conversion after newly written explanatory comment prose is saved."
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "koment",
+          "title": "koment",
+          "icon": "icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "koment": [
+        {
+          "id": "koment.annotations",
+          "name": "Annotations",
+          "type": "webview",
+          "contextualTitle": "koment"
+        }
+      ]
     }
   },
   "icon": "icon.png"
