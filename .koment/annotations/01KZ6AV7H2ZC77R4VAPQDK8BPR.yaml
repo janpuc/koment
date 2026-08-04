@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ6AV7H2ZC77R4VAPQDK8BPR
+file: .github/workflows/release.yml
+kind: gotcha
+body: |-
+  This job needs id-token: write for cosign. Without it cosign does not fail
+  fast: it decides no ambient credential is available, prints "Non-interactive
+  mode detected, using device flow" and waits five minutes for a browser that
+  will never arrive. Signing sits before the upload step, so the job died
+  having built every archive and attached none, and 0.3.0 shipped empty while
+  latest pointed at it.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: '    name: publish binaries'
+  before: |2-
+              manifest-file: .release-please-manifest.json
+
+      binaries:
+  after: |2-
+        needs: please
+        if: needs.please.outputs.released == 'true'
+        runs-on: ubuntu-24.04
+  last_seen_line: 35
+git:
+  commit: be127ab08ad0fe7b4636b9ba1f7f2076efecd260
+  path: .github/workflows/release.yml
+  line: 35
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config
