@@ -117,6 +117,19 @@ func TestTheTestPodPinsANumericUserSoRunAsNonRootCanBeVerified(t *testing.T) {
 	}
 }
 
+// `helm test --logs` reads the pod after the hook finishes. Deleting it on
+// success races that read, and the race is invisible until it loses.
+func TestTheTestPodSurvivesLongEnoughToReadItsLogs(t *testing.T) {
+	rendered := render(t)
+
+	if !strings.Contains(rendered, "helm.sh/hook-delete-policy: before-hook-creation") {
+		t.Fatal("the helm test pod no longer declares a delete policy")
+	}
+	if strings.Contains(rendered, "hook-succeeded") {
+		t.Error("hook-succeeded deletes the test pod before `helm test --logs` can read it")
+	}
+}
+
 // The chart is installed by digest so a moving tag cannot change what runs.
 func TestTheTestClientIsPinnedByDigest(t *testing.T) {
 	if !strings.Contains(render(t), "curlimages/curl@sha256:") {
