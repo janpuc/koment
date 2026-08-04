@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/janpuc/koment/compare/v0.3.1...v0.4.0) (2026-08-04)
+
+
+### Features
+
+* give rationale a panel and stop marking healthy code ([#30](https://github.com/janpuc/koment/issues/30)) ([e154ed6](https://github.com/janpuc/koment/commit/e154ed6dd9078df0e266146a78c5536fe52a71d1))
+* make the editor and the toolchain find koment ([#27](https://github.com/janpuc/koment/issues/27)) ([e144e61](https://github.com/janpuc/koment/commit/e144e614b44fe4848b0d29dc3aa1b0225e0c632c))
+
+
+### Bug Fixes
+
+* stop the language server putting null where LSP declares an array ([#28](https://github.com/janpuc/koment/issues/28)) ([8b78d72](https://github.com/janpuc/koment/commit/8b78d721a878a7b3d328fb18c334cd0362398b81))
+
 ## [0.3.1](https://github.com/janpuc/koment/compare/v0.3.0...v0.3.1) (2026-08-04)
 
 
