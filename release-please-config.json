@@ -28,24 +28,47 @@
           "type": "json",
           "path": "server.json",
           "jsonpath": "$.version"
-        },
-        {
-          "type": "json",
-          "path": "server.json",
-          "jsonpath": "$.packages[0].version"
         }
       ]
     }
   },
   "changelog-sections": [
-    { "type": "feat", "section": "Features" },
-    { "type": "fix", "section": "Bug Fixes" },
-    { "type": "refactor", "section": "Code Refactoring" },
-    { "type": "perf", "section": "Performance" },
-    { "type": "docs", "section": "Documentation" },
-    { "type": "test", "section": "Tests" },
-    { "type": "build", "section": "Build System" },
-    { "type": "ci", "section": "Continuous Integration" },
-    { "type": "chore", "section": "Miscellaneous", "hidden": true }
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "refactor",
+      "section": "Code Refactoring"
+    },
+    {
+      "type": "perf",
+      "section": "Performance"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "test",
+      "section": "Tests"
+    },
+    {
+      "type": "build",
+      "section": "Build System"
+    },
+    {
+      "type": "ci",
+      "section": "Continuous Integration"
+    },
+    {
+      "type": "chore",
+      "section": "Miscellaneous",
+      "hidden": true
+    }
   ]
 }

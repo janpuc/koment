@@ -49,6 +49,10 @@ func TestTheRegistryImageCarriesNoVersionOfItsOwn(t *testing.T) {
 			t.Errorf("server.json pins %s to tag %q; release-please updates the version fields but never this string, so it will name a stale image after the next release",
 				advertised.Identifier, tag)
 		}
+		if advertised.Version != "" {
+			t.Errorf("server.json gives OCI package %s a version field of %q; the MCP registry rejects that with 400 and wants the version in the identifier instead",
+				advertised.Identifier, advertised.Version)
+		}
 	}
 }
 
@@ -60,6 +64,7 @@ func TestTheReleaseWorkflowTagsTheImageItPublishesToTheRegistry(t *testing.T) {
 
 	for _, required := range []string{
 		".packages[0].identifier = $image",
+		"del(.packages[0].version)",
 		"IMAGE: ghcr.io/${{ github.repository }}:${{ needs.please.outputs.version }}",
 	} {
 		if !strings.Contains(workflow, required) {
@@ -77,6 +82,9 @@ func TestEveryDistributionManifestAgreesOnTheVersion(t *testing.T) {
 		t.Errorf("server.json says %q, the release manifest says %q", server.Version, release)
 	}
 	for _, advertised := range server.Packages {
+		if advertised.RegistryType == "oci" {
+			continue
+		}
 		if advertised.Version != release {
 			t.Errorf("server.json package %s says %q, the release manifest says %q",
 				advertised.Identifier, advertised.Version, release)

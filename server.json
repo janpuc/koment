@@ -22,7 +22,6 @@
     {
       "registryType": "oci",
       "identifier": "ghcr.io/janpuc/koment",
-      "version": "0.3.0",
       "runtimeHint": "docker",
       "runtimeArguments": [
         {
