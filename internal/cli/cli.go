@@ -32,8 +32,10 @@ const usage = `koment — out-of-band code annotations
   koment comments acknowledge <file> --excerpt <comment> --body <text|-> --acknowledge-inline-comment
   koment agents install|check
   koment ui [--listen <addr>] [--write]
+  koment serve --config <repositories.yaml>
   koment site --out <dir>            render one repository to static HTML
   koment mcp [--write | --http <addr> | --streamable-http <addr>]
+  koment lsp                          editor protocol over stdio
   koment version
 
 check exits non-zero when an annotation is ambiguous, drifted or orphaned.
@@ -53,9 +55,11 @@ type Server func(args []string, stderr io.Writer) error
 // Servers are injected rather than imported. Adding one is a new field, not a
 // new parameter, so signatures here stop changing shape.
 type Servers struct {
-	MCP  Server
-	UI   Server
-	Site Server
+	MCP   Server
+	UI    Server
+	Site  Server
+	Serve Server
+	LSP   Server
 }
 
 // Run dispatches a subcommand.
@@ -93,6 +97,16 @@ func Run(args []string, env Environment, servers Servers) int {
 		return ExitOK
 	case command == "site":
 		if err := servers.Site(rest, env.Stderr); err != nil {
+			return fail(env, err)
+		}
+		return ExitOK
+	case command == "serve":
+		if err := servers.Serve(rest, env.Stderr); err != nil {
+			return fail(env, err)
+		}
+		return ExitOK
+	case command == "lsp":
+		if err := servers.LSP(rest, env.Stderr); err != nil {
 			return fail(env, err)
 		}
 		return ExitOK

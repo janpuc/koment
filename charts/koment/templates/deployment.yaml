@@ -10,32 +10,20 @@ spec:
   template:
     metadata:
       labels: {{- include "koment.selectorLabels" . | nindent 8 }}
-      {{- with .Values.podAnnotations }}
-      annotations: {{- toYaml . | nindent 8 }}
-      {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
+      serviceAccountName: {{ include "koment.serviceAccountName" . }}
+      automountServiceAccountToken: false
       securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if and .Values.repository.clone.enabled (not .Values.repository.existingClaim) }}
-      initContainers:
-        - name: clone
-          image: {{ .Values.repository.clone.image | quote }}
-          args:
-            - clone
-            - --depth=1
-            - --branch={{ .Values.repository.clone.ref }}
-            - {{ required "repository.clone.url is required when clone is enabled" .Values.repository.clone.url | quote }}
-            - /repo
-          volumeMounts:
-            - name: repository
-              mountPath: /repo
-          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- end }}
       containers:
         - name: koment
           image: {{ include "koment.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: {{ include "koment.args" . }}
-          workingDir: /repo
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -43,41 +31,54 @@ spec:
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
             {{- end }}
-          {{- with .Values.env }}
-          env:
-            {{- range $name, $value := . }}
-            - name: {{ $name }}
-              value: {{ $value | quote }}
-            {{- end }}
-          {{- end }}
-          {{- /*
-            koment serves from files on disk with no dependencies, so liveness
-            and readiness are the same question: is the listener up.
-          */}}
           livenessProbe:
             httpGet:
-              path: /
+              path: /livez
               port: http
             initialDelaySeconds: 2
+            periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /
+              path: /readyz
               port: http
             initialDelaySeconds: 2
+            periodSeconds: 5
           resources: {{- toYaml .Values.resources | nindent 12 }}
           securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
-            - name: repository
-              mountPath: /repo
-              readOnly: {{ not .Values.repository.clone.enabled }}
+            - name: configuration
+              mountPath: /config
+              readOnly: true
+            {{- if .Values.github.existingSecret }}
+            - name: github
+              mountPath: /secrets/github
+              readOnly: true
+            {{- end }}
+            {{- if .Values.auth.existingSecret }}
+            - name: auth
+              mountPath: /secrets/auth
+              readOnly: true
+            {{- end }}
       volumes:
-        - name: repository
-          {{- if .Values.repository.existingClaim }}
-          persistentVolumeClaim:
-            claimName: {{ .Values.repository.existingClaim | quote }}
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
+        - name: configuration
+          configMap:
+            name: {{ include "koment.fullname" . }}
+        {{- if .Values.github.existingSecret }}
+        - name: github
+          secret:
+            secretName: {{ .Values.github.existingSecret | quote }}
+            items:
+              - key: {{ .Values.github.tokenKey | quote }}
+                path: {{ .Values.github.tokenKey | quote }}
+        {{- end }}
+        {{- if .Values.auth.existingSecret }}
+        - name: auth
+          secret:
+            secretName: {{ .Values.auth.existingSecret | quote }}
+            items:
+              - key: {{ .Values.auth.credentialsKey | quote }}
+                path: {{ .Values.auth.credentialsKey | quote }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -86,4 +87,7 @@ spec:
       {{- end }}
       {{- with .Values.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
       {{- end }}

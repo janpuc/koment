@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5NA2SJ0EEYBVEN1B97YB1N
+file: .github/workflows/ci.yml
+kind: anti-pattern
+body: |-
+  windows-archive is missing from this list on purpose (ADR 0111). It installs
+  the last published release rather than this pull request, because no Windows
+  runner builds the change under review, so a red result can mean a runner
+  image moved or a release has not happened yet. Adding it here makes an
+  irreproducible check able to block unrelated work, and the first false red
+  would get it deleted instead of demoted. It still runs and still reports; it
+  just cannot stop a merge.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: |2-
+          - setup-action
+          - workflow-lint
+  before: |2-
+          - go-test
+          - go-vulncheck
+          - helm
+  after: |2-
+        runs-on: ubuntu-24.04
+        permissions: {}
+        steps:
+  last_seen_line: 428
+git:
+  commit: 63564ad3ead1158413c1431995c34448d6fc9edd
+  path: .github/workflows/ci.yml
+  line: 428
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

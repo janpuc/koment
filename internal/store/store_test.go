@@ -113,6 +113,29 @@ func TestSavedRecordStartsWithSchemaDirectiveAndKeepsBodyReadable(t *testing.T) 
 	}
 }
 
+func TestEncodeAnnotationProducesTheExactBytesSavePersists(t *testing.T) {
+	annotations := newTestStore(t)
+	record := excerptAnnotation(firstID, "main.go", "serve()")
+	encoded, err := EncodeAnnotation(&record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := annotations.Save(&record); err != nil {
+		t.Fatal(err)
+	}
+	path, err := annotations.RecordPath(record.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(encoded) != string(persisted) {
+		t.Fatalf("encoded record differs from persisted record\nencoded:\n%s\npersisted:\n%s", encoded, persisted)
+	}
+}
+
 func TestWrappedBodyIsStoredAsShortLines(t *testing.T) {
 	annotations := newTestStore(t)
 	long := "An empty excerpt means file scope, not a wildcard that matches everything. " +
@@ -229,6 +252,14 @@ func TestLoadRejectsRecordStoredUnderTheWrongID(t *testing.T) {
 	_, err = annotations.Load(firstID)
 	if err == nil || !strings.Contains(err.Error(), secondID) {
 		t.Fatalf("want an error naming the mismatched id, got %v", err)
+	}
+}
+
+func TestDecodeAnnotationChecksRemoteRecordIdentity(t *testing.T) {
+	content := "version: 1\nid: " + secondID + "\nfile: a.go\nkind: why\nbody: body\ncreated: 2026-07-31\nanchor:\n  scope: file\nauthor:\n  name: Test\n  kind: human\n  source: explicit\n"
+	_, err := DecodeAnnotation(firstID, []byte(content))
+	if err == nil || !strings.Contains(err.Error(), "filename claims") {
+		t.Fatalf("err = %v", err)
 	}
 }
 

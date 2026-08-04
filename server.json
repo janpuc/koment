@@ -1,0 +1,65 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.janpuc/koment",
+  "title": "koment",
+  "description": "Read and write checked code rationale stored outside source comments.",
+  "version": "0.2.0",
+  "websiteUrl": "https://github.com/janpuc/koment",
+  "repository": {
+    "url": "https://github.com/janpuc/koment",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/janpuc/koment/main/internal/ui/assets/koment-logo.png",
+      "mimeType": "image/png",
+      "sizes": ["128x128"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/janpuc/koment",
+      "version": "0.2.0",
+      "runtimeHint": "docker",
+      "runtimeArguments": [
+        {"type": "positional", "value": "run"},
+        {"type": "positional", "value": "--rm"},
+        {"type": "positional", "value": "--interactive"},
+        {"type": "positional", "value": "--user"},
+        {
+          "type": "positional",
+          "value": "{host_user}",
+          "variables": {
+            "host_user": {
+              "description": "Host UID:GID allowed to write the repository mount.",
+              "isRequired": true,
+              "placeholder": "1000:1000"
+            }
+          }
+        },
+        {"type": "positional", "value": "--mount"},
+        {
+          "type": "positional",
+          "value": "type=bind,src={repository},dst=/workspace",
+          "variables": {
+            "repository": {
+              "description": "Absolute path to the koment-enabled repository.",
+              "format": "filepath",
+              "isRequired": true
+            }
+          }
+        },
+        {"type": "positional", "value": "--workdir"},
+        {"type": "positional", "value": "/workspace"}
+      ],
+      "packageArguments": [
+        {"type": "positional", "value": "mcp"},
+        {"type": "positional", "value": "--write"}
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

@@ -39,7 +39,7 @@ the port can read every annotation in the repository. It binds loopback unless
 you say otherwise, and warns at startup when you do. If Hermes is on another
 host, put the port behind something that authenticates or restrict it at the
 network level. The approved served tier replaces this behaviour
-([ADR 0105](../decisions/0105-authenticated-outbox-settles-through-git.md)).
+([ADR 0105](../decisions/0105-authenticated-writes-materialize-through-git.md)).
 
 ## Filter the tools
 

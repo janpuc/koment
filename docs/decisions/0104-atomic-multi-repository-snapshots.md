@@ -1,4 +1,4 @@
-# 0104 — Serve assigned repositories as transactional commit snapshots
+# 0104 — Serve assigned repositories as atomic commit snapshots
 
 Date: 2026-08-03
 Status: Accepted
@@ -6,10 +6,10 @@ Status: Accepted
 ## Context
 
 v0.2 can route requests among configured local roots, but clone URL and default
-branch are metadata only. The chart mounts or clones one repository once. Its
-database identity is derived from the checkout path even though the registry
-assigns an id. A Postgres row plus independently cloned pod working trees cannot
-guarantee that every replica resolves and renders the same commit.
+branch are metadata only. The chart mounts or clones one repository once, and
+repository identity is still vulnerable to being confused with a checkout
+path. Independently updated pod working trees cannot guarantee that one response
+resolves and renders a single commit.
 
 A served multi-repository product needs to say which revision every answer
 describes and replace a repository coherently when that revision changes.
@@ -20,18 +20,24 @@ to discover identity before they can use their current workspace.
 ## Decision
 
 Assign every served repository an immutable id. Configuration also names its
-display name, canonical clone URL, default branch and credential reference.
-Filesystem paths never define identity.
+display name, provider repository, default branch and credential reference.
+Filesystem paths and cache locations never define identity.
 
-Synchronize repositories outside request handling. For one fetched commit, an
-ingester validates records, reads the annotated source files, resolves every
-anchor and writes a complete Postgres generation in one transaction. A reader
-selects one active generation per repository and therefore sees either the old
-commit or the new commit, never a mixture.
+Synchronize repositories outside request handling. Resolve one immutable
+provider commit, validate its records, fetch only annotated source blobs and
+build the complete snapshot and search index away from readers. Replace the
+repository's active in-memory pointer only after that build succeeds. A reader
+therefore sees either the old complete commit or the new complete commit, never
+a mixture.
 
-Store source content only for annotated files with the generation. Read replicas
-serve from Postgres and require no local checkout. Repository id scopes every
-database key, URL, search result, metric and outbox record.
+Keep source content only for annotated files in the immutable snapshot. Request
+handling requires no checkout and performs no provider calls. Repository id
+scopes every snapshot, URL, search result, metric and provider operation.
+
+Replicas may refresh at different times, but every response names the exact
+commit it serves. A deployment requiring one globally simultaneous revision
+uses one active replica; a database is not introduced solely to coordinate a
+rebuildable cache.
 
 An unscoped get that matches several repositories refuses and lists the
 candidates. An unscoped search may span repositories because every result names
@@ -47,22 +53,29 @@ operation. Repository discovery remains available but is never a startup gate.
 
 ## Consequences
 
-- Read replicas are genuinely stateless and agree on source and resolution.
-- Ingestion storage grows with annotated source files rather than entire
+- Request handlers read immutable state and agree internally on source and
+  resolution.
+- Snapshot memory grows with annotated source files rather than entire
   repositories.
 - Updates are snapshot-based rather than live working-tree reads.
 - Repository synchronization, credentials and failed-generation visibility
   become explicit operational responsibilities.
-- A bad new commit leaves the previous valid generation available and surfaces
-  ingestion failure instead of publishing a partial result.
+- A bad new commit leaves the previous valid snapshot available and surfaces
+  synchronization failure instead of publishing a partial result.
+- Process restart requires rebuilding configured snapshots before readiness.
+- Replicas can briefly expose different, explicitly stamped commits.
 - The configuration must reject a repository set with no default or more than
   one default.
 
 ## Alternatives rejected
 
 - **Mount working trees into every replica.** Simple for one repository, but
-  replicas can update at different times and the chart cannot make Postgres
-  identify their local commit.
+  updates can change files while a snapshot is being built and request handling
+  inherits checkout and filesystem state.
+- **Write complete generations to Postgres.** It gives replicas one activation
+  point, but persists source and search data that are completely reconstructible
+  from a named commit. The migration, backup and availability burden has no
+  measured need before a live deployment exists.
 - **Derive identity from root path or clone URL.** Moving a checkout or remote
   renames repository state without an intentional identity change.
 - **Fetch source from the forge during each request.** Avoids stored source but

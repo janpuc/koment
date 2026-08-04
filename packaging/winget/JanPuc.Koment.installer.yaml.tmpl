@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
+PackageIdentifier: JanPuc.Koment
+PackageVersion: {{VERSION}}
+Platform:
+  - Windows.Desktop
+InstallerType: zip
+NestedInstallerType: portable
+Commands:
+  - koment
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_windows_amd64.zip
+    InstallerSha256: {{WINDOWS_AMD64_SHA_UPPER}}
+    NestedInstallerFiles:
+      - RelativeFilePath: koment.exe
+        PortableCommandAlias: koment
+  - Architecture: arm64
+    InstallerUrl: https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_windows_arm64.zip
+    InstallerSha256: {{WINDOWS_ARM64_SHA_UPPER}}
+    NestedInstallerFiles:
+      - RelativeFilePath: koment.exe
+        PortableCommandAlias: koment
+ManifestType: installer
+ManifestVersion: 1.12.0

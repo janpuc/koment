@@ -1,0 +1,7 @@
+binary.test.js
+protocol.test.js
+mise.lock
+mise.toml
+package-lock.json
+package-vsix.sh
+*.vsix

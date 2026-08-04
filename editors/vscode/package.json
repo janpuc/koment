@@ -1,0 +1,114 @@
+{
+  "name": "koment",
+  "displayName": "koment",
+  "description": "Read and write out-of-band code annotations directly in the editor.",
+  "version": "0.2.0",
+  "publisher": "janpuc",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "comments",
+    "annotations",
+    "rationale",
+    "agents",
+    "lsp"
+  ],
+  "main": "./extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/.koment/policy.yaml",
+    "onCommand:koment.add",
+    "onCommand:koment.reanchor"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "koment starts a workspace process and performs explicitly requested file mutations."
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janpuc/koment.git",
+    "directory": "editors/vscode"
+  },
+  "homepage": "https://github.com/janpuc/koment",
+  "bugs": {
+    "url": "https://github.com/janpuc/koment/issues"
+  },
+  "galleryBanner": {
+    "color": "#4A56C4",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "scripts": {
+    "test": "node --test protocol.test.js binary.test.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "3.9.2",
+    "ovsx": "1.0.2"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "koment.add",
+        "title": "koment: Add annotation"
+      },
+      {
+        "command": "koment.reanchor",
+        "title": "koment: Reanchor annotation"
+      },
+      {
+        "command": "koment.convertComment",
+        "title": "koment: Convert comment to annotation"
+      },
+      {
+        "command": "koment.acknowledgeComment",
+        "title": "koment: Keep inline comment with acknowledgement"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "koment.add",
+        "key": "ctrl+alt+k",
+        "mac": "cmd+alt+k",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "koment",
+      "properties": {
+        "koment.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a koment binary. Leave empty to use the one bundled with this extension, falling back to `koment` on PATH when the universal package is installed."
+        },
+        "koment.inlineMaxLength": {
+          "type": "integer",
+          "default": 100,
+          "minimum": 20,
+          "maximum": 300,
+          "description": "Maximum annotation body length rendered as virtual inline text."
+        },
+        "koment.promptOnCommentIntent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer conversion after newly written explanatory comment prose is saved."
+        }
+      }
+    }
+  },
+  "icon": "icon.png"
+}

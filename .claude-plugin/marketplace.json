@@ -1,0 +1,17 @@
+{
+  "name": "janpuc-tools",
+  "owner": {
+    "name": "Jan Pucilowski",
+    "url": "https://github.com/janpuc"
+  },
+  "description": "Tools that keep repository rationale reviewable, attributable, and outside source comments.",
+  "plugins": [
+    {
+      "name": "koment",
+      "source": "./plugins/koment",
+      "description": "Strict koment procedure, writable MCP tools, and completion policy checks.",
+      "category": "development",
+      "tags": ["annotations", "comments", "mcp", "code-quality"]
+    }
+  ]
+}

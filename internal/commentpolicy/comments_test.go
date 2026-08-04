@@ -100,6 +100,28 @@ func TestRequestedPathCannotEscapeRoot(t *testing.T) {
 	}
 }
 
+func TestCheckContentUsesUnsavedSource(t *testing.T) {
+	content := []byte("package sample\n\nfunc run() {\n\t// Explain the retry.\n\tretry()\n}\n")
+	violations, err := CheckContent("sample.go", content, policy.Default(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(violations) != 1 || violations[0].Comment.Raw != "// Explain the retry." {
+		t.Fatalf("violations = %#v", violations)
+	}
+}
+
+func TestCommentIntentDoesNotAutoConvertCommentedCode(t *testing.T) {
+	prose := SourceComment{File: "sample.go", Body: "Retry because the peer closes idle connections."}
+	code := SourceComment{File: "sample.go", Body: "retry()"}
+	if !IsCommentIntent(prose) {
+		t.Fatal("explanatory prose was not classified as comment intent")
+	}
+	if IsCommentIntent(code) {
+		t.Fatal("commented-out code was classified as comment intent")
+	}
+}
+
 func writeSource(t *testing.T, root, name, content string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(root, name), []byte(content), 0o644); err != nil {

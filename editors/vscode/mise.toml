@@ -1,0 +1,8 @@
+[tools]
+node = "24.18.0"
+
+[tasks.test]
+run = "npm test"
+
+[tasks.package]
+run = "npm run package"

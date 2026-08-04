@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5NZT0H94223K8AR010TK6X
+file: editors/vscode/binary.js
+kind: why
+body: |-
+  A VSIX is a zip and nothing in the extension host contract guarantees the
+  executable bit survives expansion. It does survive on the paths tested here,
+  but a server that cannot be executed fails exactly like a server that is
+  missing, so the bit is asserted rather than assumed. A chmod failure is
+  deliberately not caught; swallowing it would restore the failure this
+  prevents.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: function ensureExecutable(binary, { platform = process.platform, stat = fs.statSync, chmod = fs.chmodSync } = {}) {
+  before: |2
+      return { command: 'koment', source: 'path' };
+    }
+  after: |2-
+      if (platform === 'win32') {
+        return false;
+      }
+  last_seen_line: 26
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

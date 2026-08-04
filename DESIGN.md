@@ -1,6 +1,6 @@
 # koment — design
 
-Status: **approved; stages 1–3 implemented, stages 4–6 planned.**
+Status: **approved; product and reference integrations implemented, external catalog acceptance pending.**
 
 This document is the specification. The active architectural decisions start at
 ADR 0100 in `docs/decisions/`. Earlier decisions describe the pre-deployment
@@ -21,8 +21,8 @@ shown as such everywhere; no surface may silently turn uncertainty into fact.
 
 ## Principles
 
-1. **Git is the record.** The committed YAML is authoritative. Databases,
-   static sites and in-memory search structures are disposable read models.
+1. **Git is the record.** The committed YAML is authoritative. Static sites,
+   filesystem caches and in-memory search structures are disposable read models.
 2. **One fact has one representation.** An annotation is one record with one
    stable id, regardless of which surface created or reads it.
 3. **Resolution is deterministic.** Exact text and captured context decide an
@@ -52,6 +52,9 @@ shown as such everywhere; no surface may silently turn uncertainty into fact.
 13. **End users install artifacts, not a Go program.** Contributor workflows
     may invoke the Go toolchain, but installation, CI integration, agents and
     editors consume published, authenticated koment artifacts.
+14. **Rebuildable served state stays ephemeral.** A named Git commit contains
+    everything required to rebuild a repository snapshot. koment does not add a
+    database merely to persist data that Git already owns.
 
 ## Implementation status
 
@@ -65,14 +68,16 @@ This table is the honest boundary between implemented and planned behavior.
 | Local human UI | read and capability-gated loopback write mode implemented | implemented |
 | Local agent MCP | read and explicit stdio write mode implemented | implemented |
 | Static publishing | atomic commit snapshot, body search and JSON implemented | implemented |
-| Multi-repository routing | partial | assigned identity plus synchronized commit snapshots |
-| HTTP serving | separate unauthenticated UI or MCP | one authenticated human-and-agent service |
-| Database index | local prototype removed | new Postgres read model for served snapshots only |
-| Remote authoring | design only | authenticated exact outbox materialized through Git |
+| Multi-repository routing | assigned identity, commit snapshots and contextual switching implemented | implemented |
+| HTTP serving | authenticated UI and MCP share one service and snapshot catalog | implemented |
+| Database index | local prototype removed | none; served snapshots and search remain rebuildable in memory |
+| Remote authoring | authenticated creation materializes exact records through reviewed Git pull requests | implemented for creation; source-mutating operations remain local |
 | Agent policy | strict policy, generated client adapters, hooks and CI gate implemented | implemented |
-| Operational toolchain | mise, Lefthook, Renovate and security gates implemented | implemented |
-| Helm and release | baseline exists | konflate-aligned tests, hardening and signatures |
-| End-user distribution | GitHub release assets and setup Action | binary package managers, agent marketplaces and editor registries |
+| Operational toolchain | mise, Lefthook, generated chart documentation and security gates implemented; the Renovate preset is committed and awaits app installation | implemented |
+| Helm and release | hardened chart, Kind E2E, signed canonical artifacts and SBOM/provenance implemented | implemented |
+| End-user distribution | releases, setup Action, mise, Claude marketplace, MCP metadata, VS Code/Open VSX package, and generated package-manager manifests | external catalog and publisher account acceptance pending |
+| Editor distribution | seven signed packages per release — six carrying the platform's canonical binary, one universal — ordered after the binaries job, with opt-in marketplace publication and LSP configuration for every other editor | implemented; marketplace publication awaits publisher accounts |
+| Windows | archives, checksums, signatures and package manifests ship; an advisory job installs and runs the published archive | supported and non-gating by decision (ADR 0111) |
 | Maintained workspace | builds, tests, publishes and carries current annotations | implemented |
 
 ## Annotation record
@@ -218,9 +223,10 @@ surfaces.
 
 Local commands build a snapshot directly from the current working tree.
 `koment site` builds one immutable snapshot for the whole render. The served
-tier reads transactional snapshots from Postgres. The current bidirectional
-SQLite index and its recovery role are removed; Git alone recovers records.
-ADR 0102 records this boundary.
+tier builds the same model from a named provider commit and atomically replaces
+the active in-memory snapshot only after the complete build succeeds. The
+current bidirectional SQLite index and its recovery role are removed; Git alone
+recovers records. ADR 0102 records this boundary.
 
 ## Product tiers
 
@@ -230,7 +236,7 @@ The tiers share records and presentation, not false capability parity.
 |---|---|---|---|---|---|
 | local | current working tree | CLI and UI | stdio MCP | direct Git records | one or configured local set |
 | published | commit snapshots | static UI | static JSON/search data | none | one repository or a configured set |
-| served | transactional snapshots | authenticated UI | authenticated MCP | authenticated outbox | many assigned repositories |
+| served | atomically replaced commit snapshots | authenticated UI | authenticated MCP | reviewed Git pull requests | many assigned repositories |
 
 ### Local
 
@@ -285,6 +291,27 @@ the product.
 Static output is read-only by nature; it may link to a configured writer but
 never presents an inert write control.
 
+### Human navigation and search
+
+The ordinary repository view owns navigation; there is no repository-selector
+landing page. A compact, visually distinct repository switcher sits in the top
+right of the application header and preserves the current page context when a
+matching route exists. The left rail ends with a persistent source link to
+`https://github.com/janpuc/koment`.
+
+Search opens as a centered modal over the current repository instead of taking
+permanent space from source and rationale. A visible search control shows the
+platform's primary shortcut: `⌘K` on Apple platforms and `Ctrl+K` elsewhere.
+The matching primary modifier opens or focuses search, `/` opens it when focus
+is not already in an editable control, arrow keys move through results, Enter
+opens the active result and Escape closes the modal. Focus returns to the
+control that opened it. The dialog has an accessible name, traps focus while
+open and remains fully usable without a keyboard shortcut.
+
+Local UI, static publication and served UI render this same application shell.
+Search data and repository routes differ by tier, but navigation placement and
+keyboard behavior do not.
+
 ### Served
 
 `koment serve` exposes one coherent service:
@@ -307,36 +334,58 @@ accepts forwarded identity only from configured trusted proxies and records the
 verification mechanism with the author claim. ADR 0103 defines tier and
 surface capability; ADR 0105 defines remote writes.
 
+Served mutation creates a new annotation and materializes it as a dedicated
+review pull request. Reanchor, comment conversion and inline acknowledgement
+also change an existing record or source file; they remain local CLI, MCP and
+editor operations so koment cannot overwrite a remote agent's separate
+worktree through an unrelated pull request.
+
 ## Multi-repository serving
 
-A served repository is configured with an immutable id, display name,
-canonical clone URL and default branch. Local filesystem paths are deployment
-details and never identity.
+A served repository is configured with an immutable id, display name, provider
+repository and default branch. Local filesystem paths and cache locations are
+deployment details and never identity.
 
 ```yaml
 repositories:
   - id: payments
     name: Payments API
-    clone_url: https://github.com/example/payments
+    provider: github
+    remote: example/payments
     default_branch: main
     default: true
 ```
 
-An ingester synchronizes each repository outside the request path:
+The first served provider is GitHub. Its implementation uses the provider's Git
+data APIs rather than requiring a Git executable or a writable checkout in the
+application container. A small provider contract may separate synchronization
+from presentation, but koment does not claim forge portability before another
+provider exists.
 
-1. Fetch and check out one commit.
-2. Read and validate every annotation record.
-3. Read only the source files that have annotations.
-4. Resolve every anchor and build the repository snapshot.
-5. Replace that repository's database generation in one transaction.
+A synchronizer refreshes each repository outside the request path:
 
-Readers see the previous complete generation or the next complete generation,
-never rows assembled from different commits. Source content for annotated files
-is stored with the generation, so read replicas need no local checkout and are
-actually stateless.
+1. Resolve the configured branch to one immutable commit.
+2. Enumerate, read and validate every annotation record at that commit.
+3. Read only the source blobs that have annotations.
+4. Resolve every anchor and build the complete repository snapshot and search
+   index away from readers.
+5. Atomically replace that repository's active snapshot pointer.
 
-Search, URLs, metrics, outbox rows and database keys all carry the assigned
-repository id. Cross-repository search names the repository of every result.
+Readers see the previous complete snapshot or the next complete snapshot, never
+data assembled from different commits. A failed refresh leaves the previous
+valid snapshot available and makes the failure visible through readiness,
+metrics and repository status. Source content for annotated files lives in the
+immutable snapshot, so request handling needs no checkout and performs no
+provider calls.
+
+Replicas synchronize independently and can briefly serve different commits.
+Every response and direct link names its commit, so this is visible staleness
+rather than mixed or falsely current data. A deployment that requires one
+globally simultaneous revision runs a single active synchronizer and replica;
+koment does not introduce a database solely to coordinate a cache.
+
+Search, URLs, metrics, provider operations and snapshot keys all carry the
+assigned repository id. Cross-repository search names the repository of every result.
 When a file path exists in several repositories, an unscoped get refuses and
 names the candidates.
 
@@ -352,24 +401,29 @@ gate. ADR 0104 records the multi-repository decision.
 ## Remote authoring and Git settlement
 
 Remote creation never edits a read replica's checkout and never pushes directly
-to a default branch. An authenticated request creates an exact annotation record in an
-outbox with its stable id, repository id, base commit and author identity.
+to a default branch. An authenticated request creates an exact annotation
+record with its stable id, repository id, base commit and author identity, then
+asks the provider materializer to put that record in a reviewable pull request.
 
 ```text
-created ──▶ pending ──▶ pull request ──▶ settled
-                │              │
-                └── conflict ◀─┘
+request ──▶ branch commit ──▶ pull request ──▶ merged snapshot
+   │               │                 │
+   └──────────── conflict ◀───────────┘
 ```
 
 A materializer, implemented behind a provider interface with GitHub first,
-creates or updates a branch and pull request containing the YAML record. Once a
-synced repository snapshot contains that id with the same record content, the
-outbox entry is settled and removed. A conflicting committed record stops
-materialization and remains visible as a conflict; Git wins because it is the
-record.
+uses a deterministic branch derived from the annotation id and creates or
+updates a commit and pull request containing the YAML record. The request does
+not report success until the pull request exists. If a provider call fails part
+way through, an idempotent retry inspects that branch and resumes instead of
+creating a second record or pull request.
 
-The outbox stores exact records, not summaries or embeddings. It does not merge,
-deduplicate, demote or expire rationale. ADR 0105 records this lifecycle.
+The provider's branch, commit and pull request are the durable pending state.
+Once a synchronized default-branch snapshot contains that id with the same
+record content, the write is settled. A different committed record with the
+same id is a visible conflict; Git wins because it is the record. koment does
+not keep a second outbox, merge, deduplicate, demote or expire rationale. ADR
+0105 records this lifecycle.
 
 ## Search and read models
 
@@ -377,8 +431,8 @@ Search has one contract and tier-specific implementations:
 
 - local processes build an in-memory index from one snapshot;
 - published sites include a generated static search dataset;
-- served deployments use Postgres full-text search scoped by repository
-  generation.
+- served deployments query an immutable in-memory index scoped by repository
+  snapshot.
 
 Search covers bodies, file paths, kinds, authors and ids. Results return the
 same annotation view as `get`, including resolution and provenance. A read
@@ -394,6 +448,10 @@ is never a recovery source for Git.
 - Agent credentials are scoped to repositories and read or write capability.
 - Sensitive configuration comes from secret references, never chart values
   rendered into pod specifications.
+- Provider hosts are configured explicitly; repository data cannot redirect
+  authenticated requests to arbitrary network destinations.
+- Provider responses, repository trees and source blobs are bounded before
+  allocation or parsing.
 - Request bodies, sessions, concurrent work and graceful shutdown are bounded.
 - Static publishing replaces output atomically and cannot retain removed files.
 - Remote Git writes go through reviewable pull requests.
@@ -406,14 +464,16 @@ vulnerability scanning, Helm tests, container hardening, digest pinning and
 release signing. Differences must be deliberate:
 
 - koment retains race testing;
-- koment has no Node frontend toolchain;
+- the browser UI has no Node runtime or build toolchain; the VS Code package
+  uses a checksum-locked Node toolchain only for tests and marketplace packaging;
 - rationale that konflate places in inline comments belongs in koment
   annotations or ADRs here.
 
 The Helm chart deploys `koment serve`, not mutually exclusive human and agent
 modes. It provides a values schema, generated documentation, a non-token-bearing
-service account, probes, optional NetworkPolicy and disruption controls. CI
-installs the chart into Kind and runs `helm test` against the built image.
+service account, probes, optional NetworkPolicy and disruption controls. It
+does not require a database. CI installs the chart into Kind and runs `helm
+test` against the built image.
 
 Images and charts are digest-addressable and signed. Binary checksums are
 authenticated rather than downloaded unsigned beside the binary they verify.
@@ -448,10 +508,12 @@ Distribution is promoted in layers:
    pursued after a stable release where their external acceptance and ongoing
    maintenance requirements are met.
 
-Release automation generates channel metadata from one version and checksum
-manifest, tests installation on every supported operating system and opens
-external registry pull requests where direct publication is unavailable. An
-external catalog is never described as available until its submission has been
+Release automation generates Homebrew, Scoop and WinGet metadata from one
+version and checksum manifest and tests the directly controlled installation
+channels. The repository publishes Claude marketplace metadata directly,
+publishes the VSIX to VS Code Marketplace and Open VSX when their owner tokens
+are configured, and uses GitHub OIDC for the MCP Registry. Owner-submitted
+external catalogs are never described as available until their submissions are
 accepted. ADR 0109 records the artifact and distribution boundary.
 
 ## Maintained workspace
@@ -560,9 +622,11 @@ not claim that repository files can control an arbitrary process.
 
 ### 1. Operational floor — implemented
 
-The pinned konflate-style toolchain, local hooks, Renovate baseline, workflow
-audit, vulnerability scan and aggregate CI status are in place. The existing
-race suite remains mandatory.
+The pinned konflate-style toolchain, local hooks, the shared Renovate preset,
+workflow audit, vulnerability scan and aggregate CI status are in place. The
+existing race suite remains mandatory. Renovate raises no pull request until the
+app is installed on the repository, which is an account action rather than a
+repository one.
 
 ### 2. Record and anchor reset — implemented
 
@@ -581,12 +645,16 @@ Add the version-1 repository policy, managed agent adapters, MCP initialization
 instructions and adapter drift checks in the same stage so strict instructions
 never advertise unavailable mutation tools.
 
-### 4. Served multi-repository system
+### 4. Served multi-repository system — implemented
 
-Add the unified server, authentication, Postgres generations, repository
-ingestion, contextual repository switcher, exact outbox and GitHub materializer.
+Add the unified server and authentication. Build a bounded GitHub synchronizer
+that constructs immutable repository snapshots and search indexes away from
+request handling, then swaps them atomically. Add the contextual repository
+switcher and an idempotent GitHub materializer that returns success only after
+the exact record exists in a branch and pull request. No database or durable
+application outbox is part of this stage.
 
-### 5. Deployment and release
+### 5. Deployment and release — implemented; external catalogs pending acceptance
 
 Replace the prototype chart modes, add a values schema and E2E coverage, then
 sign and digest-pin all release artifacts. Publish the canonical binaries,
@@ -594,14 +662,14 @@ container and chart before promoting their metadata through Homebrew, mise,
 WinGet, Scoop, Claude and the MCP Registry. Publish the editor package to both
 the VS Code Marketplace and Open VSX when stage 6 implements it.
 
-### 6. Comment-intent and editor-native annotations — planned after the deterministic local core
+### 6. Comment-intent and editor-native annotations — implemented
 
-Add an editor-neutral `koment lsp` process backed by the same repository
+The editor-neutral `koment lsp` process is backed by the same repository
 snapshot and mutation services. It exposes status diagnostics, hover content,
-code lenses and add or reanchor commands without parsing or writing annotation
-records independently.
+code lenses, native annotation views and add, reanchor, convert or acknowledge
+commands without parsing or writing annotation records independently.
 
-Build a thin VS Code extension first. It starts or connects to koment, renders
+The thin VS Code extension starts koment, renders
 annotation bodies beside their resolved source through native decorations and
 gutter status, and opens focused editing controls when prose needs more space.
 It never inserts virtual comments into the source buffer. A human or agent can
@@ -629,14 +697,10 @@ for richer inline presentation. Workspace-folder and repository ids define the
 multi-repository boundary, so two repositories containing the same path never
 share decorations or mutations accidentally.
 
-This stage starts only after deterministic resolution and the local
-application service are stable in real use. It is planned here so the snapshot,
-mutation and repository contracts do not accidentally assume a browser or a
-separate UI.
-
-Each stage leaves tests and documentation describing only behaviour that
-exists. A capability moves from `planned` to `implemented` in this document in
-the same change that verifies it.
+The protocol remains useful without the VS Code package: editors can consume
+the standard hover, diagnostic, code-lens, code-action and execute-command
+surface directly. ADR 0110 records why mutation semantics remain in the Go
+process instead of being duplicated in extensions.
 
 ## Definition of done
 
@@ -649,7 +713,7 @@ The approved design is complete when:
 4. Humans and agents can read and write locally through first-class surfaces.
 5. Static output is atomic, searchable, commit-stamped and machine-readable.
 6. One authenticated service presents UI and MCP for several assigned
-   repositories from transactional commit snapshots.
+   repositories from atomically replaced, commit-stamped snapshots.
 7. Remote writes retain exact content and author identity through a reviewed Git
    pull request.
 8. The Helm E2E test installs the built image and passes health and functional

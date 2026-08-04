@@ -1,15 +1,13 @@
-koment is serving in "{{ .Values.mode }}" mode on port {{ .Values.service.port }}.
+koment serves its authenticated UI and MCP endpoint on port {{ .Values.service.port }}.
 
   kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "koment.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
 
-{{ if not (or .Values.repository.existingClaim .Values.repository.clone.enabled) -}}
-WARNING: no repository is mounted. /repo is an empty directory, so koment has
-nothing to serve. Set repository.existingClaim, or repository.clone.enabled
-with a URL.
+Health endpoints:
+  /livez
+  /readyz
 
-{{ end -}}
-{{- if .Values.ingress.enabled -}}
-WARNING: koment has no authentication. This ingress publishes every annotation
-in the repository to anyone who can reach it. Put it behind something that
-authenticates, or keep it on a trusted network. See ADR 0011.
-{{ end -}}
+{{- if and (not .Values.auth.existingSecret) (eq (join "," .Values.auth.trustedProxies) "127.0.0.1/32") }}
+Only a loopback trusted proxy can assert human identity with the default auth
+configuration. Configure auth.existingSecret for agents or trustedProxies for
+your OIDC proxy before exposing the service.
+{{- end }}

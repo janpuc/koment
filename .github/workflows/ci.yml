@@ -107,19 +107,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    services:
-      postgres:
-        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
-        env:
-          POSTGRES_PASSWORD: koment
-          POSTGRES_DB: koment
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -142,8 +129,6 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run tests
-        env:
-          KOMENT_TEST_DATABASE_URL: postgres://postgres:koment@localhost:5432/koment?sslmode=disable
         run: mise run test
 
       - name: Report coverage
@@ -227,6 +212,67 @@ jobs:
       - name: Run binary
         run: docker run --rm koment:ci help
 
+      - name: Exercise unified service
+        env:
+          SYNCHRONIZATION_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          token="$RUNNER_TEMP/koment-synchronization-token"
+          printf '%s' "$SYNCHRONIZATION_TOKEN" > "$token"
+          chmod 0444 "$token"
+          docker run --detach --name koment-ci-service \
+            --publish 127.0.0.1:18080:8080 \
+            --mount type=bind,src="$PWD/testdata/server/repositories.yaml",dst=/config/repositories.yaml,readonly \
+            --mount type=bind,src="$token",dst=/config/synchronization-token,readonly \
+            koment:ci serve --config /config/repositories.yaml \
+              --github-token-file /config/synchronization-token \
+              --listen 0.0.0.0:8080 --trusted-proxies 127.0.0.1/32
+          cleanup() {
+            docker logs koment-ci-service
+            docker rm --force koment-ci-service
+            rm -f "$token"
+          }
+          trap cleanup EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/readyz; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:18080/livez
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/r/koment/)" = 401
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+
+      - name: Exercise Helm release
+        env:
+          SYNCHRONIZATION_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          diagnostics() {
+            kubectl get deployments,pods,services --all-namespaces
+            kubectl describe pods --namespace default
+            kubectl logs deployment/koment-koment --namespace default || true
+          }
+          trap diagnostics ERR
+          kind load docker-image koment:ci --name chart-testing
+          kubectl create secret generic koment-synchronization \
+            --from-literal=github-token="$SYNCHRONIZATION_TOKEN"
+          helm upgrade --install koment charts/koment \
+            --set image.repository=koment \
+            --set-string image.tag=ci \
+            --set image.pullPolicy=Never \
+            --set github.existingSecret=koment-synchronization \
+            --wait --timeout 5m
+          helm test koment --logs --timeout 2m
+
   setup-action:
     name: Setup Action (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -257,6 +303,60 @@ jobs:
           test -n "$INSTALLED_VERSION"
           koment version | grep -q "$INSTALLED_VERSION"
 
+  windows-archive:
+    name: Windows Archive (advisory)
+    runs-on: windows-2025
+    permissions:
+      contents: read
+    steps:
+      - name: Install the published Windows archive the way Scoop and WinGet do
+        shell: pwsh
+        env:
+          KOMENT_SOURCE: janpuc/koment
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $resolved = (Invoke-WebRequest -Uri "https://github.com/$env:KOMENT_SOURCE/releases/latest" -UseBasicParsing).BaseResponse.RequestMessage.RequestUri.AbsoluteUri
+          $tag = ($resolved -split '/')[-1]
+          $version = $tag.TrimStart('v')
+          if ($version -notmatch '^\d+\.\d+\.\d+') {
+            throw "could not resolve a koment release from $resolved"
+          }
+
+          $archive = "koment_${version}_windows_amd64.zip"
+          $base = "https://github.com/$env:KOMENT_SOURCE/releases/download/$tag"
+          $work = New-Item -ItemType Directory -Force -Path (Join-Path $env:RUNNER_TEMP 'koment-windows')
+
+          Write-Host "installing koment $version (windows/amd64)"
+          Invoke-WebRequest -Uri "$base/$archive" -OutFile (Join-Path $work $archive) -UseBasicParsing
+          Invoke-WebRequest -Uri "$base/koment_${version}_checksums.txt" -OutFile (Join-Path $work 'checksums.txt') -UseBasicParsing
+
+          $listed = Select-String -Path (Join-Path $work 'checksums.txt') -Pattern " $([regex]::Escape($archive))$"
+          if (-not $listed) {
+            throw "$archive is not listed in the release checksum manifest"
+          }
+          $expected = ($listed.Line -split '\s+')[0]
+          $actual = (Get-FileHash -Path (Join-Path $work $archive) -Algorithm SHA256).Hash.ToLower()
+          if ($expected -ne $actual) {
+            throw "${archive}: expected $expected, got $actual"
+          }
+          Write-Host "${archive}: OK"
+
+          $extracted = Join-Path $work 'extracted'
+          Expand-Archive -Path (Join-Path $work $archive) -DestinationPath $extracted -Force
+          foreach ($member in @('koment.exe', 'LICENSE', 'README.md')) {
+            if (-not (Test-Path (Join-Path $extracted $member))) {
+              throw "$member is not at the root of $archive"
+            }
+          }
+          Write-Host 'archive root carries koment.exe, LICENSE and README.md'
+
+          $reported = (& (Join-Path $extracted 'koment.exe') version) -join ' '
+          Write-Host $reported
+          if ($reported -notmatch [regex]::Escape($version)) {
+            throw "koment.exe reported '$reported', which does not name $version"
+          }
+
   helm:
     name: helm chart
     runs-on: ubuntu-24.04
@@ -280,11 +380,98 @@ jobs:
       - name: Render supported modes
         run: mise run helm-template
 
+  editor:
+    name: VS Code Extension
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          experimental: true
+          install: false
+
+      - name: Install locked editor tools
+        run: mise --cd editors/vscode install --locked
+
+      - name: Install editor packaging tools
+        run: mise --cd editors/vscode exec -- npm ci
+
+      - name: Test extension protocol
+        run: mise run extension-test
+
+      - name: Build the archives the extension bundles
+        run: |
+          set -euo pipefail
+          version=0.0.0-ci
+          mkdir -p archives
+          cp LICENSE README.md archives/
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}
+            arch=${target#*/}
+            binary=koment
+            [ "$os" = windows ] && binary=koment.exe
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath -o "archives/${binary}" ./cmd/koment
+            name="koment_${version}_${os}_${arch}"
+            if [ "$os" = windows ]; then
+              (cd archives && zip -q "${name}.zip" "$binary" LICENSE README.md && rm "$binary")
+            else
+              (cd archives && tar -czf "${name}.tar.gz" "$binary" LICENSE README.md && rm "$binary")
+            fi
+          done
+          rm archives/LICENSE archives/README.md
+          (cd archives && sha256sum ./*.tar.gz ./*.zip | sed 's| \./| |' > "koment_${version}_checksums.txt")
+
+      - name: Validate every VSIX
+        run: |
+          set -euo pipefail
+          version=0.0.0-ci
+          manifest=editors/vscode/package.json
+          cp "$manifest" "$RUNNER_TEMP/package.json"
+          trap 'cp "$RUNNER_TEMP/package.json" "$manifest"' EXIT
+          node -e "
+            const p = require('./editors/vscode/package.json');
+            p.version = '$version';
+            require('fs').writeFileSync('editors/vscode/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          ./editors/vscode/package-vsix.sh "$version" archives dist >/dev/null
+
+          for pair in linux-x64:koment linux-arm64:koment darwin-x64:koment darwin-arm64:koment \
+                      win32-x64:koment.exe win32-arm64:koment.exe; do
+            target=${pair%%:*}
+            expected=${pair##*:}
+            package="dist/koment-vscode_${version}_${target}.vsix"
+            carried=$(unzip -l "$package" | awk '/extension\/bin\//{print $NF}' | sed 's|extension/bin/||')
+            test "$carried" = "$expected" || {
+              echo "::error::$package carries '$carried', expected '$expected'"
+              exit 1
+            }
+            unzip -p "$package" extension.vsixmanifest | grep -q "TargetPlatform=\"${target}\"" || {
+              echo "::error::$package is not declared for $target"
+              exit 1
+            }
+            echo "$package: $expected for $target"
+          done
+
+          universal="dist/koment-vscode_${version}.vsix"
+          if unzip -l "$universal" | grep -q 'extension/bin/'; then
+            echo "::error::the universal package must carry no binary"
+            exit 1
+          fi
+          echo "$universal: no binary, falls back to PATH"
+
   test:
     if: ${{ always() }}
     name: test
     needs:
       - container
+      - editor
       - go-lint
       - go-quality
       - go-test

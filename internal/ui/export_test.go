@@ -49,6 +49,14 @@ func TestExportWritesAnIndexAndAPagePerFile(t *testing.T) {
 	if !strings.Contains(index, rationale) {
 		t.Error("the index should show the first file's annotations")
 	}
+	if !strings.Contains(index, `href="https://github.com/janpuc/koment"`) {
+		t.Error("the project source should remain reachable from the bottom of the rail")
+	}
+	for _, want := range []string{`data-search-dialog`, `data-search-open hidden`, `data-path="main.go"`} {
+		if !strings.Contains(index, want) {
+			t.Errorf("the exported search shell is missing %s", want)
+		}
+	}
 }
 
 func TestExportWritesMachineReadableSnapshotAndBodySearch(t *testing.T) {

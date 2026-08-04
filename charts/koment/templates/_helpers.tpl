@@ -2,6 +2,14 @@
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "koment.testImage" -}}
+{{- if .Values.tests.image.digest -}}
+{{- printf "%s@%s" .Values.tests.image.repository .Values.tests.image.digest -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.tests.image.repository .Values.tests.image.tag -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "koment.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
@@ -23,27 +31,37 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{- define "koment.image" -}}
+{{- if .Values.image.digest -}}
+{{- printf "%s@%s" .Values.image.repository .Values.image.digest -}}
+{{- else -}}
 {{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) -}}
 {{- end -}}
+{{- end -}}
 
-{{/*
-Only read-only surfaces are offered. ADR 0011 ties the no-authentication
-posture to the surface staying read-only, and this chart ships no auth, so a
-writable mode must not become reachable by setting a value.
-*/}}
-{{- define "koment.args" -}}
-{{- $port := printf "0.0.0.0:%d" (int .Values.service.port) -}}
-{{- $metrics := list -}}
-{{- if .Values.metrics.enabled -}}
-{{- $metrics = list "--metrics" (printf "0.0.0.0:%d" (int .Values.metrics.port)) -}}
-{{- end -}}
-{{- if eq .Values.mode "ui" -}}
-{{ concat (list "ui" "--listen" $port) $metrics | toJson }}
-{{- else if eq .Values.mode "mcp-http" -}}
-{{ concat (list "mcp" "--http" $port) $metrics | toJson }}
-{{- else if eq .Values.mode "mcp-streamable" -}}
-{{ concat (list "mcp" "--streamable-http" $port) $metrics | toJson }}
+{{- define "koment.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+{{- default (include "koment.fullname" .) .Values.serviceAccount.name -}}
 {{- else -}}
-{{- fail (printf "mode %q is not one of ui, mcp-http, mcp-streamable" .Values.mode) -}}
+{{- required "serviceAccount.name is required when creation is disabled" .Values.serviceAccount.name -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "koment.args" -}}
+{{- $args := list "serve" "--config" "/config/repositories.yaml" "--listen" (printf "0.0.0.0:%d" (int .Values.service.port)) "--sync-interval" .Values.syncInterval -}}
+{{- if .Values.metrics.enabled -}}
+{{- $args = concat $args (list "--metrics" (printf "0.0.0.0:%d" (int .Values.metrics.port))) -}}
+{{- end -}}
+{{- if .Values.github.existingSecret -}}
+{{- $args = concat $args (list "--github-token-file" (printf "/secrets/github/%s" .Values.github.tokenKey)) -}}
+{{- end -}}
+{{- if .Values.auth.existingSecret -}}
+{{- $args = concat $args (list "--credentials-file" (printf "/secrets/auth/%s" .Values.auth.credentialsKey)) -}}
+{{- end -}}
+{{- if .Values.auth.trustedProxies -}}
+{{- $args = concat $args (list "--trusted-proxies" (join "," .Values.auth.trustedProxies)) -}}
+{{- end -}}
+{{- if .Values.auth.humanWrites -}}
+{{- $args = append $args "--human-writes" -}}
+{{- end -}}
+{{- $args | toJson -}}
 {{- end -}}

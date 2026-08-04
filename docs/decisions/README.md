@@ -28,12 +28,16 @@ the approved destination.
 - [0101 — Fail deterministic resolution when an anchor is ambiguous](0101-fail-ambiguous-anchor-resolution.md)
 - [0102 — Build every read surface from one repository snapshot](0102-one-repository-snapshot-for-every-reader.md)
 - [0103 — Give humans and agents explicit capabilities in three tiers](0103-three-tiers-with-human-and-agent-capabilities.md)
-- [0104 — Serve assigned repositories as transactional commit snapshots](0104-transactional-multi-repository-snapshots.md)
-- [0105 — Authenticate remote access and settle writes through Git](0105-authenticated-outbox-settles-through-git.md)
+- [0104 — Serve assigned repositories as atomic commit snapshots](0104-atomic-multi-repository-snapshots.md)
+- [0105 — Authenticate remote access and materialize writes through Git](0105-authenticated-writes-materialize-through-git.md)
 - [0106 — Use konflate as the operational baseline](0106-konflate-is-the-operational-baseline.md)
 - [0107 — Enforce the comment-free thesis on koment itself](0107-dogfood-the-comment-free-thesis.md)
 - [0108 — Layer agent guidance behind an authoritative policy gate](0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md)
 - [0109 — Distribute authenticated artifacts instead of Go invocations](0109-distribute-authenticated-artifacts-instead-of-go-invocations.md)
+- [0110 — Keep editor semantics behind LSP](0110-keep-editor-semantics-behind-lsp.md)
+- [0111 — Ship Windows without letting it gate the pipeline](0111-windows-is-supported-but-not-gating.md)
+- [0112 — Publish one editor package per marketplace, and configuration everywhere else](0112-publish-one-editor-package-per-marketplace.md)
+- [0113 — Bundle the released binary in the extension](0113-bundle-the-release-binary-in-the-extension.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

@@ -42,6 +42,17 @@ type Conversion struct {
 	Excerpt string
 }
 
+// IsCommentIntent distinguishes prose from text that parses as Go statements.
+func IsCommentIntent(comment SourceComment) bool {
+	body := strings.TrimSpace(comment.Body)
+	if body == "" {
+		return false
+	}
+	candidate := "package intent\nfunc inspect() {\n" + body + "\n}\n"
+	_, err := parser.ParseFile(token.NewFileSet(), comment.File, candidate, parser.SkipObjectResolution)
+	return err != nil
+}
+
 // Check scans supported source and returns every prohibited comment.
 func Check(rootPath string, configured policy.Policy, requested []string) (_ []Violation, returnedError error) {
 	root, err := os.OpenRoot(rootPath)
@@ -69,19 +80,30 @@ func Check(rootPath string, configured policy.Policy, requested []string) (_ []V
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", file, err)
 		}
-		comments, intrinsic, err := scan(file, content, configured)
+		found, err := CheckContent(file, content, configured, records)
 		if err != nil {
 			return nil, err
 		}
-		for index, comment := range comments {
-			if intrinsic[index] || acknowledged(comment, content, records) {
-				continue
-			}
-			violations = append(violations, Violation{
-				Comment: comment,
-				Reason:  "convert with `koment comments convert` or retain with `koment comments acknowledge --acknowledge-inline-comment`",
-			})
+		violations = append(violations, found...)
+	}
+	return violations, nil
+}
+
+// CheckContent applies comment policy to an in-memory source document.
+func CheckContent(file string, content []byte, configured policy.Policy, records []store.Annotation) ([]Violation, error) {
+	comments, intrinsic, err := scan(file, content, configured)
+	if err != nil {
+		return nil, err
+	}
+	violations := make([]Violation, 0, len(comments))
+	for index, comment := range comments {
+		if intrinsic[index] || acknowledged(comment, content, records) {
+			continue
 		}
+		violations = append(violations, Violation{
+			Comment: comment,
+			Reason:  "convert with `koment comments convert` or retain with `koment comments acknowledge --acknowledge-inline-comment`",
+		})
 	}
 	return violations, nil
 }

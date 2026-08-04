@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5HRCNT1H2NEGRMSBHFSR72
+file: packaging/naming_test.go
+kind: why
+body: |-
+  Every channel spells the release version differently; comparing names is
+  only possible once they all say the same thing.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: var versionTokens = strings.NewReplacer(
+  before: "\tchecksumMention = regexp.MustCompile(`koment_` + versionPlaceholder + `_checksums\\.txt`)\n)\n"
+  after: "\t\"${VERSION}\", versionPlaceholder,\n\t\"{{VERSION}}\", versionPlaceholder,\n\t\"${version}\", versionPlaceholder,"
+  last_seen_line: 22
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

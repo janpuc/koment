@@ -1,4 +1,4 @@
-# 0105 — Authenticate remote access and settle writes through Git
+# 0105 — Authenticate remote access and materialize writes through Git
 
 Date: 2026-08-03
 Status: Accepted
@@ -28,22 +28,31 @@ configured trusted proxies and records the issuer or credential mechanism in
 the author's verification field. The deployment must prevent direct network
 bypass of the trusted proxy.
 
-An authenticated remote mutation writes an exact annotation record to a Postgres
-outbox with repository id, base commit, stable annotation id and author. A
-provider interface materializes it through a branch and pull request; GitHub is
-the first implementation. Direct pushes to a default branch are not supported.
+An authenticated remote mutation creates an exact annotation record with its
+repository id, base commit, stable annotation id and author, then synchronously
+asks a provider materializer to create a deterministic branch, commit and pull
+request. GitHub is the first implementation. Direct pushes to a default branch
+are not supported.
 
-Settlement occurs when repository ingestion observes the same id and record
-content in Git. A different committed record with the same id is a visible
-conflict. Pending records are not merged, summarized, deduplicated, demoted or
-expired.
+The request reports success only after the pull request exists. The provider's
+branch, commit and pull request are the durable pending state. If a provider
+call fails part way through, retrying the same record inspects and resumes that
+state instead of creating a second record or pull request.
+
+Settlement occurs when synchronization observes the same id and record content
+on the default branch. A different committed record with the same id is a
+visible conflict. Pending records are not merged, summarized, deduplicated,
+demoted or expired.
 
 ## Consequences
 
 - Remote readers no longer receive source merely because they can reach a port.
 - Human and agent writes have authenticated provenance and reviewable Git diffs.
-- The outbox is durable pending work but never a second authoritative annotation
-  store.
+- koment needs no durable application store, migration system or background
+  outbox worker.
+- Remote mutation latency includes provider commit and pull-request creation.
+- A provider outage makes new remote writes fail loudly instead of accepting
+  work that koment cannot durably queue.
 - Deployments need an OIDC proxy, trusted-network configuration, agent
   credential management and a GitHub App for full write capability.
 - Other forges require a materializer implementation but not a new annotation
@@ -58,7 +67,13 @@ expired.
   own.
 - **Push directly to the default branch.** Fast settlement, but bypasses the
   review mechanism that makes Git records trustworthy.
-- **Make pending rows authoritative forever.** Removes materialization work but
-  creates two classes of annotation and makes clones incomplete.
-- **Store only a prompt or summary in the outbox.** Smaller, but wording and
-  provenance could change before Git settlement.
+- **Persist a Postgres outbox and materialize asynchronously.** It can accept a
+  request during a provider outage, but introduces a database, worker,
+  migrations and recovery protocol solely for pending Git operations. Before a
+  live deployment demonstrates that synchronous provider latency is
+  unacceptable, deterministic retries use Git itself as the durable boundary.
+- **Make pending application rows authoritative forever.** Removes
+  materialization work but creates two classes of annotation and makes clones
+  incomplete.
+- **Store only a prompt or summary before materialization.** Smaller, but
+  wording and provenance could change before Git settlement.

@@ -48,9 +48,6 @@ runs:
             ;;
         esac
 
-        # Resolve "latest" through the release redirect rather than the REST
-        # API: the API's unauthenticated rate limit is per IP, and shared
-        # runners exhaust it in ways that are miserable to diagnose.
         if [ "$KOMENT_REQUESTED" = "latest" ]; then
           resolved=$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
             "https://github.com/${KOMENT_SOURCE}/releases/latest")
@@ -74,8 +71,6 @@ runs:
         curl -fsSL --retry 3 -o "${work}/${archive}" "${base}/${archive}"
         curl -fsSL --retry 3 -o "${work}/checksums.txt" "${base}/koment_${version}_checksums.txt"
 
-        # An unverified binary put on PATH would be a supply-chain hole in a
-        # tool whose whole claim is that you can trust what it tells you.
         (
           cd "$work"
           if command -v sha256sum >/dev/null; then

@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "koment.fullname" . }}-test
+  labels: {{- include "koment.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: {{ .Values.tests.image.runAsUser }}
+    runAsGroup: {{ .Values.tests.image.runAsGroup }}
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: service
+      image: {{ include "koment.testImage" . | quote }}
+      imagePullPolicy: {{ .Values.tests.image.pullPolicy }}
+      command: ["sh", "-ec"]
+      args:
+        - |
+          base="http://{{ include "koment.fullname" . }}:{{ .Values.service.port }}"
+          curl --fail --silent --show-error "$base/livez"
+          curl --fail --silent --show-error "$base/readyz"
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' "$base/r/{{ (index .Values.repositories 0).id }}/")
+          test "$status" = "401"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        readOnlyRootFilesystem: true

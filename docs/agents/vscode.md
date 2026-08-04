@@ -1,8 +1,17 @@
 # VS Code
 
 VS Code has native MCP support. Workspace servers go in `.vscode/mcp.json`.
+The koment extension is complementary: MCP gives Chat agents tools, while the
+extension runs `koment lsp` for inline human views, diagnostics and native
+mutation actions.
 
 ## Configure
+
+Install the signed VSIX from a koment release, or use the VS Code Marketplace
+or Open VSX after the publisher channel is active. The extension for your
+platform carries its own `koment` binary, so it needs nothing else installed.
+`koment.binaryPath` overrides it; the universal package carries no binary and
+falls back to `koment` on `PATH` (ADR 0113).
 
 `koment agents install` writes this project configuration and the matching
 Copilot instructions. The resulting `.vscode/mcp.json` contains:

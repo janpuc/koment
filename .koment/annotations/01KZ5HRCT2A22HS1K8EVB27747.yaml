@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5HRCT2A22HS1K8EVB27747
+file: packaging/naming_test.go
+kind: invariant
+body: |-
+  The release workflow is the producer, so it defines the names every package
+  manager is allowed to reference (ADR 0109).
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: func published(t *testing.T) map[archive]bool {
+  before: |2
+
+    const releaseWorkflow = ".github/workflows/release.yml"
+  after: "\tt.Helper()\n\tworkflow := repositoryFile(t, releaseWorkflow)\n"
+  last_seen_line: 55
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ5HRD1SYG9Z40TQAQY3BB65
+file: packaging/naming_test.go
+kind: why
+body: |-
+  The setup action names no archive literally: it maps the runner it finds
+  onto one. Expanding that mapping is the only way to compare it with what
+  ships.
+created: "2026-08-04"
+anchor:
+  scope: excerpt
+  excerpt: func requestedByTheSetupAction(t *testing.T) map[archive]bool {
+  before: "\tactionArchitecure = regexp.MustCompile(`arch=([a-z0-9]+)\\s*;;`)\n)\n"
+  after: "\tt.Helper()\n\tcontent := repositoryFile(t, setupAction)\n"
+  last_seen_line: 103
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config

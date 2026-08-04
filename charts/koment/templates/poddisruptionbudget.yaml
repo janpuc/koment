@@ -1,0 +1,11 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "koment.fullname" . }}
+  labels: {{- include "koment.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels: {{- include "koment.selectorLabels" . | nindent 6 }}
+{{- end }}

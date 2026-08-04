@@ -1,15 +1,18 @@
-# Build output
 /koment
 /dist/
 /bin/
 
-# Go
+# Assembled into the extension at package time from the canonical release.
+/editors/vscode/bin/
+/editors/vscode/icon.png
+/editors/vscode/LICENSE
+
 *.test
 *.out
 coverage.*
 
-# Editors / OS
 .DS_Store
+node_modules/
 .idea/
 .vscode/*
 !.vscode/extensions.json
@@ -18,8 +21,3 @@ coverage.*
 *.swp
 .mise.local.toml
 .mise.local.lock
-
-# Derived index — a build artifact, never repository content (ADR 0022).
-*.db
-*.db-wal
-*.db-shm

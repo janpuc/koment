@@ -3,11 +3,9 @@
 Copy one file into your repository and everyone with access reads the reasoning
 in a browser. No server, no database, no authentication to design, no cost.
 
-This is the **published tier**
-([ADR 0103](decisions/0103-three-tiers-with-human-and-agent-capabilities.md)).
-It sits between running the CLI on a laptop and running a served instance, and
-moving between them is not a migration — all three read the same `.koment/` in
-git.
+This is the **published tier**. It sits between running the CLI on a laptop and
+running a served instance, and moving between them is not a migration — all
+three read the same `.koment/` in git.
 
 > **A site renders your source, not only your annotations.** Publishing one from
 > a private repository to public Pages publishes that source. Check your Pages
@@ -141,18 +139,25 @@ shows. Cross-repository search remains a served-tier capability.
 ## Moving to a served instance later
 
 Nothing to migrate. The annotations were never in the site — they are in
-`.koment/` in git, which is also what the served tier reads:
+`.koment/` in git, which is also what the served tier reads. Point the unified
+service at the provider repository:
 
-```bash
-docker run --rm -p 8080:8080 -v "$PWD:/repo:ro" ghcr.io/janpuc/koment:latest
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/server.schema.json
+repositories:
+  - id: project
+    name: Project
+    provider: github
+    remote: you/project
+    default_branch: main
+    default: true
 ```
 
-You gain live resolution against the working tree, several repositories behind
-one switcher, cross-repository search and metrics. You take on hosting and an
-access-control decision; the served tier requires authentication
-([ADR 0105](decisions/0105-authenticated-outbox-settles-through-git.md)).
-Keeping the published site as well is a reasonable thing to do; they do not
-conflict.
+You gain atomically refreshed commit snapshots, several repositories behind one
+switcher, cross-repository search, authenticated MCP, reviewed annotation pull
+requests and metrics. You take on hosting and an access-control boundary; the
+Helm chart accepts provider and credential files through existing Secrets.
+Keeping the published site as well is reasonable; they do not conflict.
 
 ## Not on GitHub
 
