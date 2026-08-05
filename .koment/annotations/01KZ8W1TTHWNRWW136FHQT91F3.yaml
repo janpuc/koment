@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8W1TTHWNRWW136FHQT91F3
+  created: "2026-08-05T11:48:29Z"
+spec:
+  target:
+    file: internal/mcp/writes.go
+  type: gotcha
+  title: The JSON surfaces are views; only the record carries apiVersion
+  body: |-
+    `kind` on every JSON surface still means the rationale category - why,
+    gotcha, invariant, anti-pattern - while the YAML record calls that
+    `spec.type` and uses `kind` for the resource type. That looks like drift and
+    is not. The MCP tool results and the published site are views of a record,
+    versioned by their own contract, and reshaping them would break the
+    extension and the static UI for no reader's benefit. This one field is
+    different because it claimed to be the record's version: `record.version: 1`
+    would now be a lie, so it says which API generation wrote the record
+    instead. ADR 0119.
+  anchor:
+    scope: excerpt
+    excerpt: APIVersion string            `json:"api_version"`
+    before: |-
+      }
+
+      type MutationRecord struct {
+    after: "\tID         string            `json:\"id\"`\n\tFile       string            `json:\"file\"`\n\tKind       string            `json:\"kind\"`"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c
+    path: internal/mcp/writes.go
+    line: 70
+status:
+  lastSeenLine: 70
+  resolution: ok
+  resolvedAt: "2026-08-05T11:48:29Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

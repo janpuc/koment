@@ -1,25 +1,30 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0B8PQG92RWS705VEEQ6WHN
-file: session/store.go
-kind: invariant
-body: |-
-  Get takes a read lock, not a write lock. Anything added here that mutates the
-  map must take the write lock instead, or concurrent reads will race and the
-  detector will only catch it under load.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: func (s *Store) Get(id string) (Token, error) {
-  before: "\treturn len(s.sessions)\n}\n"
-  after: "\ts.mu.RLock()\n\tdefer s.mu.RUnlock()\n\ttoken, ok := s.sessions[id]"
-  last_seen_line: 31
-git:
-  commit: 7521fbee8c45c8ac07412f8b4dd927f82cfeabc2
-  path: src/store.go
-  line: 33
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0B8PQG92RWS705VEEQ6WHN
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: session/store.go
+  type: invariant
+  body: |-
+    Get takes a read lock, not a write lock. Anything added here that mutates the
+    map must take the write lock instead, or concurrent reads will race and the
+    detector will only catch it under load.
+  anchor:
+    scope: excerpt
+    excerpt: func (s *Store) Get(id string) (Token, error) {
+    before: "\treturn len(s.sessions)\n}\n"
+    after: "\ts.mu.RLock()\n\tdefer s.mu.RUnlock()\n\ttoken, ok := s.sessions[id]"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 7521fbee8c45c8ac07412f8b4dd927f82cfeabc2
+    path: src/store.go
+    line: 33
+status:
+  lastSeenLine: 31

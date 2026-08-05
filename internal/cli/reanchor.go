@@ -33,6 +33,6 @@ func runReanchor(args []string, env Environment) int {
 	if err != nil {
 		return fail(env, err)
 	}
-	fmt.Fprintf(env.Stdout, "%s  %s %s\n", mutation.Record.ID, mutation.Record.Kind, location(mutation.Record.File, mutation.Record.Anchor.LastSeenLine))
+	fmt.Fprintf(env.Stdout, "%s  %s %s\n", mutation.Record.Metadata.ID, mutation.Record.Spec.Type, location(mutation.Record.Spec.Target.File, mutation.Record.Status.LastSeenLine))
 	return ExitOK
 }

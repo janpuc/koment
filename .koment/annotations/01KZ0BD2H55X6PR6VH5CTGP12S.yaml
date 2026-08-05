@@ -1,30 +1,35 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0BD2H55X6PR6VH5CTGP12S
-file: internal/store/context.go
-kind: invariant
-title: Identity is a claim, not a proof; proven and unproven render apart
-body: |-
-  The identity is a claim, not a proof. git config is trivially set to
-  anything, so source records where it came from and the UI must render an
-  unverified identity differently from a checked one. Rendering them
-  identically would be a lie of omission, and it is the kind that gets
-  believed because it looks like data rather than an assertion.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: func (a Author) IsProven() bool { return a.Verified != "" }
-  before: |2-
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0BD2H55X6PR6VH5CTGP12S
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/store/context.go
+  type: invariant
+  title: Identity is a claim, not a proof; proven and unproven render apart
+  body: |-
+    The identity is a claim, not a proof. git config is trivially set to
+    anything, so source records where it came from and the UI must render an
+    unverified identity differently from a checked one. Rendering them
+    identically would be a lie of omission, and it is the kind that gets
+    believed because it looks like data rather than an assertion.
+  anchor:
+    scope: excerpt
+    excerpt: func (a Author) IsProven() bool { return a.Verified != "" }
+    before: |2-
 
-    // IsProven reports whether the identity was verified by some mechanism. An
-    // unverified identity must not be rendered as though it were checked.
-  last_seen_line: 97
-git:
-  commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
-  path: internal/store/context.go
-  line: 88
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+      // IsProven reports whether the identity was verified by some mechanism. An
+      // unverified identity must not be rendered as though it were checked.
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
+    path: internal/store/context.go
+    line: 88
+status:
+  lastSeenLine: 97

@@ -78,52 +78,56 @@ func TestUnverifiedIdentityIsNotProven(t *testing.T) {
 func TestProvenanceRoundTrips(t *testing.T) {
 	s := newTestStore(t)
 	want := &Annotation{
-		Version: RecordVersion,
-		ID:      firstID,
-		File:    "a.go",
-		Anchor:  Anchor{Scope: ScopeFile},
-		Kind:    KindWhy,
-		Body:    "Entry point only.",
-		Created: Date{time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)},
-		Git:     &GitContext{Commit: validCommit, Path: "a.go", Line: 12, EndLine: 18},
-		Author: Author{
-			Name: "Jan Pucilowski", Email: "janpuc@proton.me",
-			Kind: AuthorHuman, Source: FromGitConfig,
+		APIVersion: APIVersion,
+		Kind:       KindAnnotation,
+		Metadata:   Metadata{ID: firstID, Created: Timestamp{time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)}},
+		Spec: Spec{
+			Target: Target{File: "a.go"},
+			Type:   TypeWhy,
+			Body:   "Entry point only.",
+			Anchor: Anchor{Scope: ScopeFile},
+			Author: Author{
+				Name: "Jan Pucilowski", Email: "janpuc@proton.me",
+				Kind: AuthorHuman, Source: FromGitConfig,
+			},
+			Git: &GitContext{Commit: validCommit, Path: "a.go", Line: 12, EndLine: 18},
 		},
 	}
 	if err := s.Save(want); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := s.Load(want.ID)
+	got, err := s.Load(want.Metadata.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Git == nil || got.Git.Commit != validCommit || got.Git.EndLine != 18 {
-		t.Errorf("git context did not round trip: %+v", got.Git)
+	if got.Spec.Git == nil || got.Spec.Git.Commit != validCommit || got.Spec.Git.EndLine != 18 {
+		t.Errorf("git context did not round trip: %+v", got.Spec.Git)
 	}
-	if got.Author.Email != "janpuc@proton.me" {
-		t.Errorf("author did not round trip: %+v", got.Author)
+	if got.Spec.Author.Email != "janpuc@proton.me" {
+		t.Errorf("author did not round trip: %+v", got.Spec.Author)
 	}
 }
 
 func TestGitContextIsOptionalButAuthorIsRequired(t *testing.T) {
 	s := newTestStore(t)
 	record := &Annotation{
-		Version: RecordVersion,
-		ID:      firstID,
-		File:    "a.go",
-		Anchor:  Anchor{Scope: ScopeFile},
-		Kind:    KindWhy,
-		Body:    "Written before koment recorded provenance.",
-		Created: Date{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		Author:  Author{Name: "Legacy import", Kind: AuthorUnknown, Source: FromMigration},
+		APIVersion: APIVersion,
+		Kind:       KindAnnotation,
+		Metadata:   Metadata{ID: firstID, Created: Timestamp{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)}},
+		Spec: Spec{
+			Target: Target{File: "a.go"},
+			Type:   TypeWhy,
+			Body:   "Written before koment recorded provenance.",
+			Anchor: Anchor{Scope: ScopeFile},
+			Author: Author{Name: "Legacy import", Kind: AuthorUnknown, Source: FromMigration},
+		},
 	}
 	if err := s.Save(record); err != nil {
 		t.Fatalf("an annotation without provenance must still be valid: %v", err)
 	}
 
-	path, err := s.RecordPath(record.ID)
+	path, err := s.RecordPath(record.Metadata.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

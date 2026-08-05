@@ -83,33 +83,40 @@ func TestServiceAddsAndReanchorsThroughOneContract(t *testing.T) {
 	author := store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit}
 
 	created, err := service.Add(AddInput{
-		File: "main.go", Excerpt: "var First = true", Kind: store.KindWhy,
+		File: "main.go", Excerpt: "var First = true", Kind: store.TypeWhy,
 		Body: "The first value is the compatibility default.", Author: author,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if created.Path != ".koment/annotations/"+created.Record.ID+".yaml" {
+	if created.Path != ".koment/annotations/"+created.Record.Metadata.ID+".yaml" {
 		t.Fatalf("path = %q", created.Path)
 	}
 
-	moved, err := service.Reanchor(ReanchorInput{ID: created.Record.ID, Excerpt: "var Second = true"})
+	moved, err := service.Reanchor(ReanchorInput{ID: created.Record.Metadata.ID, Excerpt: "var Second = true"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if moved.Record.ID != created.Record.ID || moved.Record.Created != created.Record.Created || moved.Record.Author != created.Record.Author {
+	if moved.Record.Metadata.ID != created.Record.Metadata.ID || moved.Record.Metadata.Created != created.Record.Metadata.Created || moved.Record.Spec.Author != created.Record.Spec.Author {
 		t.Fatal("reanchor changed stable record identity")
 	}
-	if moved.Record.Anchor.Excerpt != "var Second = true" {
-		t.Fatalf("excerpt = %q", moved.Record.Anchor.Excerpt)
+	if moved.Record.Spec.Anchor.Excerpt != "var Second = true" {
+		t.Fatalf("excerpt = %q", moved.Record.Spec.Anchor.Excerpt)
 	}
 }
 
 func testRecord(id, file, excerpt string, line int) store.Annotation {
 	return store.Annotation{
-		Version: store.RecordVersion, ID: id, File: file, Kind: store.KindWhy,
-		Body: "The test agent recorded this.", Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-		Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt, LastSeenLine: line},
-		Author: store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: id, Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: file},
+			Type:   store.TypeWhy,
+			Body:   "The test agent recorded this.",
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+			Author: store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+		},
+		Status: store.Status{LastSeenLine: line},
 	}
 }

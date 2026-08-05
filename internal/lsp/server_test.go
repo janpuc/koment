@@ -25,7 +25,7 @@ func TestProtocolPresentsAnnotationsFromOpenContent(t *testing.T) {
 	root, uri, source := lspRepository(t, "package sample\n\nfunc run() {\n\tretry()\n}\n")
 	service := application.NewService(repository.Repository{ID: "sample", Root: root})
 	_, err := service.Add(application.AddInput{
-		File: "sample.go", Excerpt: "retry()", Kind: store.KindWhy,
+		File: "sample.go", Excerpt: "retry()", Kind: store.TypeWhy,
 		Body:   "The upstream closes idle connections.",
 		Author: store.Author{Name: "Fixture", Kind: store.AuthorHuman, Source: store.FromExplicit},
 	})
@@ -102,7 +102,7 @@ func TestExecuteConvertPersistsBeforeEditingSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(records) != 1 || records[0].Body != "Retry because the peer closes idle connections." {
+	if len(records) != 1 || records[0].Spec.Body != "Retry because the peer closes idle connections." {
 		t.Fatalf("records = %#v", records)
 	}
 }
@@ -244,7 +244,7 @@ func TestOnlyFailingStatusesBecomeDiagnostics(t *testing.T) {
 	root, uri, source := lspRepository(t, "package sample\n\nfunc run() {\n\tretry()\n}\n")
 	service := application.NewService(repository.Repository{ID: "sample", Root: root})
 	if _, err := service.Add(application.AddInput{
-		File: "sample.go", Excerpt: "retry()", Kind: store.KindWhy, Body: "Upstream closes idle connections.",
+		File: "sample.go", Excerpt: "retry()", Kind: store.TypeWhy, Body: "Upstream closes idle connections.",
 		Author: store.Author{Name: "Fixture", Kind: store.AuthorHuman, Source: store.FromExplicit},
 	}); err != nil {
 		t.Fatal(err)

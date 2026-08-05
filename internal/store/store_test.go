@@ -31,38 +31,38 @@ func testAuthor() Author {
 
 func excerptAnnotation(id, file, excerpt string) Annotation {
 	return Annotation{
-		Version: RecordVersion,
-		ID:      id,
-		File:    file,
-		Kind:    KindGotcha,
-		Body:    "An empty excerpt means file scope, not a wildcard.",
-		Created: Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		Anchor: Anchor{
-			Scope:        ScopeExcerpt,
-			Excerpt:      excerpt,
-			LastSeenLine: 1,
+		APIVersion: APIVersion,
+		Kind:       KindAnnotation,
+		Metadata:   Metadata{ID: id, Created: Timestamp{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)}},
+		Spec: Spec{
+			Target: Target{File: file},
+			Type:   TypeGotcha,
+			Body:   "An empty excerpt means file scope, not a wildcard.",
+			Anchor: Anchor{Scope: ScopeExcerpt, Excerpt: excerpt},
+			Author: testAuthor(),
 		},
-		Author: testAuthor(),
+		Status: Status{LastSeenLine: 1},
 	}
 }
 
 func fileAnnotation(id, file string) Annotation {
 	annotation := excerptAnnotation(id, file, "unused")
-	annotation.Kind = KindWhy
-	annotation.Anchor = Anchor{Scope: ScopeFile}
+	annotation.Spec.Type = TypeWhy
+	annotation.Spec.Anchor = Anchor{Scope: ScopeFile}
+	annotation.Status.LastSeenLine = 0
 	return annotation
 }
 
 func TestSaveLoadRoundTripsLosslessly(t *testing.T) {
 	annotations := newTestStore(t)
 	want := excerptAnnotation(firstID, "internal/anchor/resolve.go", "if anchor.Excerpt == \"\" {")
-	want.Anchor.Before = "func Resolve(anchor Anchor) Resolution {\n\tif ready {"
-	want.Anchor.After = "\treturn Resolution{}\n}"
+	want.Spec.Anchor.Before = "func Resolve(anchor Anchor) Resolution {\n\tif ready {"
+	want.Spec.Anchor.After = "\treturn Resolution{}\n}"
 
 	if err := annotations.Save(&want); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
-	got, err := annotations.Load(want.ID)
+	got, err := annotations.Load(want.Metadata.ID)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -92,12 +92,12 @@ func TestSaveUsesOneFlatFilePerAnnotationID(t *testing.T) {
 func TestSavedRecordStartsWithSchemaDirectiveAndKeepsBodyReadable(t *testing.T) {
 	annotations := newTestStore(t)
 	record := fileAnnotation(firstID, "a.go")
-	record.Body = "First line of the rationale.\nSecond line of the rationale."
+	record.Spec.Body = "First line of the rationale.\nSecond line of the rationale."
 	if err := annotations.Save(&record); err != nil {
 		t.Fatal(err)
 	}
 
-	path, err := annotations.RecordPath(record.ID)
+	path, err := annotations.RecordPath(record.Metadata.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,8 +105,8 @@ func TestSavedRecordStartsWithSchemaDirectiveAndKeepsBodyReadable(t *testing.T) 
 	if !strings.HasPrefix(content, schemaDirective) {
 		t.Errorf("record does not start with the schema directive:\n%s", content)
 	}
-	if !strings.Contains(content, "created: \"2026-07-31\"") && !strings.Contains(content, "created: 2026-07-31") {
-		t.Errorf("created date not written as a plain date:\n%s", content)
+	if !strings.Contains(content, `created: "2026-07-31T00:00:00Z"`) {
+		t.Errorf("created is not written as an RFC3339 instant:\n%s", content)
 	}
 	if strings.Contains(content, `\n`) {
 		t.Errorf("body was escaped onto one line:\n%s", content)
@@ -123,7 +123,7 @@ func TestEncodeAnnotationProducesTheExactBytesSavePersists(t *testing.T) {
 	if err := annotations.Save(&record); err != nil {
 		t.Fatal(err)
 	}
-	path, err := annotations.RecordPath(record.ID)
+	path, err := annotations.RecordPath(record.Metadata.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,12 +142,12 @@ func TestWrappedBodyIsStoredAsShortLines(t *testing.T) {
 		"Treating it as a wildcard made every annotation resolve at offset zero and " +
 		"report ok forever, which is exactly the silent staleness koment exists to prevent."
 	record := fileAnnotation(firstID, "a.go")
-	record.Body = WrapProse(long)
+	record.Spec.Body = WrapProse(long)
 	if err := annotations.Save(&record); err != nil {
 		t.Fatal(err)
 	}
 
-	path, err := annotations.RecordPath(record.ID)
+	path, err := annotations.RecordPath(record.Metadata.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,12 +160,12 @@ func TestWrappedBodyIsStoredAsShortLines(t *testing.T) {
 		}
 	}
 
-	reloaded, err := annotations.Load(record.ID)
+	reloaded, err := annotations.Load(record.Metadata.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reloaded.Body != record.Body {
-		t.Errorf("wrapped body did not round trip\n want %q\n  got %q", record.Body, reloaded.Body)
+	if reloaded.Spec.Body != record.Spec.Body {
+		t.Errorf("wrapped body did not round trip\n want %q\n  got %q", record.Spec.Body, reloaded.Spec.Body)
 	}
 }
 
@@ -245,7 +245,7 @@ func TestLoadRejectsRecordStoredUnderTheWrongID(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	content := "version: 1\nid: " + record.ID + "\nfile: a.go\nkind: why\nbody: body\ncreated: 2026-07-31\nanchor:\n  scope: file\nauthor:\n  name: Test\n  kind: human\n  source: explicit\n"
+	content := "version: 1\nid: " + record.Metadata.ID + "\nfile: a.go\nkind: why\nbody: body\ncreated: 2026-07-31\nanchor:\n  scope: file\nauthor:\n  name: Test\n  kind: human\n  source: explicit\n"
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -266,22 +266,36 @@ func TestDecodeAnnotationChecksRemoteRecordIdentity(t *testing.T) {
 func TestValidateRejectsBadAnnotations(t *testing.T) {
 	base := excerptAnnotation(firstID, "a.go", "snippet")
 	cases := map[string]func(*Annotation){
-		"wrong version":         func(annotation *Annotation) { annotation.Version = 2 },
-		"invalid id":            func(annotation *Annotation) { annotation.ID = "X" },
-		"empty file":            func(annotation *Annotation) { annotation.File = "" },
-		"noncanonical file":     func(annotation *Annotation) { annotation.File = "./a.go" },
-		"backslash file":        func(annotation *Annotation) { annotation.File = `internal\a.go` },
-		"drive-relative file":   func(annotation *Annotation) { annotation.File = "C:a.go" },
-		"escaping file":         func(annotation *Annotation) { annotation.File = "../a.go" },
-		"empty excerpt":         func(annotation *Annotation) { annotation.Anchor.Excerpt = "" },
-		"excerpt on file":       func(annotation *Annotation) { annotation.Anchor.Scope = ScopeFile },
-		"unknown kind":          func(annotation *Annotation) { annotation.Kind = "todo" },
-		"unknown scope":         func(annotation *Annotation) { annotation.Anchor.Scope = "symbol" },
-		"blank body":            func(annotation *Annotation) { annotation.Body = "   " },
-		"missing created":       func(annotation *Annotation) { annotation.Created = Date{} },
-		"missing author":        func(annotation *Annotation) { annotation.Author = Author{} },
-		"too much context":      func(annotation *Annotation) { annotation.Anchor.Before = "1\n2\n3\n4" },
-		"unacknowledged policy": func(annotation *Annotation) { annotation.Policy = &Policy{Exception: "inline-comment"} },
+		"wrong api version":   func(annotation *Annotation) { annotation.APIVersion = "koment.dev/v2" },
+		"missing api version": func(annotation *Annotation) { annotation.APIVersion = "" },
+		"wrong resource kind": func(annotation *Annotation) { annotation.Kind = "Rationale" },
+		"invalid id":          func(annotation *Annotation) { annotation.Metadata.ID = "X" },
+		"empty file":          func(annotation *Annotation) { annotation.Spec.Target.File = "" },
+		"noncanonical file":   func(annotation *Annotation) { annotation.Spec.Target.File = "./a.go" },
+		"backslash file":      func(annotation *Annotation) { annotation.Spec.Target.File = `internal\a.go` },
+		"drive-relative file": func(annotation *Annotation) { annotation.Spec.Target.File = "C:a.go" },
+		"escaping file":       func(annotation *Annotation) { annotation.Spec.Target.File = "../a.go" },
+		"empty excerpt":       func(annotation *Annotation) { annotation.Spec.Anchor.Excerpt = "" },
+		"excerpt on file":     func(annotation *Annotation) { annotation.Spec.Anchor.Scope = ScopeFile },
+		"unknown type":        func(annotation *Annotation) { annotation.Spec.Type = "todo" },
+		"unknown scope":       func(annotation *Annotation) { annotation.Spec.Anchor.Scope = "symbol" },
+		"blank body":          func(annotation *Annotation) { annotation.Spec.Body = "   " },
+		"missing created":     func(annotation *Annotation) { annotation.Metadata.Created = Timestamp{} },
+		"missing author":      func(annotation *Annotation) { annotation.Spec.Author = Author{} },
+		"too much context":    func(annotation *Annotation) { annotation.Spec.Anchor.Before = "1\n2\n3\n4" },
+		"missing line":        func(annotation *Annotation) { annotation.Status.LastSeenLine = 0 },
+		"unknown resolution":  func(annotation *Annotation) { annotation.Status.Resolution = "moved" },
+		"resolution without a time": func(annotation *Annotation) {
+			annotation.Status.Resolution = AnchorOK
+		},
+		"abbreviated resolved commit": func(annotation *Annotation) {
+			annotation.Status.Resolution = AnchorOK
+			annotation.Status.ResolvedAt = Now()
+			annotation.Status.ResolvedCommit = "abc1234"
+		},
+		"unacknowledged policy": func(annotation *Annotation) {
+			annotation.Spec.Policy = &Policy{Exception: "inline-comment"}
+		},
 	}
 
 	for name, corrupt := range cases {
@@ -327,7 +341,7 @@ func TestForFileAndAnnotatedFilesUseRecordContent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(onlyZ) != 1 || onlyZ[0].ID != firstID {
+	if len(onlyZ) != 1 || onlyZ[0].Metadata.ID != firstID {
 		t.Errorf("want %s for z.go, got %+v", firstID, onlyZ)
 	}
 }

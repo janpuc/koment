@@ -1,24 +1,29 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ3NMKQ9J3Y0H45E597AHPGA
-file: internal/ui/export.go
-kind: why
-title: Links walk back up to the export root for file:// and subpath alike
-body: |-
-  exportedLinks walks back up to the output root from wherever this page sits,
-  so the tree works from a file:// path and from a project subpath alike.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: func exportedLinks(page string) links {
-  before: "\treturn len(pages), nil\n}\n"
-  after: "\tup := strings.Repeat(\"../\", strings.Count(page, \"/\"))\n\treturn links{\n\t\tfile:       func(target string) string { return up + \"f/\" + target + exportedSuffix },"
-  last_seen_line: 157
-git:
-  commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
-  path: internal/ui/export.go
-  line: 159
-author:
-  name: Codex
-  kind: agent
-  source: explicit
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ3NMKQ9J3Y0H45E597AHPGA
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/export.go
+  type: why
+  title: Links walk back up to the export root for file:// and subpath alike
+  body: |-
+    exportedLinks walks back up to the output root from wherever this page sits,
+    so the tree works from a file:// path and from a project subpath alike.
+  anchor:
+    scope: excerpt
+    excerpt: func exportedLinks(page string) links {
+    before: "\treturn len(pages), nil\n}\n"
+    after: "\tup := strings.Repeat(\"../\", strings.Count(page, \"/\"))\n\treturn links{\n\t\tfile:       func(target string) string { return up + \"f/\" + target + exportedSuffix },"
+  author:
+    name: Codex
+    kind: agent
+    source: explicit
+  git:
+    commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
+    path: internal/ui/export.go
+    line: 159
+status:
+  lastSeenLine: 157

@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8W296ZBJ7Z1A0GEER8H5VK
+  created: "2026-08-05T11:48:43Z"
+spec:
+  target:
+    file: internal/store/record.go
+  type: invariant
+  title: Status is observed, never consulted
+  body: |-
+    Nothing reads `status.resolution` to decide where an annotation applies.
+    Every surface resolves the anchor against the file in front of it, and this
+    block only records what the last write saw. That is the whole reason it can
+    be persisted at all: ADR 0116 removed `moved` because a stored verdict
+    presented as current fact is the staleness koment exists to prevent, and
+    `resolvedCommit` is what keeps this honest - a reader comparing it to HEAD
+    can see how old the observation is. The equality filter matters for the same
+    reason. Moving `resolvedAt` on every write would make it mean "when did a
+    command last run"; leaving it alone when the verdict and commit are
+    unchanged makes it mean "since when has this been true", which is the only
+    version of it worth storing.
+  anchor:
+    scope: excerpt
+    excerpt: func (s *Status) Observe(resolution AnchorStatus, commit string, at Timestamp) {
+    before: |-
+      // Observe records a resolution, leaving ResolvedAt alone when the verdict and
+      // the commit are already the ones recorded. ResolvedAt then answers "since
+      // when has this been true" instead of "when did a command last run".
+    after: "\tif s.Resolution == resolution && s.ResolvedCommit == commit {\n\t\treturn\n\t}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c
+    path: internal/store/record.go
+    line: 129
+status:
+  lastSeenLine: 129
+  resolution: ok
+  resolvedAt: "2026-08-05T11:48:43Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

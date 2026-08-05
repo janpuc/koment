@@ -1,30 +1,35 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ2Z70A78G6AKW92NMTDX81B
-file: internal/ui/assets/koment.js
-kind: why
-title: On narrow screens notes sit in source order; transforms are cleared
-body: |-
-  On a narrow screen the note already sits directly under the line it
-  annotates, in source order, and the code has the full width. Translating
-  notes toward a line would break that reading order to chase an alignment
-  there is no room for. The transforms are cleared rather than left stale,
-  because a resize from wide to narrow would otherwise keep the wide-layout
-  offsets.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: '      if (narrow.matches) {'
-  before: |2
-        function place() {
-          scheduled = null;
-  after: |2-
-            notes.forEach(function (note) { note.style.transform = ""; });
-            gloss.classList.remove("aligned");
-            return;
-  last_seen_line: 59
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ2Z70A78G6AKW92NMTDX81B
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/assets/koment.js
+  type: why
+  title: On narrow screens notes sit in source order; transforms are cleared
+  body: |-
+    On a narrow screen the note already sits directly under the line it
+    annotates, in source order, and the code has the full width. Translating
+    notes toward a line would break that reading order to chase an alignment
+    there is no room for. The transforms are cleared rather than left stale,
+    because a resize from wide to narrow would otherwise keep the wide-layout
+    offsets.
+  anchor:
+    scope: excerpt
+    excerpt: '      if (narrow.matches) {'
+    before: |2
+          function place() {
+            scheduled = null;
+    after: |2-
+              notes.forEach(function (note) { note.style.transform = ""; });
+              gloss.classList.remove("aligned");
+              return;
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 59

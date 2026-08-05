@@ -33,18 +33,17 @@ func annotatedRepository(t *testing.T) *store.Store {
 	annotations := store.Open(root)
 	excerpt := "\tserve()"
 	record := &store.Annotation{
-		Version: store.RecordVersion,
-		ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-		File:    "main.go",
-		Anchor: store.Anchor{
-			Scope:        store.ScopeExcerpt,
-			Excerpt:      excerpt,
-			LastSeenLine: 4,
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "main.go"},
+			Type:   store.TypeInvariant,
+			Body:   store.WrapProse(rationale),
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+			Author: store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
 		},
-		Kind:    store.KindInvariant,
-		Body:    store.WrapProse(rationale),
-		Created: store.Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		Author:  store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
+		Status: store.Status{LastSeenLine: 4},
 	}
 	if err := annotations.Save(record); err != nil {
 		t.Fatal(err)
@@ -149,18 +148,17 @@ func crowd(t *testing.T, annotations *store.Store, extra int) {
 			t.Fatal(err)
 		}
 		record := store.Annotation{
-			Version: store.RecordVersion,
-			ID:      id,
-			File:    "main.go",
-			Anchor: store.Anchor{
-				Scope:        store.ScopeExcerpt,
-				Excerpt:      excerpt,
-				LastSeenLine: 4,
+			APIVersion: store.APIVersion,
+			Kind:       store.KindAnnotation,
+			Metadata:   store.Metadata{ID: id, Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+			Spec: store.Spec{
+				Target: store.Target{File: "main.go"},
+				Type:   store.TypeWhy,
+				Body:   store.WrapProse(strings.Repeat("Reasoning that runs long enough to be several lines tall. ", 4)),
+				Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+				Author: store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
 			},
-			Kind:    store.KindWhy,
-			Body:    store.WrapProse(strings.Repeat("Reasoning that runs long enough to be several lines tall. ", 4)),
-			Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-			Author:  store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
+			Status: store.Status{LastSeenLine: 4},
 		}
 		if err := annotations.Save(&record); err != nil {
 			t.Fatal(err)
@@ -363,7 +361,7 @@ func TestWriteModeRequiresCapabilityOriginAndFormToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(records) != 2 || records[1].Author.Name != "UI Human" || records[1].Author.Kind != store.AuthorHuman {
+	if len(records) != 2 || records[1].Spec.Author.Name != "UI Human" || records[1].Spec.Author.Kind != store.AuthorHuman {
 		t.Fatalf("records = %#v", records)
 	}
 }

@@ -29,9 +29,12 @@ that includes your contribution, which closes the revenue door that
 keeps open.
 
 Sign by posting a comment on your pull request beginning with the phrase in
-[CLA.md §7](CLA.md#7-how-to-sign). The `cla` status check turns green once
-the comment is recorded; the project's required status list enforces it
-before merge. The maintainer and any `[bot]` account are exempt.
+[CLA.md §7](CLA.md#7-how-to-sign). The `cla` status check turns green once the
+comment is recorded, and a red `cla` blocks the merge button. It is not in the
+repository's required-checks list, because a release pull request is opened by
+`GITHUB_TOKEN` and therefore never gets a `cla` run at all; requiring it would
+make every release unmergeable. The maintainer and any `[bot]` account are
+exempt.
 
 ## Code rules
 
@@ -51,13 +54,17 @@ before merge. The maintainer and any `[bot]` account are exempt.
   through an explicit `koment comments acknowledge`.
 - One concern per commit. Conventional Commit subjects (`feat:`, `fix:`,
   `docs:`, `refactor:`, `test:`, `chore:`) decide how release-please turns
-  merged work into a version. Use `!` after the type for breaking changes.
+  merged work into a version. Use `!` after the type for breaking changes; from
+  1.0.0 that produces a major version.
+- A claim that a change is backward compatible needs evidence: a migration the
+  binary performs, or an ADR naming the version the old shape was cut off at.
+  Without either, the change is breaking and its subject says `feat!:`.
 - Do not edit `go.mod` or `.release-please-manifest.json` versions by hand.
   Release-please owns those files; `packaging` and the chart will fail the
   build if they disagree.
 
 ## Reporting a security issue
 
-Open a GitHub security advisory at
-<https://github.com/janpuc/koment/security/advisories/new>. Do not file a
-public issue.
+Read [SECURITY.md](SECURITY.md). Report privately through a GitHub security
+advisory at <https://github.com/janpuc/koment/security/advisories/new>. Never
+in a public issue, a pull request or a discussion.

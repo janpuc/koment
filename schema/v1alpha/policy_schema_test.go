@@ -45,7 +45,7 @@ func decodePolicy(t *testing.T, content []byte) map[string]any {
 }
 
 func TestCommittedPolicyMatchesPublishedSchema(t *testing.T) {
-	content, err := os.ReadFile(filepath.Join("..", ".koment", "policy.yaml"))
+	content, err := os.ReadFile(filepath.Join("..", "..", ".koment", "policy.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestCommittedPolicyMatchesPublishedSchema(t *testing.T) {
 }
 
 func TestPolicySchemaRejectsVersionTwoAndUnknownFields(t *testing.T) {
-	content, err := os.ReadFile(filepath.Join("..", ".koment", "policy.yaml"))
+	content, err := os.ReadFile(filepath.Join("..", "..", ".koment", "policy.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}

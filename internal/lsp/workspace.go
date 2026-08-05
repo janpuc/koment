@@ -97,7 +97,7 @@ func annotationItems(file workspaceFile) ([]annotationItem, error) {
 	items := make([]annotationItem, 0, len(views))
 	for _, view := range views {
 		line := max(1, view.Line)
-		if view.Record.Anchor.Scope == store.ScopeFile {
+		if view.Record.Spec.Anchor.Scope == store.ScopeFile {
 			line = 1
 		}
 		annotationRange := rangeValue{
@@ -105,8 +105,8 @@ func annotationItems(file workspaceFile) ([]annotationItem, error) {
 			End:   position{Line: line - 1, Character: lineUTF16Length(file.content, line-1)},
 		}
 		items = append(items, annotationItem{
-			ID: view.Record.ID, Kind: string(view.Record.Kind),
-			Title: view.Record.Headline(), Body: view.Record.Body,
+			ID: view.Record.Metadata.ID, Kind: string(view.Record.Spec.Type),
+			Title: view.Record.Headline(), Body: view.Record.Spec.Body,
 			Status: string(view.Status), Line: line, Warning: view.Warning, Range: annotationRange,
 		})
 	}

@@ -49,16 +49,23 @@ func TestAcknowledgementMustResolveAndContainTheComment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	captured, err := anchor.Capture([]byte(source), excerpt)
+	captured, capturedLine, err := anchor.Capture([]byte(source), excerpt)
 	if err != nil {
 		t.Fatal(err)
 	}
 	record := store.Annotation{
-		Version: store.RecordVersion, ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", File: "sample.go",
-		Kind: store.KindWhy, Body: "The generator reads this exact source comment.",
-		Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}, Anchor: captured,
-		Author: store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
-		Policy: &store.Policy{Exception: "inline-comment", Acknowledged: true},
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "sample.go"},
+			Type:   store.TypeWhy,
+			Body:   "The generator reads this exact source comment.",
+			Anchor: captured,
+			Author: store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
+			Policy: &store.Policy{Exception: "inline-comment", Acknowledged: true},
+		},
+		Status: store.Status{LastSeenLine: capturedLine},
 	}
 	if err := store.Open(root).Save(&record); err != nil {
 		t.Fatal(err)

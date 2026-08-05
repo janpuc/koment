@@ -1,31 +1,36 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0JZADR09MKX9T9QC946S6Y
-file: internal/config/config.go
-kind: gotcha
-title: FromEnvironment runs after Parse so Visit sees only set flags
-body: |-
-  This runs after Parse, not before, because flag.FlagSet.Visit only reports
-  flags that were actually given - which is the entire signal needed to decide
-  whether the environment should fill one in. Doing it before Parse would mean
-  comparing against defaults, and a flag explicitly set to its default value
-  would be indistinguishable from one that was omitted.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: "\tgiven := map[string]bool{}"
-  before: |-
-    // It runs after Parse because that is the only point at which "was this flag
-    // actually given" is knowable.
-    func FromEnvironment(flags *flag.FlagSet) error {
-  after: "\tflags.Visit(func(f *flag.Flag) { given[f.Name] = true })\n\n\tvar failed error"
-  last_seen_line: 27
-git:
-  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
-  path: internal/config/config.go
-  line: 27
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0JZADR09MKX9T9QC946S6Y
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/config/config.go
+  type: gotcha
+  title: FromEnvironment runs after Parse so Visit sees only set flags
+  body: |-
+    This runs after Parse, not before, because flag.FlagSet.Visit only reports
+    flags that were actually given - which is the entire signal needed to decide
+    whether the environment should fill one in. Doing it before Parse would mean
+    comparing against defaults, and a flag explicitly set to its default value
+    would be indistinguishable from one that was omitted.
+  anchor:
+    scope: excerpt
+    excerpt: "\tgiven := map[string]bool{}"
+    before: |-
+      // It runs after Parse because that is the only point at which "was this flag
+      // actually given" is knowable.
+      func FromEnvironment(flags *flag.FlagSet) error {
+    after: "\tflags.Visit(func(f *flag.Flag) { given[f.Name] = true })\n\n\tvar failed error"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+    path: internal/config/config.go
+    line: 27
+status:
+  lastSeenLine: 27

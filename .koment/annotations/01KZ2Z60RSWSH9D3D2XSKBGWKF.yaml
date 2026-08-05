@@ -1,34 +1,39 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ2Z60RSWSH9D3D2XSKBGWKF
-file: internal/ui/view.go
-kind: why
-title: Notes live in their own column so tall prose never grows a code line
-body: |-
-  Notes are deliberately not attached to their line's row. When they were,
-  each line was a grid row whose height was set by the tallest cell in it, so
-  a long note stretched its line and pushed the surrounding code apart.
-  Measured: ten annotations on a five-line const block rendered as about
-  thirty-five lines, and the code stopped being readable as code.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ2Z60RSWSH9D3D2XSKBGWKF
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/view.go
+  type: why
+  title: Notes live in their own column so tall prose never grows a code line
+  body: |-
+    Notes are deliberately not attached to their line's row. When they were,
+    each line was a grid row whose height was set by the tallest cell in it, so
+    a long note stretched its line and pushed the surrounding code apart.
+    Measured: ten annotations on a five-line const block rendered as about
+    thirty-five lines, and the code stopped being readable as code.
 
-  Lines are now uniform and the notes carry their line number instead. The
-  browser nudges each note down to meet its line and moves the note, never the
-  code, when two would collide. With scripting off they stay in a column in
-  line order, which is correct but less precise — that degradation is the
-  price of the published tier having no server (ADR 0026).
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: "\t\tbuilt.Notes = append(built.Notes, described)"
-  before: "\t\t\tbuilt.Detached = append(built.Detached, described)\n\t\t\tcontinue\n\t\t}"
-  after: "\t\tworst, seen := marked[annotation.Line]\n\t\tif !seen || statusSeverity[annotation.Status] > statusSeverity[worst] {\n\t\t\tmarked[annotation.Line] = annotation.Status"
-  last_seen_line: 207
-git:
-  commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
-  path: internal/ui/view.go
-  line: 186
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+    Lines are now uniform and the notes carry their line number instead. The
+    browser nudges each note down to meet its line and moves the note, never the
+    code, when two would collide. With scripting off they stay in a column in
+    line order, which is correct but less precise — that degradation is the
+    price of the published tier having no server (ADR 0026).
+  anchor:
+    scope: excerpt
+    excerpt: "\t\tbuilt.Notes = append(built.Notes, described)"
+    before: "\t\t\tbuilt.Detached = append(built.Detached, described)\n\t\t\tcontinue\n\t\t}"
+    after: "\t\tworst, seen := marked[annotation.Line]\n\t\tif !seen || statusSeverity[annotation.Status] > statusSeverity[worst] {\n\t\t\tmarked[annotation.Line] = annotation.Status"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
+    path: internal/ui/view.go
+    line: 186
+status:
+  lastSeenLine: 207

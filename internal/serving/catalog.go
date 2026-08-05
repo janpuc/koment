@@ -213,13 +213,13 @@ func cloneSnapshot(snapshot *application.RepositorySnapshot) *application.Reposi
 }
 
 func cloneRecord(record store.Annotation) store.Annotation {
-	if record.Git != nil {
-		gitContext := *record.Git
-		record.Git = &gitContext
+	if record.Spec.Git != nil {
+		gitContext := *record.Spec.Git
+		record.Spec.Git = &gitContext
 	}
-	if record.Policy != nil {
-		policy := *record.Policy
-		record.Policy = &policy
+	if record.Spec.Policy != nil {
+		policy := *record.Spec.Policy
+		record.Spec.Policy = &policy
 	}
 	return record
 }

@@ -114,12 +114,18 @@ func materializerClient(t *testing.T, fixture *materializerFixture) *Client {
 
 func materializedRecord() store.Annotation {
 	return store.Annotation{
-		Version: store.RecordVersion, ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", File: "main.go",
-		Kind: store.KindWhy, Body: "The remote write is reviewed before settlement.",
-		Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-		Anchor:  store.Anchor{Scope: store.ScopeExcerpt, Excerpt: "serve()", LastSeenLine: 3},
-		Git:     &store.GitContext{Commit: objectID("a"), Path: "main.go", Line: 3, EndLine: 3},
-		Author:  store.Author{Name: "Remote Agent", Kind: store.AuthorAgent, Source: store.FromScopedAgent, Verified: "bearer-sha256"},
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "main.go"},
+			Type:   store.TypeWhy,
+			Body:   "The remote write is reviewed before settlement.",
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: "serve()"},
+			Author: store.Author{Name: "Remote Agent", Kind: store.AuthorAgent, Source: store.FromScopedAgent, Verified: "bearer-sha256"},
+			Git:    &store.GitContext{Commit: objectID("a"), Path: "main.go", Line: 3, EndLine: 3},
+		},
+		Status: store.Status{LastSeenLine: 3},
 	}
 }
 

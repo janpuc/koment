@@ -1,32 +1,37 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ2WD0KBB1GW343MXWW8JQHZ
-file: internal/repository/repository.go
-kind: why
-title: Three sources, each covers a case the others make worse
-body: |-
-  Three configuration sources look like too many until you try to collapse
-  them. A laptop must need zero configuration; a container with two mounts
-  should not need a mounted file; a deployment with clone URLs and branches
-  has nowhere to put them in an env var. Each source covers a case the others
-  make worse. Precedence is richest-first so adding one never silently changes
-  what a simpler one was already doing.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: func Load(workingDirectory string) (*Set, error) {
-  before: |2-
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ2WD0KBB1GW343MXWW8JQHZ
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/repository/repository.go
+  type: why
+  title: Three sources, each covers a case the others make worse
+  body: |-
+    Three configuration sources look like too many until you try to collapse
+    them. A laptop must need zero configuration; a container with two mounts
+    should not need a mounted file; a deployment with clone URLs and branches
+    has nowhere to put them in an env var. Each source covers a case the others
+    make worse. Precedence is richest-first so adding one never silently changes
+    what a simpler one was already doing.
+  anchor:
+    scope: excerpt
+    excerpt: func Load(workingDirectory string) (*Set, error) {
+    before: |2-
 
-    // Load reads the registry, preferring the richest source that is configured so
-    // that a laptop needs no configuration and a deployment can say more.
-  after: "\tif path := os.Getenv(EnvConfig); path != \"\" {\n\t\treturn loadFile(path)\n\t}"
-  last_seen_line: 53
-git:
-  commit: 891a943c595ce0526139604cdd723ae6c63bf57b
-  path: internal/repository/repository.go
-  line: 53
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+      // Load reads the registry, preferring the richest source that is configured so
+      // that a laptop needs no configuration and a deployment can say more.
+    after: "\tif path := os.Getenv(EnvConfig); path != \"\" {\n\t\treturn loadFile(path)\n\t}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 891a943c595ce0526139604cdd723ae6c63bf57b
+    path: internal/repository/repository.go
+    line: 53
+status:
+  lastSeenLine: 53

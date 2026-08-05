@@ -1,0 +1,418 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json",
+  "title": "koment annotation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "koment.dev/v1alpha"
+    },
+    "kind": {
+      "const": "Annotation"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    },
+    "status": {
+      "$ref": "#/$defs/status"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "spec": {
+            "type": "object",
+            "required": [
+              "anchor"
+            ],
+            "properties": {
+              "anchor": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "const": "excerpt"
+                  }
+                },
+                "required": [
+                  "scope"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "spec"
+        ]
+      },
+      "then": {
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "object",
+            "required": [
+              "lastSeenLine"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {
+            "type": "object",
+            "not": {
+              "required": [
+                "lastSeenLine"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "created"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "type",
+        "body",
+        "anchor",
+        "author"
+      ],
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "type": {
+          "enum": [
+            "why",
+            "gotcha",
+            "invariant",
+            "anti-pattern"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 72,
+          "pattern": "^[^\\n\\r]*\\S[^\\n\\r]*$"
+        },
+        "body": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "anchor": {
+          "$ref": "#/$defs/anchor"
+        },
+        "author": {
+          "$ref": "#/$defs/author"
+        },
+        "git": {
+          "$ref": "#/$defs/git"
+        },
+        "policy": {
+          "$ref": "#/$defs/policy"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "policy"
+            ]
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "why"
+              },
+              "anchor": {
+                "type": "object",
+                "required": [
+                  "scope",
+                  "excerpt"
+                ],
+                "properties": {
+                  "scope": {
+                    "const": "excerpt"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file"
+      ],
+      "properties": {
+        "file": {
+          "$ref": "#/$defs/sourcePath"
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "dependentRequired": {
+        "resolution": [
+          "resolvedAt"
+        ],
+        "resolvedAt": [
+          "resolution"
+        ]
+      },
+      "properties": {
+        "lastSeenLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resolution": {
+          "enum": [
+            "ok",
+            "ambiguous",
+            "drifted",
+            "orphaned"
+          ]
+        },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+        },
+        "resolvedCommit": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+        }
+      }
+    },
+    "sourcePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^/"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(^|/)\\.\\.(/|$)"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(^|/)\\.(/|$)"
+          }
+        },
+        {
+          "not": {
+            "pattern": "//|/$"
+          }
+        },
+        {
+          "not": {
+            "pattern": "\\\\"
+          }
+        },
+        {
+          "not": {
+            "pattern": "^[A-Za-z]:"
+          }
+        }
+      ]
+    },
+    "anchor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope"
+          ],
+          "properties": {
+            "scope": {
+              "const": "file"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "excerpt"
+          ],
+          "properties": {
+            "scope": {
+              "const": "excerpt"
+            },
+            "excerpt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "before": {
+              "type": "string",
+              "pattern": "^(?:[^\\n]*(?:\\n|$)){0,3}$"
+            },
+            "after": {
+              "type": "string",
+              "pattern": "^(?:[^\\n]*(?:\\n|$)){0,3}$"
+            }
+          }
+        }
+      ]
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "path"
+      ],
+      "dependentRequired": {
+        "endLine": [
+          "line"
+        ]
+      },
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+        },
+        "path": {
+          "$ref": "#/$defs/sourcePath"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "email": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "human",
+            "agent",
+            "unknown"
+          ]
+        },
+        "source": {
+          "enum": [
+            "git-config",
+            "explicit",
+            "session",
+            "migration",
+            "oidc-proxy",
+            "bearer-credential"
+          ]
+        },
+        "account": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "source": {
+                "const": "migration"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "source": {
+                "not": {
+                  "const": "migration"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exception",
+        "acknowledged"
+      ],
+      "properties": {
+        "exception": {
+          "const": "inline-comment"
+        },
+        "acknowledged": {
+          "const": true
+        }
+      }
+    }
+  }
+}

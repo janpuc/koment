@@ -1,32 +1,37 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ6D9MX34FB8M700W71GQ7AS
-file: internal/lsp/workspace.go
-kind: invariant
-title: Diagnostic slices are initialised so LSP never sees JSON null
-body: |-
-  Initialised, not declared with var. A nil Go slice marshals to JSON null,
-  and LSP declares PublishDiagnosticsParams.diagnostics as an array, so a nil
-  one puts null on the wire. Editor clients call .map on it and throw before
-  rendering anything. The VS Code extension reported that as "koment could not
-  start", which sent everyone looking at the binary.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ6D9MX34FB8M700W71GQ7AS
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: internal/lsp/workspace.go
+  type: invariant
+  title: Diagnostic slices are initialised so LSP never sees JSON null
+  body: |-
+    Initialised, not declared with var. A nil Go slice marshals to JSON null,
+    and LSP declares PublishDiagnosticsParams.diagnostics as an array, so a nil
+    one puts null on the wire. Editor clients call .map on it and throw before
+    rendering anything. The VS Code extension reported that as "koment could not
+    start", which sent everyone looking at the binary.
 
-  Any list this server sends needs the same treatment; a Go-level test cannot
-  see the difference, so the assertion lives at the wire in
-  TestListsReachTheWireAsArraysAndNeverAsNull.
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: "\tdiagnostics := []diagnostic{}"
-  before: "\tif err != nil {\n\t\treturn nil, err\n\t}"
-  after: "\tfor _, item := range items {\n\t\tswitch anchor.Status(item.Status) {\n\t\tcase anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned:"
-  last_seen_line: 126
-git:
-  commit: 76b29a05ef1485abb0e293ab158c1b7e15d38f94
-  path: internal/lsp/workspace.go
-  line: 126
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+    Any list this server sends needs the same treatment; a Go-level test cannot
+    see the difference, so the assertion lives at the wire in
+    TestListsReachTheWireAsArraysAndNeverAsNull.
+  anchor:
+    scope: excerpt
+    excerpt: "\tdiagnostics := []diagnostic{}"
+    before: "\tif err != nil {\n\t\treturn nil, err\n\t}"
+    after: "\tfor _, item := range items {\n\t\tswitch anchor.Status(item.Status) {\n\t\tcase anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned:"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 76b29a05ef1485abb0e293ab158c1b7e15d38f94
+    path: internal/lsp/workspace.go
+    line: 126
+status:
+  lastSeenLine: 126

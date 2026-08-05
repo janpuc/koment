@@ -67,16 +67,16 @@ type MutationReview struct {
 }
 
 type MutationRecord struct {
-	Version int               `json:"version"`
-	ID      string            `json:"id"`
-	File    string            `json:"file"`
-	Kind    string            `json:"kind"`
-	Body    string            `json:"body"`
-	Created string            `json:"created"`
-	Anchor  MutationAnchor    `json:"anchor"`
-	Git     *AnnotationGit    `json:"git,omitempty"`
-	Author  AnnotationAuthor  `json:"author"`
-	Policy  *AnnotationPolicy `json:"policy,omitempty"`
+	APIVersion string            `json:"api_version"`
+	ID         string            `json:"id"`
+	File       string            `json:"file"`
+	Kind       string            `json:"kind"`
+	Body       string            `json:"body"`
+	Created    string            `json:"created"`
+	Anchor     MutationAnchor    `json:"anchor"`
+	Git        *AnnotationGit    `json:"git,omitempty"`
+	Author     AnnotationAuthor  `json:"author"`
+	Policy     *AnnotationPolicy `json:"policy,omitempty"`
 }
 
 type MutationAnchor struct {
@@ -100,7 +100,7 @@ func add(repositories *repository.Set) sdk.ToolHandlerFor[AddInput, MutationOutp
 		if err != nil {
 			return nil, MutationOutput{}, err
 		}
-		kind, err := store.ParseKind(input.Kind)
+		kind, err := store.ParseType(input.Kind)
 		if err != nil {
 			return nil, MutationOutput{}, err
 		}
@@ -143,9 +143,9 @@ func convertComment(repositories *repository.Set) sdk.ToolHandlerFor[ConvertComm
 		if err != nil {
 			return nil, MutationOutput{}, err
 		}
-		kind := store.KindWhy
+		kind := store.TypeWhy
 		if input.Kind != "" {
-			if kind, err = store.ParseKind(input.Kind); err != nil {
+			if kind, err = store.ParseType(input.Kind); err != nil {
 				return nil, MutationOutput{}, err
 			}
 		}
@@ -203,25 +203,25 @@ func mutationOutput(repositoryID string, mutation application.Mutation) Mutation
 	output := MutationOutput{
 		Repository: repositoryID, Path: mutation.Path, Warnings: mutation.Warnings,
 		Record: MutationRecord{
-			Version: record.Version, ID: record.ID, File: record.File, Kind: string(record.Kind),
-			Body: record.Body, Created: record.Created.Format("2006-01-02"),
+			APIVersion: record.APIVersion, ID: record.Metadata.ID, File: record.Spec.Target.File, Kind: string(record.Spec.Type),
+			Body: record.Spec.Body, Created: record.Metadata.Created.Format("2006-01-02"),
 			Anchor: MutationAnchor{
-				Scope: string(record.Anchor.Scope), Excerpt: record.Anchor.Excerpt,
-				Before: record.Anchor.Before, After: record.Anchor.After, LastSeenLine: record.Anchor.LastSeenLine,
+				Scope: string(record.Spec.Anchor.Scope), Excerpt: record.Spec.Anchor.Excerpt,
+				Before: record.Spec.Anchor.Before, After: record.Spec.Anchor.After, LastSeenLine: record.Status.LastSeenLine,
 			},
 			Author: AnnotationAuthor{
-				Name: record.Author.Name, Email: record.Author.Email, Kind: string(record.Author.Kind),
-				Source: string(record.Author.Source), Account: record.Author.Account, Verified: record.Author.Verified,
+				Name: record.Spec.Author.Name, Email: record.Spec.Author.Email, Kind: string(record.Spec.Author.Kind),
+				Source: string(record.Spec.Author.Source), Account: record.Spec.Author.Account, Verified: record.Spec.Author.Verified,
 			},
 		},
 	}
-	if record.Git != nil {
+	if record.Spec.Git != nil {
 		output.Record.Git = &AnnotationGit{
-			Commit: record.Git.Commit, Path: record.Git.Path, Line: record.Git.Line, EndLine: record.Git.EndLine,
+			Commit: record.Spec.Git.Commit, Path: record.Spec.Git.Path, Line: record.Spec.Git.Line, EndLine: record.Spec.Git.EndLine,
 		}
 	}
-	if record.Policy != nil {
-		output.Record.Policy = &AnnotationPolicy{Exception: record.Policy.Exception, Acknowledged: record.Policy.Acknowledged}
+	if record.Spec.Policy != nil {
+		output.Record.Policy = &AnnotationPolicy{Exception: record.Spec.Policy.Exception, Acknowledged: record.Spec.Policy.Acknowledged}
 	}
 	return output
 }

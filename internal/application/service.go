@@ -23,7 +23,7 @@ type Service struct {
 type AddInput struct {
 	File    string
 	Excerpt string
-	Kind    store.Kind
+	Kind    store.Type
 	Title   string
 	Body    string
 	Author  store.Author
@@ -63,7 +63,7 @@ func (s *Service) Add(input AddInput) (Mutation, error) {
 	if err := input.Author.Validate(); err != nil {
 		return Mutation{}, err
 	}
-	if _, err := store.ParseKind(string(input.Kind)); err != nil {
+	if _, err := store.ParseType(string(input.Kind)); err != nil {
 		return Mutation{}, err
 	}
 	id, err := store.NewID(time.Now())
@@ -71,19 +71,27 @@ func (s *Service) Add(input AddInput) (Mutation, error) {
 		return Mutation{}, err
 	}
 	record := store.Annotation{
-		Version: store.RecordVersion, ID: id, File: file, Kind: input.Kind,
-		Title: strings.TrimSpace(input.Title),
-		Body:  store.WrapProse(input.Body), Created: store.Today(), Author: input.Author,
-		Policy: input.Policy,
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: id, Created: store.Now()},
+		Spec: store.Spec{
+			Target: store.Target{File: file},
+			Type:   input.Kind,
+			Title:  strings.TrimSpace(input.Title),
+			Body:   store.WrapProse(input.Body),
+			Author: input.Author,
+			Policy: input.Policy,
+		},
 	}
 	if err := s.anchor(&record, file, input.Excerpt); err != nil {
 		return Mutation{}, err
 	}
 	warnings := s.captureGit(&record)
+	s.observe(&record)
 	if err := s.store.Save(&record); err != nil {
 		return Mutation{}, err
 	}
-	return Mutation{Record: record, Path: recordPath(record.ID), Warnings: warnings}, nil
+	return Mutation{Record: record, Path: recordPath(id), Warnings: warnings}, nil
 }
 
 // Reanchor changes only an annotation's target.
@@ -92,25 +100,26 @@ func (s *Service) Reanchor(input ReanchorInput) (Mutation, error) {
 	if err != nil {
 		return Mutation{}, err
 	}
-	file := record.File
+	file := record.Spec.Target.File
 	if input.File != "" {
 		if file, err = s.store.FromRoot(input.File); err != nil {
 			return Mutation{}, err
 		}
 	}
 	excerpt := input.Excerpt
-	if excerpt == "" && record.Anchor.Scope == store.ScopeExcerpt {
-		excerpt = record.Anchor.Excerpt
+	if excerpt == "" && record.Spec.Anchor.Scope == store.ScopeExcerpt {
+		excerpt = record.Spec.Anchor.Excerpt
 	}
 	moved := *record
 	if err := s.anchor(&moved, file, excerpt); err != nil {
 		return Mutation{}, err
 	}
-	moved.File = file
+	moved.Spec.Target.File = file
+	s.observe(&moved)
 	if err := s.store.Save(&moved); err != nil {
 		return Mutation{}, err
 	}
-	return Mutation{Record: moved, Path: recordPath(moved.ID)}, nil
+	return Mutation{Record: moved, Path: recordPath(moved.Metadata.ID)}, nil
 }
 
 func (s *Service) anchor(record *store.Annotation, file, excerpt string) error {
@@ -119,10 +128,11 @@ func (s *Service) anchor(record *store.Annotation, file, excerpt string) error {
 		return fmt.Errorf("reading %s: %w", file, err)
 	}
 	if excerpt == "" {
-		record.Anchor = store.Anchor{Scope: store.ScopeFile}
+		record.Spec.Anchor = store.Anchor{Scope: store.ScopeFile}
+		record.Status.LastSeenLine = 0
 		return nil
 	}
-	captured, err := anchor.Capture(content, excerpt)
+	captured, line, err := anchor.Capture(content, excerpt)
 	if err != nil {
 		lines := anchor.ExcerptLines(content, excerpt)
 		switch len(lines) {
@@ -132,23 +142,33 @@ func (s *Service) anchor(record *store.Annotation, file, excerpt string) error {
 			return fmt.Errorf("excerpt matches %d places in %s (lines %v); extend it until it is unique", len(lines), file, lines)
 		}
 	}
-	record.Anchor = captured
+	record.Spec.Anchor = captured
+	record.Status.LastSeenLine = line
 	return nil
 }
 
+func (s *Service) observe(record *store.Annotation) {
+	commit, err := provenance.Head(s.repository.Root)
+	if err != nil {
+		commit = ""
+	}
+	record.Status.Observe(store.AnchorOK, commit, store.Now())
+}
+
 func (s *Service) captureGit(record *store.Annotation) []string {
-	context, err := provenance.Capture(s.repository.Root, record.File, record.Anchor.LastSeenLine, record.Anchor.LastSeenLine)
+	file := record.Spec.Target.File
+	context, err := provenance.Capture(s.repository.Root, file, record.Status.LastSeenLine, record.Status.LastSeenLine)
 	if err == nil {
-		record.Git = context
-		if provenance.WorktreeIsDirty(s.repository.Root, record.File) {
-			return []string{fmt.Sprintf("%s has uncommitted changes, so commit %s does not describe what was annotated", record.File, context.Commit[:7])}
+		record.Spec.Git = context
+		if provenance.WorktreeIsDirty(s.repository.Root, file) {
+			return []string{fmt.Sprintf("%s has uncommitted changes, so commit %s does not describe what was annotated", file, context.Commit[:7])}
 		}
 		return nil
 	}
 	if errors.Is(err, provenance.ErrNoGit) {
-		return []string{fmt.Sprintf("no git context recorded for %s", record.File)}
+		return []string{fmt.Sprintf("no git context recorded for %s", file)}
 	}
-	return []string{fmt.Sprintf("git context failed for %s: %v", record.File, err)}
+	return []string{fmt.Sprintf("git context failed for %s: %v", file, err)}
 }
 
 func recordPath(id string) string {

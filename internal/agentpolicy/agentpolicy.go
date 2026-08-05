@@ -45,6 +45,18 @@ func Contract() string {
 - Releases follow ` + "`docs/releasing.md`" + ` exactly. Published versions are permanent. Never publish an artifact by hand, never hand-edit a version, and get explicit human approval before merging a release pull request.`
 }
 
+// ContractFor is Contract plus the principles this repository's policy states.
+// The generated files are repository-specific; the MCP server states the
+// procedure alone, because one server can front several repositories whose
+// policies differ.
+func ContractFor(configured policy.Policy) string {
+	contract := Contract()
+	for _, stated := range configured.States() {
+		contract += "\n- " + stated
+	}
+	return contract
+}
+
 // Install creates or refreshes every adapter selected by the policy.
 func Install(rootPath string, configured policy.Policy) (_ []Change, returnedError error) {
 	if err := configured.Validate(); err != nil {
@@ -61,8 +73,8 @@ func Install(rootPath string, configured policy.Policy) (_ []Change, returnedErr
 	}()
 
 	var changes []Change
-	for _, adapter := range configured.Agents.Adapters {
-		installed, err := installAdapter(root, adapter)
+	for _, adapter := range configured.Spec.Agents.Adapters {
+		installed, err := installAdapter(root, configured, adapter)
 		if err != nil {
 			return nil, err
 		}
@@ -87,8 +99,8 @@ func Check(rootPath string, configured policy.Policy) (_ []Drift, returnedError 
 	}()
 
 	var drift []Drift
-	for _, adapter := range configured.Agents.Adapters {
-		found, err := adapterDrift(root, adapter)
+	for _, adapter := range configured.Spec.Agents.Adapters {
+		found, err := adapterDrift(root, configured, adapter)
 		if err != nil {
 			return nil, err
 		}
@@ -97,11 +109,11 @@ func Check(rootPath string, configured policy.Policy) (_ []Drift, returnedError 
 	return drift, nil
 }
 
-func installAdapter(root *os.Root, adapter policy.Adapter) ([]Change, error) {
+func installAdapter(root *os.Root, configured policy.Policy, adapter policy.Adapter) ([]Change, error) {
 	switch adapter {
 	case policy.AdapterAgents:
 		return installFiles([]installation{{"AGENTS.md", func() (bool, error) {
-			return installManagedBlock(root, "AGENTS.md", Contract())
+			return installManagedBlock(root, "AGENTS.md", ContractFor(configured))
 		}}})
 	case policy.AdapterClaude:
 		return installFiles([]installation{
@@ -111,14 +123,14 @@ func installAdapter(root *os.Root, adapter policy.Adapter) ([]Change, error) {
 	case policy.AdapterCopilot:
 		return installFiles([]installation{
 			{".github/copilot-instructions.md", func() (bool, error) {
-				return installManagedBlock(root, ".github/copilot-instructions.md", Contract())
+				return installManagedBlock(root, ".github/copilot-instructions.md", ContractFor(configured))
 			}},
 			{".vscode/mcp.json", func() (bool, error) { return installMCPJSON(root, ".vscode/mcp.json", "servers") }},
 		})
 	case policy.AdapterCursor:
 		return installFiles([]installation{
 			{".cursor/rules/koment.mdc", func() (bool, error) {
-				return replaceWhenDifferent(root, ".cursor/rules/koment.mdc", cursorRule())
+				return replaceWhenDifferent(root, ".cursor/rules/koment.mdc", cursorRule(configured))
 			}},
 			{".cursor/mcp.json", func() (bool, error) { return installMCPJSON(root, ".cursor/mcp.json", "mcpServers") }},
 		})
@@ -163,12 +175,12 @@ type adapterCheck struct {
 	check func() (string, error)
 }
 
-func adapterDrift(root *os.Root, adapter policy.Adapter) ([]Drift, error) {
+func adapterDrift(root *os.Root, configured policy.Policy, adapter policy.Adapter) ([]Drift, error) {
 	var checks []adapterCheck
 	switch adapter {
 	case policy.AdapterAgents:
 		checks = append(checks, adapterCheck{"AGENTS.md", func() (string, error) {
-			return managedBlockDrift(root, "AGENTS.md", Contract())
+			return managedBlockDrift(root, "AGENTS.md", ContractFor(configured))
 		}})
 	case policy.AdapterClaude:
 		checks = append(checks,
@@ -180,7 +192,7 @@ func adapterDrift(root *os.Root, adapter policy.Adapter) ([]Drift, error) {
 	case policy.AdapterCopilot:
 		checks = append(checks,
 			adapterCheck{".github/copilot-instructions.md", func() (string, error) {
-				return managedBlockDrift(root, ".github/copilot-instructions.md", Contract())
+				return managedBlockDrift(root, ".github/copilot-instructions.md", ContractFor(configured))
 			}},
 			adapterCheck{".vscode/mcp.json", func() (string, error) {
 				return mcpJSONDrift(root, ".vscode/mcp.json", "servers")
@@ -189,7 +201,7 @@ func adapterDrift(root *os.Root, adapter policy.Adapter) ([]Drift, error) {
 	case policy.AdapterCursor:
 		checks = append(checks,
 			adapterCheck{".cursor/rules/koment.mdc", func() (string, error) {
-				return exactDrift(root, ".cursor/rules/koment.mdc", cursorRule())
+				return exactDrift(root, ".cursor/rules/koment.mdc", cursorRule(configured))
 			}},
 			adapterCheck{".cursor/mcp.json", func() (string, error) {
 				return mcpJSONDrift(root, ".cursor/mcp.json", "mcpServers")
@@ -314,8 +326,8 @@ func hasLine(content, wanted string) bool {
 	return false
 }
 
-func cursorRule() string {
-	return "---\ndescription: Enforce the koment rationale procedure\nglobs:\nalwaysApply: true\n---\n\n" + Contract() + "\n"
+func cursorRule(configured policy.Policy) string {
+	return "---\ndescription: Enforce the koment rationale procedure\nglobs:\nalwaysApply: true\n---\n\n" + ContractFor(configured) + "\n"
 }
 
 func installMCPJSON(root *os.Root, name, serversKey string) (bool, error) {

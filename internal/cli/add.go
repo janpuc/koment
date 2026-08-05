@@ -23,7 +23,7 @@ func runAdd(args []string, env Environment) int {
 		return ExitUsage
 	}
 
-	parsedKind, err := store.ParseKind(*kind)
+	parsedKind, err := store.ParseType(*kind)
 	if err != nil {
 		return misuse(env, "%v", err)
 	}
@@ -51,7 +51,7 @@ func runAdd(args []string, env Environment) int {
 		return fail(env, err)
 	}
 	writeMutationWarnings(env, mutation)
-	fmt.Fprintf(env.Stdout, "%s  %s %s\n", mutation.Record.ID, mutation.Record.Kind, location(file, mutation.Record.Anchor.LastSeenLine))
+	fmt.Fprintf(env.Stdout, "%s  %s %s\n", mutation.Record.Metadata.ID, mutation.Record.Spec.Type, location(file, mutation.Record.Status.LastSeenLine))
 	return ExitOK
 }
 

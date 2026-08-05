@@ -1,0 +1,12 @@
+# Review is requested automatically. It is not required to merge: this
+# repository has one maintainer, and a rule nobody can satisfy is a rule that
+# gets bypassed.
+* @janpuc
+
+# The parts a mistake cannot be taken back from.
+/docs/decisions/ @janpuc
+/docs/releasing.md @janpuc
+/schema/ @janpuc
+/.github/workflows/ @janpuc
+/release-please-config.json @janpuc
+/.release-please-manifest.json @janpuc

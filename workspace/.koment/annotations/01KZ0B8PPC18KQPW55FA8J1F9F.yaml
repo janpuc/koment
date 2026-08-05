@@ -1,31 +1,36 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0B8PPC18KQPW55FA8J1F9F
-file: session/token.go
-kind: gotcha
-body: |-
-  The skew subtraction is deliberate. Without it, clients whose clock runs a
-  few seconds fast are logged out mid-request, and the failure looks like a
-  flaky backend rather than a clock problem. Bit us in #412.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: "\treturn t.Expiry.Before(now.Add(-clockSkew))"
-  before: |-
-    }
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0B8PPC18KQPW55FA8J1F9F
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: session/token.go
+  type: gotcha
+  body: |-
+    The skew subtraction is deliberate. Without it, clients whose clock runs a
+    few seconds fast are logged out mid-request, and the failure looks like a
+    flaky backend rather than a clock problem. Bit us in #412.
+  anchor:
+    scope: excerpt
+    excerpt: "\treturn t.Expiry.Before(now.Add(-clockSkew))"
+    before: |-
+      }
 
-    func (t Token) Expired(now time.Time) bool {
-  after: |-
-    }
+      func (t Token) Expired(now time.Time) bool {
+    after: |-
+      }
 
-    func (t Token) remaining(now time.Time) time.Duration {
-  last_seen_line: 15
-git:
-  commit: 7521fbee8c45c8ac07412f8b4dd927f82cfeabc2
-  path: src/session.go
-  line: 17
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+      func (t Token) remaining(now time.Time) time.Duration {
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 7521fbee8c45c8ac07412f8b4dd927f82cfeabc2
+    path: src/session.go
+    line: 17
+status:
+  lastSeenLine: 15

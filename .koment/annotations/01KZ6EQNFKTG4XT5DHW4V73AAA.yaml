@@ -1,28 +1,33 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ6EQNFKTG4XT5DHW4V73AAA
-file: internal/lsp/workspace.go
-kind: invariant
-title: Only failing statuses become diagnostics; moved stays in the gloss
-body: |-
-  Only statuses that fail koment check become diagnostics. moved resolves
-  uniquely and passes, and publishing it as one drew a blue squiggle under
-  healthy code in most files here — 26 annotations are moved. A marker that
-  fires on a non-problem teaches people to ignore markers. moved is reported
-  in the inline gloss and the panel instead (ADR 0114).
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: "\t\tcase anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned:"
-  before: "\tdiagnostics := []diagnostic{}\n\tfor _, item := range items {\n\t\tswitch anchor.Status(item.Status) {"
-  after: "\t\t\tdiagnostics = append(diagnostics, diagnostic{\n\t\t\t\tRange: item.Range, Severity: 1, Code: \"koment.\" + item.Status,\n\t\t\t\tSource: \"koment\", Message: item.Warning, Data: map[string]string{\"id\": item.ID},"
-  last_seen_line: 129
-git:
-  commit: 8b78d721a878a7b3d328fb18c334cd0362398b81
-  path: internal/lsp/workspace.go
-  line: 129
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ6EQNFKTG4XT5DHW4V73AAA
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: internal/lsp/workspace.go
+  type: invariant
+  title: Only failing statuses become diagnostics; moved stays in the gloss
+  body: |-
+    Only statuses that fail koment check become diagnostics. moved resolves
+    uniquely and passes, and publishing it as one drew a blue squiggle under
+    healthy code in most files here — 26 annotations are moved. A marker that
+    fires on a non-problem teaches people to ignore markers. moved is reported
+    in the inline gloss and the panel instead (ADR 0114).
+  anchor:
+    scope: excerpt
+    excerpt: "\t\tcase anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned:"
+    before: "\tdiagnostics := []diagnostic{}\n\tfor _, item := range items {\n\t\tswitch anchor.Status(item.Status) {"
+    after: "\t\t\tdiagnostics = append(diagnostics, diagnostic{\n\t\t\t\tRange: item.Range, Severity: 1, Code: \"koment.\" + item.Status,\n\t\t\t\tSource: \"koment\", Message: item.Warning, Data: map[string]string{\"id\": item.ID},"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 8b78d721a878a7b3d328fb18c334cd0362398b81
+    path: internal/lsp/workspace.go
+    line: 129
+status:
+  lastSeenLine: 129

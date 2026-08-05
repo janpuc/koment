@@ -1,35 +1,40 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ5JZCPEJGHRG1VAQRKXVNSD
-file: .github/workflows/ci.yml
-kind: why
-title: Readiness uses a job token; shared runners share anonymous GH limits
-body: |-
-  Readiness gates on a completed repository snapshot, so the service is only
-  ready once it has read a tree from GitHub. Unauthenticated GitHub API calls
-  are limited to 60 an hour per source address, and hosted runners share
-  addresses, so this step failed whenever another job on the same address had
-  spent the budget. The job token raises the limit and makes readiness depend
-  on koment rather than on who else was building at the time.
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: '          --github-token-file /config/synchronization-token \'
-  before: |2-
-                --mount type=bind,src="$PWD/testdata/server/repositories.yaml",dst=/config/repositories.yaml,readonly \
-                --mount type=bind,src="$token",dst=/config/synchronization-token,readonly \
-                koment:ci serve --config /config/repositories.yaml \
-  after: |2-
-                  --listen 0.0.0.0:8080 --trusted-proxies 127.0.0.1/32
-              cleanup() {
-                docker logs koment-ci-service
-  last_seen_line: 228
-git:
-  commit: 63564ad3ead1158413c1431995c34448d6fc9edd
-  path: .github/workflows/ci.yml
-  line: 228
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ5JZCPEJGHRG1VAQRKXVNSD
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: .github/workflows/ci.yml
+  type: why
+  title: Readiness uses a job token; shared runners share anonymous GH limits
+  body: |-
+    Readiness gates on a completed repository snapshot, so the service is only
+    ready once it has read a tree from GitHub. Unauthenticated GitHub API calls
+    are limited to 60 an hour per source address, and hosted runners share
+    addresses, so this step failed whenever another job on the same address had
+    spent the budget. The job token raises the limit and makes readiness depend
+    on koment rather than on who else was building at the time.
+  anchor:
+    scope: excerpt
+    excerpt: '          --github-token-file /config/synchronization-token \'
+    before: |2-
+                  --mount type=bind,src="$PWD/testdata/server/repositories.yaml",dst=/config/repositories.yaml,readonly \
+                  --mount type=bind,src="$token",dst=/config/synchronization-token,readonly \
+                  koment:ci serve --config /config/repositories.yaml \
+    after: |2-
+                    --listen 0.0.0.0:8080 --trusted-proxies 127.0.0.1/32
+                cleanup() {
+                  docker logs koment-ci-service
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 63564ad3ead1158413c1431995c34448d6fc9edd
+    path: .github/workflows/ci.yml
+    line: 228
+status:
+  lastSeenLine: 228

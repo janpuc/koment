@@ -33,7 +33,7 @@ func TestConvertCommentWritesRecordBeforeRemovingSourceProse(t *testing.T) {
 	if strings.Contains(string(content), "Retry because") {
 		t.Fatal("source comment remains after conversion")
 	}
-	if mutation.Record.Body != "Retry because the peer closes idle connections." || mutation.Record.Author.Kind != store.AuthorAgent {
+	if mutation.Record.Spec.Body != "Retry because the peer closes idle connections." || mutation.Record.Spec.Author.Kind != store.AuthorAgent {
 		t.Fatalf("record = %#v", mutation.Record)
 	}
 }

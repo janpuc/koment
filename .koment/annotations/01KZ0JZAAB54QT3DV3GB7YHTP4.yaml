@@ -1,31 +1,36 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0JZAAB54QT3DV3GB7YHTP4
-file: internal/metrics/metrics.go
-kind: why
-title: Sweep is timer-driven; scraping the metrics port must not do work
-body: |-
-  The sweep runs on a timer rather than when a scrape arrives. A sweep is
-  O(annotations) and reads every annotated file, so wiring it to the scrape
-  would let anyone who can reach the metrics port drive real work by scraping
-  faster. The gauges are therefore up to sweepInterval stale, which is the
-  correct trade for a number that changes when someone commits.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: func Sweep(annotations *store.Store, recorder Recorder) error {
-  before: |-
-    // Sweep resolves the whole repository so the gauges describe it. Called on a
-    // schedule rather than per request, because a sweep is O(annotations) and a
-    // scrape must not be able to drive load.
-  after: "\tstarted := time.Now()\n\tfiles, err := annotations.AnnotatedFiles()\n\tif err != nil {"
-  last_seen_line: 198
-git:
-  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
-  path: internal/metrics/metrics.go
-  line: 198
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0JZAAB54QT3DV3GB7YHTP4
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/metrics/metrics.go
+  type: why
+  title: Sweep is timer-driven; scraping the metrics port must not do work
+  body: |-
+    The sweep runs on a timer rather than when a scrape arrives. A sweep is
+    O(annotations) and reads every annotated file, so wiring it to the scrape
+    would let anyone who can reach the metrics port drive real work by scraping
+    faster. The gauges are therefore up to sweepInterval stale, which is the
+    correct trade for a number that changes when someone commits.
+  anchor:
+    scope: excerpt
+    excerpt: func Sweep(annotations *store.Store, recorder Recorder) error {
+    before: |-
+      // Sweep resolves the whole repository so the gauges describe it. Called on a
+      // schedule rather than per request, because a sweep is O(annotations) and a
+      // scrape must not be able to drive load.
+    after: "\tstarted := time.Now()\n\tfiles, err := annotations.AnnotatedFiles()\n\tif err != nil {"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+    path: internal/metrics/metrics.go
+    line: 198
+status:
+  lastSeenLine: 198

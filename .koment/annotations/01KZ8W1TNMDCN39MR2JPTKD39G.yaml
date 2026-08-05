@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8W1TNMDCN39MR2JPTKD39G
+  created: "2026-08-05T11:48:28Z"
+spec:
+  target:
+    file: internal/anchor/anchor.go
+  type: why
+  title: Status is an alias so the vocabulary has one owner
+  body: |-
+    A record persists the last observed resolution, so the store has to know the
+    vocabulary in order to validate it. Declaring it a second time here as its
+    own string type would let the two lists drift the moment a fifth status is
+    added - which is exactly the class of failure ADR 0116 removed when it
+    deleted `moved`. An alias keeps `anchor.StatusOK` reading naturally at the
+    sixty-odd call sites that use it while there is still only one definition.
+    It is a type alias, not a named type, so the two are the same type and no
+    conversion can hide a mismatch.
+  anchor:
+    scope: excerpt
+    excerpt: type Status = store.AnchorStatus
+    before: |2-
+
+      // Status is the record's own vocabulary. The store owns it because a record
+      // persists the last observed one; naming it twice would let the two drift.
+    after: "\nconst (\n\tStatusOK        = store.AnchorOK"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c
+    path: internal/anchor/anchor.go
+    line: 18
+status:
+  lastSeenLine: 18
+  resolution: ok
+  resolvedAt: "2026-08-05T11:48:29Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

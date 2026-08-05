@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8W2N9PY3PZTGC0PKX6DFT8
+  created: "2026-08-05T11:48:56Z"
+spec:
+  target:
+    file: internal/policy/policy.go
+  type: why
+  title: A policy states only principles koment knows the wording of
+  body: |-
+    The wording of each principle lives in Go beside the vocabulary rather than
+    in the policy file, so a repository cannot state a rule koment does not
+    enforce the meaning of, and `koment agents check` can tell a stale AGENTS.md
+    from an edited one. Iterating the declared vocabulary rather than the
+    configured list is what keeps the generated contract byte-stable: ordering
+    by the file would let a reordered policy produce a diff that means nothing.
+    ADR 0121.
+  anchor:
+    scope: excerpt
+    excerpt: func (p Policy) States() []string {
+    before: |-
+      // States returns the wording of every principle this policy enables, in the
+      // order the vocabulary declares them so that a regenerated contract does not
+      // diff against itself.
+    after: "\tstated := make([]string, 0, len(p.Spec.Agents.Principles))\n\tfor _, principle := range Principles {\n\t\tfor _, enabled := range p.Spec.Agents.Principles {"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c
+    path: internal/policy/policy.go
+    line: 293
+status:
+  lastSeenLine: 293
+  resolution: ok
+  resolvedAt: "2026-08-05T11:48:56Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

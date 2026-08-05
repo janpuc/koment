@@ -1,24 +1,29 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ3NMJNG4ZD8VHR96PHEGMZ3
-file: internal/metrics/metrics.go
-kind: invariant
-title: A rising drifted rate means agents are served history as current
-body: |-
-  The metric this project should watch: a rising drifted rate means agents are
-  being handed history as though it described the code.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: 'mcpServed: prometheus.NewCounterVec(prometheus.CounterOpts{'
-  before: "\t\t\tBuckets:   prometheus.DefBuckets,\n\t\t}, []string{\"tool\"}),\n"
-  after: "\t\t\tNamespace: namespace,\n\t\t\tName:      \"mcp_annotations_served_total\",\n\t\t\tHelp:      \"Annotations handed to an agent, by resolution status.\","
-  last_seen_line: 112
-git:
-  commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
-  path: internal/metrics/metrics.go
-  line: 114
-author:
-  name: Codex
-  kind: agent
-  source: explicit
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ3NMJNG4ZD8VHR96PHEGMZ3
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/metrics/metrics.go
+  type: invariant
+  title: A rising drifted rate means agents are served history as current
+  body: |-
+    The metric this project should watch: a rising drifted rate means agents are
+    being handed history as though it described the code.
+  anchor:
+    scope: excerpt
+    excerpt: 'mcpServed: prometheus.NewCounterVec(prometheus.CounterOpts{'
+    before: "\t\t\tBuckets:   prometheus.DefBuckets,\n\t\t}, []string{\"tool\"}),\n"
+    after: "\t\t\tNamespace: namespace,\n\t\t\tName:      \"mcp_annotations_served_total\",\n\t\t\tHelp:      \"Annotations handed to an agent, by resolution status.\","
+  author:
+    name: Codex
+    kind: agent
+    source: explicit
+  git:
+    commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
+    path: internal/metrics/metrics.go
+    line: 114
+status:
+  lastSeenLine: 112

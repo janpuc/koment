@@ -1,39 +1,44 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ6CPSFQTFDJJH46YAZ4TB4J
-file: .mise/config.toml
-kind: gotcha
-title: Dev pin tracks a release; gates always run from source
-body: |-
-  koment depends on a release of itself here, and that is deliberate but
-  narrow. This entry exists so .mcp.json and .vscode/mcp.json, which both
-  declare command: koment, resolve to something. The repository gates
-  deliberately do not use it: annotations, comments and agent-policy all run
-  go run ./cmd/koment so they judge the working tree rather than the last
-  release.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ6CPSFQTFDJJH46YAZ4TB4J
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: .mise/config.toml
+  type: gotcha
+  title: Dev pin tracks a release; gates always run from source
+  body: |-
+    koment depends on a release of itself here, and that is deliberate but
+    narrow. This entry exists so .mcp.json and .vscode/mcp.json, which both
+    declare command: koment, resolve to something. The repository gates
+    deliberately do not use it: annotations, comments and agent-policy all run
+    go run ./cmd/koment so they judge the working tree rather than the last
+    release.
 
-  The consequence to remember is that editor and MCP tooling in this checkout
-  speaks the released record format while the gates speak the one you are
-  editing. If you change the record schema or a mutation surface, expect them
-  to disagree until this pin moves.
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: '"github:janpuc/koment" = "0.8.0"'
-  before: |-
-    [tools]
-    actionlint = "1.7.12"
-  after: |-
-    go = "1.26.5"
-    "go:golang.org/x/vuln/cmd/govulncheck" = "1.6.0"
-    golangci-lint = "2.12.2"
-  last_seen_line: 3
-git:
-  commit: 76b29a05ef1485abb0e293ab158c1b7e15d38f94
-  path: .mise/config.toml
-  line: 3
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+    The consequence to remember is that editor and MCP tooling in this checkout
+    speaks the released record format while the gates speak the one you are
+    editing. If you change the record schema or a mutation surface, expect them
+    to disagree until this pin moves.
+  anchor:
+    scope: excerpt
+    excerpt: '"github:janpuc/koment" = "0.8.0"'
+    before: |-
+      [tools]
+      actionlint = "1.7.12"
+    after: |-
+      go = "1.26.5"
+      "go:golang.org/x/vuln/cmd/govulncheck" = "1.6.0"
+      golangci-lint = "2.12.2"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 76b29a05ef1485abb0e293ab158c1b7e15d38f94
+    path: .mise/config.toml
+    line: 3
+status:
+  lastSeenLine: 3

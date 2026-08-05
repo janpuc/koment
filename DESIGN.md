@@ -97,41 +97,71 @@ not rationale, and is allowed by the comment policy. The schema can move to a
 pinned published URL once the record has real external users.
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01JQ8ZK3M4N5P6R7S8T9V0W1X2
-file: internal/session/token.go
-kind: invariant
-body: |-
-  Rotation must keep the previous key until every token minted before the
-  rotation window has expired.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: "if token.Expired(now) {"
-  before: |-
-    func validate(token Token, now time.Time) error {
-  after: |-
-        return ErrExpired
-  last_seen_line: 42
-git:
-  commit: 9f3c1a4d8e2b7c5a6f0d3e1b8c7a5f2d4e6b9c1a
-  path: internal/session/token.go
-  line: 42
-  end_line: 42
-author:
-  name: Jan Pucilowski
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01JQ8ZK3M4N5P6R7S8T9V0W1X2
+  created: "2026-08-03T09:15:00Z"
+spec:
+  target:
+    file: internal/session/token.go
+  type: invariant
+  title: Rotation keeps the previous key until every token expires
+  body: |-
+    Rotation must keep the previous key until every token minted before the
+    rotation window has expired.
+  anchor:
+    scope: excerpt
+    excerpt: "if token.Expired(now) {"
+    before: |-
+      func validate(token Token, now time.Time) error {
+    after: |-
+          return ErrExpired
+  git:
+    commit: 9f3c1a4d8e2b7c5a6f0d3e1b8c7a5f2d4e6b9c1a
+    path: internal/session/token.go
+    line: 42
+    end_line: 42
+  author:
+    name: Jan Pucilowski
+    kind: human
+    source: git-config
+status:
+  lastSeenLine: 42
+  resolution: ok
+  resolvedAt: "2026-08-03T09:15:00Z"
+  resolvedCommit: 9f3c1a4d8e2b7c5a6f0d3e1b8c7a5f2d4e6b9c1a
 ```
 
-Required fields are `version`, `id`, `file`, `kind`, `body`, `created`,
-`anchor` and `author`. Git context is recorded when available and never affects
-resolution. Author kind is `human`, `agent` or `unknown`; new writes require the
-first two. An imported prototype annotation with no attributable author records
-an explicit `unknown` legacy identity; migration never invents a person.
+The record is a Kubernetes-shaped resource. `apiVersion` names the API group
+and its generation, `kind` names the resource, `metadata` identifies it, `spec`
+is what the author decided and `status` is what the last write observed. ADR
+0119 records the shape and the divergence from Kubernetes on
+`metadata.id`: a ULID is not a DNS-1123 name, so koment does not call it
+`metadata.name`.
 
-Kinds remain deliberately constrained:
+Required fields are `apiVersion`, `kind`, `metadata.id`, `metadata.created`,
+`spec.target.file`, `spec.type`, `spec.body`, `spec.anchor` and `spec.author`.
+Git context is recorded when available and never affects resolution. Author
+kind is `human`, `agent` or `unknown`; new writes require the first two. An
+imported prototype annotation with no attributable author records an explicit
+`unknown` legacy identity; migration never invents a person.
+
+`status` is written by the commands that already write a record — `add`,
+`reanchor` and their MCP equivalents — and never by a read. Nothing consults it
+to decide where an annotation applies: a reader resolves the anchor against the
+file in front of it. `status.resolvedCommit` exists so that a reader can see how
+old the recorded observation is, and `status.resolvedAt` answers "since when has
+this been true" rather than "when did a command last run".
+
+A record written before ADR 0119 carried a flat `version: 1` shape. Any binary
+from 1.0.0 onward rewrites such a record in the current shape the first time it
+reads it. The rewrite is atomic and idempotent; a repository mounted read-only
+still reads correctly, because the upgrade happens in memory and only the
+rewrite is skipped.
+
+Types remain deliberately constrained:
 
 - `why` — why this approach won;
 - `gotcha` — surprising behaviour a changer must account for;
@@ -146,16 +176,18 @@ An annotation that authorizes an otherwise forbidden inline comment adds this
 machine-readable policy acknowledgement:
 
 ```yaml
-kind: why
-body: |-
-  The generator requires this marker at the declaration it controls.
-anchor:
-  scope: excerpt
-  excerpt: "// generator:keep"
-  last_seen_line: 18
-policy:
-  exception: inline-comment
-  acknowledged: true
+spec:
+  type: why
+  body: |-
+    The generator requires this marker at the declaration it controls.
+  anchor:
+    scope: excerpt
+    excerpt: "// generator:keep"
+  policy:
+    exception: inline-comment
+    acknowledged: true
+status:
+  lastSeenLine: 18
 ```
 
 The anchor must resolve to the exact comment, not merely nearby code. Its body
@@ -182,8 +214,8 @@ Resolution follows one order:
 6. Several occurrences are filtered by the captured before and after context.
 7. Exactly one contextual candidate resolves there; otherwise return
    `ambiguous`.
-8. A unique resolution is `ok`, wherever it was found. `last_seen_line` is not
-   consulted.
+8. A unique resolution is `ok`, wherever it was found. `status.lastSeenLine`
+   is not consulted.
 
 | Status | Meaning | `koment check` |
 |---|---|---|
@@ -192,7 +224,7 @@ Resolution follows one order:
 | `drifted` | the file exists but the excerpt does not | fail |
 | `orphaned` | the file does not exist | fail |
 
-`last_seen_line` is descriptive metadata. It never selects a candidate.
+`status.lastSeenLine` is descriptive metadata. It never selects a candidate.
 Reanchor keeps the id, author and creation date, replaces the anchor and records
 the newly confirmed line. ADR 0101 records the resolution decision.
 

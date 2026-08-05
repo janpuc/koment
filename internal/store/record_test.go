@@ -19,7 +19,14 @@ func TestHeadlinePrefersATitleAndFallsBackToTheFirstSentence(t *testing.T) {
 		{"a decimal is not a full stop", "", "Pinned to 1.2.3 because arm64 broke", "Pinned to 1.2.3 because arm64 broke"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := Annotation{Title: test.title, Body: test.body}.Headline()
+			got := Annotation{
+				APIVersion: APIVersion,
+				Kind:       KindAnnotation,
+				Spec: Spec{
+					Title: test.title,
+					Body:  test.body,
+				},
+			}.Headline()
 			if got != test.want {
 				t.Errorf("Headline() = %q, want %q", got, test.want)
 			}
@@ -31,7 +38,13 @@ func TestHeadlinePrefersATitleAndFallsBackToTheFirstSentence(t *testing.T) {
 // never itself exceed the limit.
 func TestADerivedHeadlineNeverExceedsTheLimit(t *testing.T) {
 	long := strings.Repeat("consideration ", 40)
-	got := Annotation{Body: long}.Headline()
+	got := Annotation{
+		APIVersion: APIVersion,
+		Kind:       KindAnnotation,
+		Spec: Spec{
+			Body: long,
+		},
+	}.Headline()
 	if count := len([]rune(got)); count > TitleLimit {
 		t.Errorf("derived headline is %d characters, limit is %d: %q", count, TitleLimit, got)
 	}

@@ -13,7 +13,7 @@ type GitContext struct {
 	Commit  string `yaml:"commit"`
 	Path    string `yaml:"path"`
 	Line    int    `yaml:"line,omitempty"`
-	EndLine int    `yaml:"end_line,omitempty"`
+	EndLine int    `yaml:"endLine,omitempty"`
 }
 
 var fullCommitSHA = regexp.MustCompile(`^[0-9a-f]{40}$|^[0-9a-f]{64}$`)

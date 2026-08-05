@@ -32,18 +32,17 @@ func twoRepositories(t *testing.T) *repository.Set {
 		annotations := store.Open(root)
 		excerpt := "\tserve()"
 		if err := annotations.Save(&store.Annotation{
-			Version: store.RecordVersion,
-			ID:      fixture.recordID,
-			File:    "main.go",
-			Anchor: store.Anchor{
-				Scope:        store.ScopeExcerpt,
-				Excerpt:      excerpt,
-				LastSeenLine: 4,
+			APIVersion: store.APIVersion,
+			Kind:       store.KindAnnotation,
+			Metadata:   store.Metadata{ID: fixture.recordID, Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+			Spec: store.Spec{
+				Target: store.Target{File: "main.go"},
+				Type:   store.TypeInvariant,
+				Body:   store.WrapProse(fixture.body),
+				Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+				Author: store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
 			},
-			Kind:    store.KindInvariant,
-			Body:    store.WrapProse(fixture.body),
-			Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-			Author:  store.Author{Name: "Test Human", Kind: store.AuthorHuman, Source: store.FromExplicit},
+			Status: store.Status{LastSeenLine: 4},
 		}); err != nil {
 			t.Fatal(err)
 		}

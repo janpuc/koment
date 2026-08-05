@@ -1,35 +1,40 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ8AMCGJ8VBAMFREXKF9DGEZ
-file: .github/workflows/ci.yml
-kind: gotcha
-title: Install checks must not race publication
-body: |-
-  A push to main can be a release commit. release-please creates the GitHub
-  release, and latest flips to the new tag immediately, but publish binaries
-  has not uploaded the archives yet. On 0.5.0 that window was two minutes
-  twelve seconds, and this job downloaded latest inside it and got a 404. The
-  archives are not a property of the commit being tested, so the release
-  workflow verifies its own output once publication finishes.
-created: "2026-08-05"
-anchor:
-  scope: excerpt
-  excerpt: '        if: github.event_name == ''push'''
-  before: |2-
-              persist-credentials: false
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8AMCGJ8VBAMFREXKF9DGEZ
+  created: "2026-08-05T00:00:00Z"
+spec:
+  target:
+    file: .github/workflows/ci.yml
+  type: gotcha
+  title: Install checks must not race publication
+  body: |-
+    A push to main can be a release commit. release-please creates the GitHub
+    release, and latest flips to the new tag immediately, but publish binaries
+    has not uploaded the archives yet. On 0.5.0 that window was two minutes
+    twelve seconds, and this job downloaded latest inside it and got a 404. The
+    archives are not a property of the commit being tested, so the release
+    workflow verifies its own output once publication finishes.
+  anchor:
+    scope: excerpt
+    excerpt: '        if: github.event_name == ''push'''
+    before: |2-
+                persist-credentials: false
 
-          - name: Explain why the published release is not installed here
-  after: |2-
-            run: |
-              echo "::notice::A push to main can be a release commit, whose tag becomes 'latest'" \
-                   "minutes before its archives are uploaded. The release workflow verifies its own" \
-  last_seen_line: 260
-git:
-  commit: a5f899783828eb2488cbdcff0b88930c89ac02f9
-  path: .github/workflows/ci.yml
-  line: 260
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+            - name: Explain why the published release is not installed here
+    after: |2-
+              run: |
+                echo "::notice::A push to main can be a release commit, whose tag becomes 'latest'" \
+                     "minutes before its archives are uploaded. The release workflow verifies its own" \
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: a5f899783828eb2488cbdcff0b88930c89ac02f9
+    path: .github/workflows/ci.yml
+    line: 260
+status:
+  lastSeenLine: 260

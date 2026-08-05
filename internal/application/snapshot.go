@@ -66,16 +66,16 @@ func BuildSnapshot(entry repository.Repository) (*RepositorySnapshot, error) {
 	}
 	sources := make(map[string][]byte)
 	for _, record := range records {
-		if _, loaded := sources[record.File]; loaded {
+		if _, loaded := sources[record.Spec.Target.File]; loaded {
 			continue
 		}
-		content, readErr := annotations.ReadSource(record.File)
+		content, readErr := annotations.ReadSource(record.Spec.Target.File)
 		switch {
 		case errors.Is(readErr, fs.ErrNotExist):
 		case readErr != nil:
 			return nil, readErr
 		default:
-			sources[record.File] = content
+			sources[record.Spec.Target.File] = content
 		}
 	}
 
@@ -98,18 +98,18 @@ func BuildSnapshot(entry repository.Repository) (*RepositorySnapshot, error) {
 // AssembleSnapshot resolves a complete source revision without performing I/O.
 func AssembleSnapshot(input SnapshotInput) (*RepositorySnapshot, error) {
 	records := append([]store.Annotation(nil), input.Records...)
-	sort.Slice(records, func(left, right int) bool { return records[left].ID < records[right].ID })
+	sort.Slice(records, func(left, right int) bool { return records[left].Metadata.ID < records[right].Metadata.ID })
 	grouped := make(map[string][]store.Annotation)
 	seen := make(map[string]struct{}, len(records))
 	for _, record := range records {
 		if err := record.Validate(); err != nil {
 			return nil, err
 		}
-		if _, duplicate := seen[record.ID]; duplicate {
-			return nil, errors.New("duplicate annotation id " + record.ID)
+		if _, duplicate := seen[record.Metadata.ID]; duplicate {
+			return nil, errors.New("duplicate annotation id " + record.Metadata.ID)
 		}
-		seen[record.ID] = struct{}{}
-		grouped[record.File] = append(grouped[record.File], record)
+		seen[record.Metadata.ID] = struct{}{}
+		grouped[record.Spec.Target.File] = append(grouped[record.Spec.Target.File], record)
 	}
 	paths := make([]string, 0, len(grouped))
 	for path := range grouped {
@@ -185,8 +185,8 @@ func (s *RepositorySnapshot) Search(query string) []AnnotationView {
 		for _, annotation := range file.Annotations {
 			record := annotation.Record
 			haystack := strings.ToLower(strings.Join([]string{
-				record.ID, record.File, string(record.Kind), record.Body,
-				record.Author.Name, record.Author.Email, record.Author.Account,
+				record.Metadata.ID, record.Spec.Target.File, string(record.Spec.Type), record.Spec.Body,
+				record.Spec.Author.Name, record.Spec.Author.Email, record.Spec.Author.Account,
 			}, "\n"))
 			if strings.Contains(haystack, needle) {
 				matches = append(matches, annotation)

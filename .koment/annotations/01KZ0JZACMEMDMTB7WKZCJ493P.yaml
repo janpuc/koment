@@ -1,32 +1,37 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0JZACMEMDMTB7WKZCJ493P
-file: internal/config/config.go
-kind: invariant
-title: Explicit flag always beats the environment; flags stay overridable
-body: |-
-  An explicit flag always beats the environment. That ordering is what makes a
-  container debuggable: the deployment sets KOMENT_LISTEN and a person
-  exec-ing in can still override it on the command line without editing the
-  manifest. Reversing it would make the environment un-overridable, which is
-  the frustrating half of every twelve-factor implementation that gets this
-  backwards.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: func FromEnvironment(flags *flag.FlagSet) error {
-  before: |-
-    //
-    // It runs after Parse because that is the only point at which "was this flag
-    // actually given" is knowable.
-  after: "\tgiven := map[string]bool{}\n\tflags.Visit(func(f *flag.Flag) { given[f.Name] = true })\n"
-  last_seen_line: 26
-git:
-  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
-  path: internal/config/config.go
-  line: 26
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0JZACMEMDMTB7WKZCJ493P
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/config/config.go
+  type: invariant
+  title: Explicit flag always beats the environment; flags stay overridable
+  body: |-
+    An explicit flag always beats the environment. That ordering is what makes a
+    container debuggable: the deployment sets KOMENT_LISTEN and a person
+    exec-ing in can still override it on the command line without editing the
+    manifest. Reversing it would make the environment un-overridable, which is
+    the frustrating half of every twelve-factor implementation that gets this
+    backwards.
+  anchor:
+    scope: excerpt
+    excerpt: func FromEnvironment(flags *flag.FlagSet) error {
+    before: |-
+      //
+      // It runs after Parse because that is the only point at which "was this flag
+      // actually given" is knowable.
+    after: "\tgiven := map[string]bool{}\n\tflags.Visit(func(f *flag.Flag) { given[f.Name] = true })\n"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+    path: internal/config/config.go
+    line: 26
+status:
+  lastSeenLine: 26

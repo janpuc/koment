@@ -1,29 +1,34 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ5NZSWMQQBBVBT5S1HX1A46
-file: editors/vscode/binary.js
-kind: gotcha
-title: koment.binaryPath defaults to empty so a user setting always wins
-body: |-
-  koment.binaryPath defaults to empty, not to "koment". A default that is also
-  a valid path cannot be told apart from a user who typed it, so the bundled
-  binary could never win against an unset setting. Empty means unset; anything
-  else is a deliberate override (ADR 0113).
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: '  const explicit = (configured ?? '''').trim();'
-  before: |-
-    }
-
-    function resolveBinary({ configured, extensionPath, platform, exists = fs.existsSync }) {
-  after: |2-
-      if (explicit) {
-        return { command: explicit, source: 'configured' };
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ5NZSWMQQBBVBT5S1HX1A46
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: editors/vscode/binary.js
+  type: gotcha
+  title: koment.binaryPath defaults to empty so a user setting always wins
+  body: |-
+    koment.binaryPath defaults to empty, not to "koment". A default that is also
+    a valid path cannot be told apart from a user who typed it, so the bundled
+    binary could never win against an unset setting. Empty means unset; anything
+    else is a deliberate override (ADR 0113).
+  anchor:
+    scope: excerpt
+    excerpt: '  const explicit = (configured ?? '''').trim();'
+    before: |-
       }
-  last_seen_line: 15
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+
+      function resolveBinary({ configured, extensionPath, platform, exists = fs.existsSync }) {
+    after: |2-
+        if (explicit) {
+          return { command: explicit, source: 'configured' };
+        }
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 15

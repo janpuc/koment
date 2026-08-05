@@ -38,28 +38,33 @@ serve several assigned local roots.
 An annotation on disk:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYW1ETE3CVB6S0ND70GGZVWM
-file: internal/store/ulid.go
-kind: gotcha
-body: |-
-  26 Crockford characters carry 130 bits but a ULID holds 128 …
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: paddingBits = ulidLength*bitsPerChar - 8*(...)
-  before: const (
-  after: )
-  last_seen_line: 18
-git:
-  commit: 9f3c1a4d8e2b7c5a...
-  path: internal/store/ulid.go
-  line: 18
-author:
-  name: Jan Pucilowski
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYW1ETE3CVB6S0ND70GGZVWM
+  created: "2026-08-02T14:02:00Z"
+spec:
+  target:
+    file: internal/store/ulid.go
+  type: gotcha
+  body: |-
+    26 Crockford characters carry 130 bits but a ULID holds 128 …
+  anchor:
+    scope: excerpt
+    excerpt: paddingBits = ulidLength*bitsPerChar - 8*(...)
+    before: const (
+    after: )
+  git:
+    commit: 9f3c1a4d8e2b7c5a...
+    path: internal/store/ulid.go
+    line: 18
+  author:
+    name: Jan Pucilowski
+    kind: human
+    source: git-config
+status:
+  lastSeenLine: 18
 ```
 
 **The one idea to internalise.** Two fields look like they do the same job and

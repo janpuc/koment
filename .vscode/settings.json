@@ -1,6 +1,6 @@
 {
   "yaml.schemas": {
-    "./schema/annotation.schema.json": [
+    "./schema/v1alpha/annotation.schema.json": [
       ".koment/annotations/[0-9A-Z]*.yaml",
       "workspace/.koment/annotations/[0-9A-Z]*.yaml"
     ]

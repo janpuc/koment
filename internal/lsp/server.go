@@ -350,9 +350,9 @@ func (s *server) execute(raw json.RawMessage) (any, *rpcError, error) {
 	if err != nil && params.Command != commandReanchor {
 		return nil, nil, err
 	}
-	kind := store.KindWhy
+	kind := store.TypeWhy
 	if arguments.Kind != "" {
-		kind, err = store.ParseKind(arguments.Kind)
+		kind, err = store.ParseType(arguments.Kind)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -396,7 +396,7 @@ func (s *server) execute(raw json.RawMessage) (any, *rpcError, error) {
 		return nil, nil, err
 	}
 	return map[string]any{
-		"id": mutation.Record.ID, "path": mutation.Path, "fileChanged": fileChanged,
+		"id": mutation.Record.Metadata.ID, "path": mutation.Path, "fileChanged": fileChanged,
 		"warnings": mutation.Warnings,
 	}, nil, nil
 }
