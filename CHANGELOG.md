@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/janpuc/koment/compare/v0.6.0...v0.7.0) (2026-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* relicense to AGPL-3.0-or-later with commercial dual licensing ([#37](https://github.com/janpuc/koment/issues/37))
+
+### Features
+
+* add CLA gate with in-repo signing workflow ([#39](https://github.com/janpuc/koment/issues/39)) ([b0e03bb](https://github.com/janpuc/koment/commit/b0e03bb7865dcf9dc7e3dbb59d3ec4e942734b49))
+* relicense to AGPL-3.0-or-later with commercial dual licensing ([#37](https://github.com/janpuc/koment/issues/37)) ([bca8d2e](https://github.com/janpuc/koment/commit/bca8d2e0d2eb4c9c6e25b20f1153099b199cc9a9))
+
 ## [0.6.0](https://github.com/janpuc/koment/compare/v0.5.1...v0.6.0) (2026-08-05)
 
 
