@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/janpuc/koment/compare/v0.7.0...v0.8.0) (2026-08-05)
+
+
+### Features
+
+* ship opencode as a first-class peer of codex ([#41](https://github.com/janpuc/koment/issues/41)) ([f2a7a0e](https://github.com/janpuc/koment/commit/f2a7a0ea37beaccbb6c4c042a5866fdd4330ab12))
+
 ## [0.7.0](https://github.com/janpuc/koment/compare/v0.6.0...v0.7.0) (2026-08-05)
 
 
