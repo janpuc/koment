@@ -16,9 +16,9 @@ purpose — the rest of the project's reasoning lives in `DESIGN.md`,
 
 ## Contributor Licence Agreement
 
-The project is dual-licensed. Every contributor must sign a CLA before a pull
-request can be merged. The CLA grants the project the right to license the
-contributed code under both:
+The project is dual-licensed. Every contributor must sign a
+[CLA](CLA.md) before a pull request can be merged. The CLA grants the project
+the right to license the contributed code under both:
 
 - the GNU Affero General Public License, version 3 or later;
 - a commercial licence offered to organisations whose policy excludes AGPL.
@@ -28,10 +28,10 @@ that includes your contribution, which closes the revenue door that
 [ADR 0117](docs/decisions/0117-relicense-to-agpl-with-commercial-dual-licensing.md)
 keeps open.
 
-A GitHub-hosted CLA Assistant bot manages the workflow. The first time you open
-a pull request, the bot comments with a link to the CLA. Sign once; every later
-contribution is covered automatically. Pull requests cannot be merged until the
-status check is green.
+Sign by posting a comment on your pull request beginning with the phrase in
+[CLA.md §7](CLA.md#7-how-to-sign). The `cla` status check turns green once
+the comment is recorded; the project's required status list enforces it
+before merge. The maintainer and any `[bot]` account are exempt.
 
 ## Code rules
 

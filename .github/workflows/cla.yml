@@ -1,0 +1,95 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: CLA
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target: # zizmor: ignore[dangerous-triggers] required to set the `cla` status check on PRs from forks; the workflow only reads PR metadata and writes status checks/comments via the GITHUB_TOKEN, and never checks out or executes code from the pull request.
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  cla:
+    name: cla
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Allowlist self
+        id: allowlist
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+        run: |
+          set -euo pipefail
+          author="${AUTHOR:-${COMMENT_AUTHOR:-}}"
+          if [ "$author" = "janpuc" ] || [[ "$author" == *"[bot]" ]]; then
+            echo "exempt=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exempt=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set CLA status
+        if: github.event_name == 'pull_request_target' && steps.allowlist.outputs.exempt != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          signers=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --paginate --jq '.[].body' | grep -c '^I have read the CLA' || true)
+          if [ "$signers" -gt 0 ]; then
+            gh api "repos/$REPO/statuses/$HEAD_SHA" \
+              -f state=success \
+              -f description='CLA signed on PR' \
+              -f context=cla
+          else
+            gh api "repos/$REPO/statuses/$HEAD_SHA" \
+              -f state=pending \
+              -f description='Sign the CLA: comment with the phrase from CLA.md section 7' \
+              -f context=cla
+          fi
+
+      - name: Request signature on first PR
+        if: github.event_name == 'pull_request_target' && steps.allowlist.outputs.exempt != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          body=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --paginate --jq '.[].user.login' | sort -u)
+          if grep -qx "$AUTHOR" <<<"$body"; then exit 0; fi
+          gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+            -f body=$'Thank you for contributing to koment. Before this pull request can be merged, please read [CLA.md](https://github.com/janpuc/koment/blob/main/CLA.md) and post a comment on this pull request beginning with:\n\n> I have read the CLA at https://github.com/janpuc/koment/blob/main/CLA.md and I hereby sign the CLA.\n\nThe `cla` status check will turn green once the comment is recorded.'
+
+      - name: Mark signed on signature comment
+        if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, 'I have read the CLA')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          head_sha=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.head.sha')
+          gh api "repos/$REPO/statuses/$head_sha" \
+            -f state=success \
+            -f description='CLA signed' \
+            -f context=cla
