@@ -6,10 +6,12 @@
 
 **Keep the _why_ next to your code — checked, so it can't quietly rot.**
 
+[![Release](https://img.shields.io/github/v/release/janpuc/koment?label=release)](https://github.com/janpuc/koment/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/janpuc/koment/ci.yml?branch=main&label=ci)](https://github.com/janpuc/koment/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/actions/workflow/status/janpuc/koment/release.yml?branch=main&label=release)](https://github.com/janpuc/koment/actions/workflows/release.yml)
-[![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://janpuc.github.io/koment/)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/janpuc/koment?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/janpuc/koment)
+[![Open VSX](https://img.shields.io/open-vsx/v/janpuc/koment?label=open%20vsx)](https://open-vsx.org/extension/janpuc/koment)
 [![License](https://img.shields.io/github/license/janpuc/koment)](https://github.com/janpuc/koment/blob/main/LICENSE)
+[![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://janpuc.github.io/koment/)
 
 </div>
 
@@ -292,9 +294,17 @@ invisible layer visible for Flux the way koment tries to for rationale.
 
 ## License
 
-[AGPL-3.0-or-later](LICENSE) for the open-source grant. Commercial licences
-are available on request for organisations whose policy excludes AGPL, or
-that want warranty or indemnification — write to
+[AGPL-3.0-or-later](LICENSE) for the open-source grant. `LICENSE` is the
+verbatim licence text and nothing else, so that GitHub and every automated
+licence scanner identify it correctly; the terms specific to this project are
+here rather than appended to it.
+
+The complete corresponding source is this repository,
+<https://github.com/janpuc/koment>, which satisfies the AGPL §13 obligation
+for anyone interacting with a koment server over a network.
+
+Commercial licences are available on request for organisations whose policy
+excludes AGPL, or that want warranty or indemnification — write to
 [licensing@koment.dev](mailto:licensing@koment.dev).
 
 Releases ≤ v0.6.0 were distributed under the MIT licence and remain MIT in
