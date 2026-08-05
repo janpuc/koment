@@ -23,7 +23,7 @@ spec:
     to disagree until this pin moves.
   anchor:
     scope: excerpt
-    excerpt: '"github:janpuc/koment" = "0.8.0"'
+    excerpt: '"github:janpuc/koment" = "1.0.0"'
     before: |-
       [tools]
       actionlint = "1.7.12"
@@ -42,3 +42,6 @@ spec:
     line: 3
 status:
   lastSeenLine: 3
+  resolution: ok
+  resolvedAt: "2026-08-05T16:58:18Z"
+  resolvedCommit: 47e7a684d82f3579d08bb2d38c8cdb989a27f27a
