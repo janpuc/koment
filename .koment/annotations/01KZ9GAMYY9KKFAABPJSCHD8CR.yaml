@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9GAMYY9KKFAABPJSCHD8CR
+  created: "2026-08-05T17:42:49Z"
+spec:
+  target:
+    file: .github/workflows/renovate.yml
+  type: why
+  title: Inert without an app, rather than failing nightly
+  body: |-
+    The whole job is gated on a repository variable so that a checkout without
+    an app configured reports what is missing and exits clean. A scheduled
+    workflow that fails every night is one people learn to ignore, and then it
+    is not a gate any more - the same reason the release workflow guards
+    marketplace publication on a variable instead of assuming the secrets exist.
+
+    GITHUB_TOKEN is not an alternative here. Pull requests it opens start no
+    workflows, so the required `ci` check would never report and the ruleset
+    would never let a Renovate pull request merge. That is the same rule that
+    parks every release pull request at `action_required`, arrived at from a
+    different direction.
+
+    The variable holds an OAuth client id (`Iv23li...`), not the numeric app id.
+    `actions/create-github-app-token` v3 accepts either in its `app-id` input,
+    which is worth knowing before "correcting" it to a number.
+  anchor:
+    scope: excerpt
+    excerpt: '        if: env.RENOVATE_BOT_APP_ID == '''''
+    before: |2-
+                persist-credentials: false
+
+            - name: report that renovate is not configured
+    after: |2-
+              run: |
+                echo "::notice::renovate is inert: set the RENOVATE_BOT_APP_ID variable and the"\
+                  "RENOVATE_BOT_PRIVATE_KEY secret to a GitHub App installed on this repository."\
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
+    path: .github/workflows/renovate.yml
+    line: 46
+status:
+  lastSeenLine: 46
+  resolution: ok
+  resolvedAt: "2026-08-05T17:42:49Z"
+  resolvedCommit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
