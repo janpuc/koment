@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9YY2PCX21DZXD113ZS8KRE
+  created: "2026-08-05T21:58:06Z"
+spec:
+  target:
+    file: internal/server/server.go
+  type: why
+  title: A spent budget is a reason to stop, not to retry on schedule
+  body: |-
+    GitHub reports the remaining budget and its reset time on every response,
+    and until this existed koment threw both away and kept refreshing on the
+    interval. A rate-limited server therefore spent each window as fast as it
+    refilled, and the operator saw only "Forbidden: API rate limit exceeded for
+    installation" once a minute with no indication of how long it would last.
+
+    This is not a courtesy to GitHub. A refresh that cannot succeed still costs
+    a request, so retrying through an exhausted window is what keeps the window
+    exhausted - the loop was the reason the limit did not clear. The pause is
+    released by the next successful refresh rather than by a timer, so a budget
+    that recovers early is used immediately.
+
+    Observed on 2026-08-05: six pull requests' CI plus eight Renovate runs
+    shared one installation budget, and the container job's koment kept polling
+    through it, so the limit outlasted several deliberate waits.
+  anchor:
+    scope: excerpt
+    excerpt: "\t\t\tif now := time.Now().UTC(); now.Before(refreshableAt) {"
+    before: "\t\tcase <-ctx.Done():\n\t\t\treturn\n\t\tcase <-ticker.C:"
+    after: "\t\t\t\tcontinue\n\t\t\t}\n\t\t\tstarted := time.Now()"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 4c9f9c5f05f08d267284ab515c1dbc5e490deec2
+    path: internal/server/server.go
+    line: 319
+status:
+  lastSeenLine: 319
+  resolution: ok
+  resolvedAt: "2026-08-05T21:58:06Z"
+  resolvedCommit: 4c9f9c5f05f08d267284ab515c1dbc5e490deec2

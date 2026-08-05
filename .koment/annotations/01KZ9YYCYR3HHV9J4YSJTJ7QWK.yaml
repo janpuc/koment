@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9YYCYR3HHV9J4YSJTJ7QWK
+  created: "2026-08-05T21:58:16Z"
+spec:
+  target:
+    file: internal/github/ratelimit.go
+  type: gotcha
+  title: A secondary limit reports no budget, only a wait
+  body: |-
+    Two different limits arrive in two different shapes. The primary one sends
+    X-RateLimit-Remaining and X-RateLimit-Reset, so "stop" means remaining is
+    zero. Secondary limits - abuse detection - send neither: they send
+    Retry-After and nothing else, so a check written only against Remaining
+    reads a secondary limit as a healthy budget and retries straight into it.
+
+    That is why RecoversAt prefers Retry-After over Reset rather than the other
+    way round, and why it never returns a time in the past. A caller that reads
+    "already reset" as "go ahead" resumes the instant the window turns over and
+    spends the whole of it in one burst, which is how a limit that has cleared
+    becomes a limit that has not.
+  anchor:
+    scope: excerpt
+    excerpt: func (r RateLimit) Exhausted() bool {
+    before: |2-
+
+      // Exhausted reports whether the budget is spent. A secondary limit reports no
+      // remaining count at all, so Retry-After alone is enough to mean "stop".
+    after: "\treturn (r.Limit > 0 && r.Remaining <= 0) || r.RetryAfter > 0\n}\n"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 55
+  resolution: ok
+  resolvedAt: "2026-08-05T21:58:16Z"
+  resolvedCommit: 4c9f9c5f05f08d267284ab515c1dbc5e490deec2
