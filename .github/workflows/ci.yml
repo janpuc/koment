@@ -256,11 +256,20 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Explain why the published release is not installed here
+        if: github.event_name == 'push'
+        run: |
+          echo "::notice::A push to main can be a release commit, whose tag becomes 'latest'" \
+               "minutes before its archives are uploaded. The release workflow verifies its own" \
+               "output once publication finishes."
+
       - name: Install koment
         id: setup
+        if: github.event_name != 'push'
         uses: ./
 
       - name: Verify installation
+        if: github.event_name != 'push'
         env:
           INSTALLED_VERSION: ${{ steps.setup.outputs.version }}
         run: |
@@ -276,6 +285,7 @@ jobs:
       contents: read
     steps:
       - name: Install the published Windows archive the way Scoop and WinGet do
+        if: github.event_name != 'push'
         shell: pwsh
         env:
           KOMENT_SOURCE: janpuc/koment

@@ -102,6 +102,13 @@ filetypes you want. Hover, code lenses, code actions and diagnostics work
 without any koment-specific client code; inline decoration does not, and no
 configuration will add it.
 
+## Comment detection
+
+The extension offers to convert a comment only in a language koment can parse,
+which today is Go alone. Elsewhere the annotation views, diagnostics and manual
+add all work; nothing offers to migrate an existing comment. See
+[language support](../languages.md).
+
 ## Which one you get
 
 | | hover, lenses, actions, diagnostics | inline annotation bodies | install |
