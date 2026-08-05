@@ -17,7 +17,6 @@ type Status string
 
 const (
 	StatusOK        Status = "ok"
-	StatusMoved     Status = "moved"
 	StatusAmbiguous Status = "ambiguous"
 	StatusDrifted   Status = "drifted"
 	StatusOrphaned  Status = "orphaned"
@@ -63,11 +62,7 @@ func Resolve(annotation store.Annotation, content []byte) Resolution {
 }
 
 func resolved(annotation store.Annotation, found occurrence, count int) Resolution {
-	status := StatusMoved
-	if found.line == annotation.Anchor.LastSeenLine {
-		status = StatusOK
-	}
-	return Resolution{Annotation: annotation, Status: status, Line: found.line, Occurrences: count}
+	return Resolution{Annotation: annotation, Status: StatusOK, Line: found.line, Occurrences: count}
 }
 
 func ResolveOrphaned(annotation store.Annotation) Resolution {

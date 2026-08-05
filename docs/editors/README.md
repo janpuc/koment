@@ -39,8 +39,8 @@ It also turns a freshly typed explanatory comment into an annotation. See
 [the extension README](../../editors/vscode/README.md).
 
 Diagnostics carry only what fails `koment check` — `ambiguous`, `drifted`,
-`orphaned` and prohibited comments. A `moved` annotation resolves correctly, so
-it is shown in the gloss and the panel and never marks the code.
+`orphaned` and prohibited comments. An annotation that resolves is never marked,
+wherever its excerpt has moved to.
 
 The package for your platform **carries its own `koment` binary**, so installing
 the extension installs koment (ADR 0113). Linux, macOS and Windows are covered

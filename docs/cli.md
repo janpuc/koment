@@ -289,4 +289,4 @@ exists so context is normally captured from source rather than typed.
 
 `last_seen_line` is descriptive, never an anchor: exact text and the captured
 `before` and `after` context choose identity. The line only distinguishes `ok`
-from `moved` after one candidate remains.
+after one candidate remains.

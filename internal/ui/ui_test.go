@@ -297,7 +297,7 @@ func TestBrandAssetsAreServedFromTheBinary(t *testing.T) {
 
 func TestEveryStatusHasAColour(t *testing.T) {
 	_, css := request(t, setOf(annotatedRepository(t)), "/assets/style.css")
-	for _, status := range []string{"ok", "moved", "ambiguous", "drifted", "orphaned"} {
+	for _, status := range []string{"ok", "ambiguous", "drifted", "orphaned"} {
 		if !strings.Contains(css, ".dot."+status) || !strings.Contains(css, ".pill."+status) {
 			t.Errorf("status %q has no visual treatment", status)
 		}

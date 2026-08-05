@@ -111,7 +111,7 @@ internal/store/ulid.go
   drifted   gotcha        internal/store/ulid.go  01KYW1ETE3CVB6S0ND70GGZVWM
     26 Crockford characters carry 130 bits but a ULID holds 128, so the value
     is left-padded by two. Drop the padding and every character shifts.
-11 annotations across 8 files: 8 ok, 2 moved, 1 drifted
+11 annotations across 8 files: 10 ok, 1 drifted
 koment: 1 annotations no longer resolve; revisit them or update the anchor
 ```
 

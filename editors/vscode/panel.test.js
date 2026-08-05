@@ -73,11 +73,9 @@ test('every entry can be revealed and carries its line', () => {
 test('a failing status is toned apart from a healthy one', () => {
   const html = render([
     { kind: 'why', status: 'ok', line: 1, body: 'a' },
-    { kind: 'why', status: 'moved', line: 2, body: 'b' },
     { kind: 'why', status: 'orphaned', line: 3, body: 'c' }
   ]);
   assert.ok(html.includes('status ok'));
-  assert.ok(html.includes('status moved'));
   assert.ok(html.includes('status failing'));
 });
 

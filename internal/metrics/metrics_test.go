@@ -25,7 +25,7 @@ func TestEveryStatusIsReportedIncludingZero(t *testing.T) {
 	m.ObserveRepository(map[anchor.Status]int{anchor.StatusOK: 3}, 2, time.Millisecond)
 
 	body := scrape(t, m)
-	for _, status := range []string{"ok", "moved", "ambiguous", "drifted", "orphaned"} {
+	for _, status := range []string{"ok", "ambiguous", "drifted", "orphaned"} {
 		want := `koment_annotations{status="` + status + `"}`
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %s — a status that drops out looks like a scrape gap, not a return to zero", want)

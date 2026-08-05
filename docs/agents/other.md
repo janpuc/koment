@@ -85,7 +85,7 @@ koment_acknowledge_comment(file, comment, body,
   acknowledge_inline_comment: true, repository?)
 ```
 
-`status` is one of `ok`, `moved`, `ambiguous`, `drifted`, `orphaned`. When it is
+`status` is one of `ok`, `ambiguous`, `drifted`, `orphaned`. When it is
 a failing one, `warning` carries prose saying so — a client should surface it
 rather than present the body as current fact.
 

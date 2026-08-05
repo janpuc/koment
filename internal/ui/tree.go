@@ -20,7 +20,6 @@ type treeNode struct {
 
 var statusSeverity = map[anchor.Status]int{
 	anchor.StatusOK:        0,
-	anchor.StatusMoved:     1,
 	anchor.StatusAmbiguous: 2,
 	anchor.StatusDrifted:   3,
 	anchor.StatusOrphaned:  4,

@@ -46,7 +46,6 @@ copy](docs/publishing.md).
    | | meaning | build |
    |---|---|---|
    | `ok` | found where it was last seen | passes |
-   | `moved` | still there, different line | passes |
    | `ambiguous` | several contextual candidates remain | **fails** |
    | `drifted` | file exists, the annotated code is gone | **fails** |
    | `orphaned` | the file is gone | **fails** |

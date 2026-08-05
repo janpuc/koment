@@ -2,7 +2,6 @@
 
 const statusTone = {
   ok: 'ok',
-  moved: 'moved',
   ambiguous: 'failing',
   drifted: 'failing',
   orphaned: 'failing'

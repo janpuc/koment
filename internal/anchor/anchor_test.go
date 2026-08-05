@@ -87,13 +87,19 @@ func TestUneditedExcerptResolvesOK(t *testing.T) {
 	}
 }
 
-func TestCodeInsertedAboveResolvesMoved(t *testing.T) {
+// Resolution is a search, so an annotation follows its excerpt down the file on
+// its own. The recorded line is not consulted and its staleness is not a status
+// a reader has to act on (ADR 0116).
+func TestCodeInsertedAboveStillResolvesCleanlyAtTheNewLine(t *testing.T) {
 	got := resolveAcross(t, "before.go.txt", "after-moved.go.txt")
-	if got.Status != StatusMoved || got.Line != 10 {
-		t.Errorf("want %s at line 10, got %s at line %d", StatusMoved, got.Status, got.Line)
+	if got.Status != StatusOK {
+		t.Errorf("want %s, got %s", StatusOK, got.Status)
 	}
-	if got.Status.IsFailure() {
-		t.Error("moved must not fail a check")
+	if got.Line != 10 {
+		t.Errorf("want the excerpt found at line 10, got %d", got.Line)
+	}
+	if got.Line == got.Annotation.Anchor.LastSeenLine {
+		t.Fatal("this proves nothing unless the recorded line is stale")
 	}
 }
 

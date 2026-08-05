@@ -237,9 +237,9 @@ func TestListsReachTheWireAsArraysAndNeverAsNull(t *testing.T) {
 	}
 }
 
-// A koment diagnostic must mean the build is red. `moved` resolves uniquely and
-// passes `koment check`, so marking it put a squiggle under healthy code in
-// most files and taught readers to ignore the marker (ADR 0114).
+// A koment diagnostic must mean the build is red. An annotation whose excerpt
+// simply moved down the file resolves uniquely and passes `koment check`, so
+// marking it put a squiggle under healthy code (ADR 0114, ADR 0116).
 func TestOnlyFailingStatusesBecomeDiagnostics(t *testing.T) {
 	root, uri, source := lspRepository(t, "package sample\n\nfunc run() {\n\tretry()\n}\n")
 	service := application.NewService(repository.Repository{ID: "sample", Root: root})
@@ -275,8 +275,13 @@ func TestOnlyFailingStatusesBecomeDiagnostics(t *testing.T) {
 	if err := json.Unmarshal(responseByID(t, messages, "2").Result, &items); err != nil {
 		t.Fatal(err)
 	}
-	if len(items) != 1 || items[0].Status != string(anchor.StatusMoved) {
-		t.Fatalf("this proves nothing unless the annotation actually moved: %#v", items)
+	if len(items) != 1 || items[0].Status != string(anchor.StatusOK) {
+		t.Fatalf("an annotation whose excerpt moved down the file still resolves cleanly: %#v", items)
+	}
+	const recordedLine, movedLine = 4, 6
+	if items[0].Line != movedLine {
+		t.Fatalf("this proves nothing unless the excerpt moved from line %d to %d, got %d",
+			recordedLine, movedLine, items[0].Line)
 	}
 
 	for _, message := range messages {
@@ -290,8 +295,8 @@ func TestOnlyFailingStatusesBecomeDiagnostics(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, published := range params.Diagnostics {
-			if published.Code == "koment.moved" {
-				t.Error("a moved annotation is still published as a diagnostic; it passes koment check")
+			if published.Code == "koment.ok" || published.Code == "koment.moved" {
+				t.Errorf("a healthy annotation is published as a diagnostic (%s); it passes koment check", published.Code)
 			}
 		}
 	}
