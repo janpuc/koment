@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9VTN4JZ422J5T98HJMAFAG
+  created: "2026-08-05T21:03:48Z"
+spec:
+  target:
+    file: charts/koment/values.schema.json
+  type: anti-pattern
+  title: Hand-maintained and strict; never point a generator at it
+  body: |-
+    This schema is written by hand and is deliberately stricter than a generator
+    can infer. `additionalProperties: false` and the explicit top-level
+    `required` list are the point: a values file with a misplaced key fails at
+    `helm template` rather than being silently ignored, which is how a chart
+    ends up deployed without the setting somebody thought they had set.
+
+    helm-schema was permitted as a Renovate post-upgrade task for about an hour
+    because the shared home-operations preset attaches it and konflate uses it.
+    It rewrote this file on all six of Renovate's first pull requests - even the
+    ones bumping an npm dependency - downgrading the draft from 2020-12 to
+    draft-07, dropping `additionalProperties: false`, replacing the required
+    list with a per-property `required: []`, and discarding every `minLength`.
+    The result still validates; it just stops rejecting anything.
+
+    Nothing catches this. `generate-check` regenerates the chart README and runs
+    `go generate`; neither touches this file, so a generated replacement
+    produces no diff for a gate to notice, and `charts/chart_test.go` exercises
+    rendering rather than the schema. The protection is that no tool is allowed
+    to write here - see the annotation on RENOVATE_ALLOWED_COMMANDS.
+  anchor:
+    scope: excerpt
+    excerpt: '  "$schema": "https://json-schema.org/draft/2020-12/schema",'
+    before: '{'
+    after: |2-
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 76d6acc87b66d5b4bc89cc11b7b1a66966a24b36
+    path: charts/koment/values.schema.json
+    line: 2
+status:
+  lastSeenLine: 2
+  resolution: ok
+  resolvedAt: "2026-08-05T21:03:48Z"
+  resolvedCommit: 76d6acc87b66d5b4bc89cc11b7b1a66966a24b36

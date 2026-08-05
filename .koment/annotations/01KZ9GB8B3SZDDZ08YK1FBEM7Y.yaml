@@ -8,24 +8,25 @@ spec:
   target:
     file: .github/renovate-entrypoint.sh
   type: why
-  title: Renovate updates the tools it needs to update the tools
+  title: Renovate updates the tool it needs to update the tools
   body: |-
-    The `# renovate:` line above each version is what keeps this file from
-    becoming the one place in the repository that rots. Renovate's own container
-    image is pinned by the action SHA, and the two binaries it needs are pinned
-    here, so every version in the loop is proposed as an ordinary pull request
-    by the tool whose container they belong to.
+    The `# renovate:` line above the version is what keeps this file from
+    becoming the one place in the repository that rots. Renovate's own
+    container image is pinned by the action SHA, and the binary it needs is
+    pinned here, so every version in the loop is proposed as an ordinary pull
+    request by the tool whose container it belongs to.
 
-    These stay pinned rather than resolving `latest` at run time for the same
-    reason every action carries a SHA: a post-upgrade task that silently changes
-    behaviour between runs would rewrite `charts/koment/README.md` differently
-    on two otherwise identical pull requests, and the diff would be attributed
-    to the dependency being bumped.
+    It stays pinned rather than resolving `latest` at run time for the same
+    reason every action carries a SHA: a post-upgrade task that silently
+    changed behaviour between runs would rewrite `charts/koment/README.md`
+    differently on two otherwise identical pull requests, and the diff would be
+    attributed to the dependency being bumped.
 
-    The version here and the one in `.mise/config.toml` are separate pins of the
-    same tool - one for the Renovate container, one for a contributor's shell.
-    Renovate bumps both, but nothing forces them to agree, so a chart README
-    regenerated in CI can differ from one regenerated locally if they drift.
+    The version here and the one in `.mise/config.toml` are separate pins of
+    the same tool - one for the Renovate container, one for a contributor's
+    shell. Renovate bumps both, but nothing forces them to agree, so a chart
+    README regenerated in CI can differ from one regenerated locally if they
+    drift.
   anchor:
     scope: excerpt
     excerpt: HELM_DOCS_VERSION=1.14.2

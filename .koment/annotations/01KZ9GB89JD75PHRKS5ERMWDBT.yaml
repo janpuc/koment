@@ -8,28 +8,32 @@ spec:
   target:
     file: .github/workflows/renovate.yml
   type: invariant
-  title: Allowed commands and the entrypoint are one decision
+  title: Allowing a command and installing it are one decision
   body: |-
     Two halves that only work together. The shared home-operations preset
-    attaches helm-docs and helm-schema as post-upgrade tasks; this list permits
-    them and `.github/renovate-entrypoint.sh` installs them, because Renovate's
-    container carries neither. Allowing a command that is not on PATH fails the
-    task just as surely as not allowing it, so changing one half without the
-    other reintroduces the bug in a form that looks configured.
+    attaches helm-docs as a post-upgrade task; this list permits it and
+    `.github/renovate-entrypoint.sh` installs it, because Renovate's container
+    does not carry it. Allowing a command that is not on PATH fails the task
+    just as surely as not allowing it, so changing one half without the other
+    reintroduces the bug in a form that looks configured.
 
     The coupling that makes this load-bearing rather than cosmetic: `mise run
     generate-check` runs helm-docs and fails on a chart README that was not
     regenerated. A Renovate pull request touching the chart without running the
-    post-upgrade task therefore fails a required check and can never merge - the
-    first run demonstrated exactly that, with `"allowedCommands": []` in the
-    log.
+    post-upgrade task therefore fails a required check and can never merge.
+
+    The preset also attaches helm-schema, and it is deliberately absent here.
+    See the annotation on charts/koment/values.schema.json: permitting it
+    rewrote a hand-maintained strict schema into a permissive generated one on
+    all six of Renovate's first pull requests. A command the preset offers is
+    not thereby a command this repository wants.
 
     Verify a change here by watching the next run's first lines for `helm-docs
-    version` and `helm-schema version`, printed by the entrypoint before
-    Renovate starts. Silence there means the tasks will be skipped.
+    version`, printed by the entrypoint before Renovate starts. Silence there
+    means the task will be skipped.
   anchor:
     scope: excerpt
-    excerpt: '          RENOVATE_ALLOWED_COMMANDS: ''["^helm-docs ", "^helm-schema "]'''
+    excerpt: '          RENOVATE_ALLOWED_COMMANDS: ''["^helm-docs "]'''
     before: |2-
                 RENOVATE_INTERNAL_CHECKS_FILTER: strict
                 RENOVATE_REPOSITORY_CACHE: enabled
@@ -48,7 +52,7 @@ spec:
     path: .github/workflows/renovate.yml
     line: 95
 status:
-  lastSeenLine: 95
+  lastSeenLine: 96
   resolution: ok
-  resolvedAt: "2026-08-05T17:43:09Z"
-  resolvedCommit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
+  resolvedAt: "2026-08-05T20:31:27Z"
+  resolvedCommit: 76d6acc87b66d5b4bc89cc11b7b1a66966a24b36

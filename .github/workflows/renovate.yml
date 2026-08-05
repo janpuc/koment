@@ -93,7 +93,7 @@ jobs:
           RENOVATE_INTERNAL_CHECKS_FILTER: strict
           RENOVATE_REPOSITORY_CACHE: enabled
           RENOVATE_PRESET_CACHE_PERSISTENCE: "true"
-          RENOVATE_ALLOWED_COMMANDS: '["^helm-docs ", "^helm-schema "]'
+          RENOVATE_ALLOWED_COMMANDS: '["^helm-docs "]'
         with:
           docker-cmd-file: .github/renovate-entrypoint.sh
           docker-user: root
