@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/janpuc/koment/compare/v0.4.0...v0.5.0) (2026-08-05)
+
+
+### Features
+
+* give an annotation a title so nothing is shown cut off ([#31](https://github.com/janpuc/koment/issues/31)) ([ce4725a](https://github.com/janpuc/koment/commit/ce4725a0f199e7165753771470171af0a16e43a8))
+
 ## [0.4.0](https://github.com/janpuc/koment/compare/v0.3.1...v0.4.0) (2026-08-04)
 
 
