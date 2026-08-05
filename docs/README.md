@@ -27,7 +27,7 @@ Annotations live in `.koment/annotations/<id>.yaml`, one Git record per stable
 annotation id. Each excerpt anchor stores verbatim source plus captured context;
 the last seen line describes movement but never chooses identity.
 
-Resolution produces exactly one of five statuses. `ambiguous`, `drifted` and
+Resolution produces exactly one of four statuses. `ambiguous`, `drifted` and
 `orphaned` fail the build, because uncertain rationale is worse than none.
 
 Agents read through MCP; humans read through the CLI, `koment ui`, or a static

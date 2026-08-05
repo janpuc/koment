@@ -66,7 +66,6 @@ func covers(prefixes []string, file string) bool {
 
 var statusOrder = []anchor.Status{
 	anchor.StatusOK,
-	anchor.StatusMoved,
 	anchor.StatusAmbiguous,
 	anchor.StatusDrifted,
 	anchor.StatusOrphaned,

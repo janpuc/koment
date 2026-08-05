@@ -76,8 +76,9 @@ authoritative for reconstructing history; the excerpt is authoritative for
 applicability. [ADR 0100](decisions/0100-one-git-record-per-annotation.md)
 preserves that separation in the current record.
 
-Resolution produces one of five statuses. `ambiguous`, `drifted` and `orphaned`
-exit non-zero; `ok` and `moved` do not.
+Resolution produces one of four statuses. `ambiguous`, `drifted` and `orphaned`
+exit non-zero; `ok` does not. There is no status for an annotation that resolved
+somewhere new — resolution is a search, so that is simply `ok`.
 
 ### Where the data lives
 

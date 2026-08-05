@@ -122,7 +122,7 @@ type note struct {
 }
 
 var statusOrder = []anchor.Status{
-	anchor.StatusOK, anchor.StatusMoved, anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned,
+	anchor.StatusOK, anchor.StatusAmbiguous, anchor.StatusDrifted, anchor.StatusOrphaned,
 }
 
 func build(repositorySnapshot *application.RepositorySnapshot, requested string, how links) (*view, error) {

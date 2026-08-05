@@ -182,12 +182,12 @@ Resolution follows one order:
 6. Several occurrences are filtered by the captured before and after context.
 7. Exactly one contextual candidate resolves there; otherwise return
    `ambiguous`.
-8. A resolved line equal to `last_seen_line` is `ok`; another line is `moved`.
+8. A unique resolution is `ok`, wherever it was found. `last_seen_line` is not
+   consulted.
 
 | Status | Meaning | `koment check` |
 |---|---|---|
 | `ok` | the anchor resolves where it was last confirmed | pass |
-| `moved` | the anchor resolves uniquely at another line | pass |
 | `ambiguous` | more than one candidate remains | fail |
 | `drifted` | the file exists but the excerpt does not | fail |
 | `orphaned` | the file does not exist | fail |
@@ -708,7 +708,7 @@ process instead of being duplicated in extensions.
 The approved design is complete when:
 
 1. Concurrent local agents can add and reanchor records without losing work.
-2. All five resolution statuses have real before/after fixtures and identical
+2. All four resolution statuses have real before/after fixtures and identical
    presentation across CLI, UI, MCP and static output.
 3. No repository-controlled path or symlink can expose a file outside its root.
 4. Humans and agents can read and write locally through first-class surfaces.
