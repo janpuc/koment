@@ -7,6 +7,7 @@
 - **[CLI reference](cli.md)** — every command and flag
 - **[Agent setup](agents/)** — per-client MCP configuration
 - **[Editors](editors/)** — the extension, and the three lines every other editor needs
+- **[Language support](languages.md)** — where comment detection reaches, and where it does not
 - **[CI and pre-commit](ci.md)** — wiring the drift gate
 - **[Publishing](publishing.md)** — the annotations on GitHub Pages, in one workflow file
 

@@ -127,6 +127,39 @@ jobs:
             dist/koment_*_checksums.sigstore.json dist/koment.rb dist/koment-scoop.json \
             --clobber
 
+  verify:
+    name: verify the published release
+    needs: [please, binaries]
+    if: needs.please.outputs.released == 'true'
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the release that was just published
+        id: setup
+        uses: ./
+
+      - name: Verify it is the release this run produced
+        env:
+          INSTALLED_VERSION: ${{ steps.setup.outputs.version }}
+          RELEASED_VERSION: ${{ needs.please.outputs.version }}
+        run: |
+          set -euo pipefail
+          command -v koment
+          koment version
+          test "$INSTALLED_VERSION" = "$RELEASED_VERSION"
+          koment version | grep -q "$RELEASED_VERSION"
+
   image:
     name: publish image
     needs: please
