@@ -61,6 +61,7 @@ type mutationArguments struct {
 type annotationItem struct {
 	ID      string     `json:"id"`
 	Kind    string     `json:"kind"`
+	Title   string     `json:"title"`
 	Body    string     `json:"body"`
 	Status  string     `json:"status"`
 	Line    int        `json:"line"`

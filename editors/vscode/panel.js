@@ -29,6 +29,7 @@ function entry(item, index) {
   const warning = item.warning ? `<p class="warning">${escape(item.warning)}</p>` : '';
   return `<li>
   <button type="button" data-reveal="${index}">
+    <span class="title">${escape(item.title)}</span>
     <span class="meta"><span class="kind">${escape(item.kind)}</span><span class="status ${tone}">${escape(item.status)}</span><span class="line">L${Number(item.line) || 0}</span></span>
     <span class="body">${paragraphs(item.body)}${warning}</span>
   </button>
@@ -62,8 +63,9 @@ function panelHTML({ items, file, nonce, styleNonce }) {
   }
   button:hover { background: var(--vscode-list-hoverBackground); }
   button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
-  .meta { display: flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.2rem; }
-  .kind { font-weight: 600; }
+  .title { display: block; font-weight: 600; margin-bottom: 0.15rem; }
+  .meta { display: flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.3rem; }
+  .kind { color: var(--vscode-descriptionForeground); }
   .status { font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.04em; }
   .status.ok { color: var(--vscode-descriptionForeground); }
   .status.moved { color: var(--vscode-editorWarning-foreground); }

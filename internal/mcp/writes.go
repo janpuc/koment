@@ -24,6 +24,7 @@ type AddInput struct {
 	File       string `json:"file" jsonschema:"source path relative to the repository root"`
 	Excerpt    string `json:"excerpt,omitempty" jsonschema:"verbatim code excerpt; omit for a file-scoped annotation"`
 	Kind       string `json:"kind" jsonschema:"one of why, gotcha, invariant, anti-pattern"`
+	Title      string `json:"title,omitempty" jsonschema:"short headline shown beside the code, at most 72 characters on one line; derived from the body when omitted"`
 	Body       string `json:"body" jsonschema:"the rationale to record"`
 }
 
@@ -104,7 +105,8 @@ func add(repositories *repository.Set) sdk.ToolHandlerFor[AddInput, MutationOutp
 			return nil, MutationOutput{}, err
 		}
 		mutation, err := application.NewService(entry).Add(application.AddInput{
-			File: input.File, Excerpt: input.Excerpt, Kind: kind, Body: input.Body, Author: agentAuthor(request),
+			File: input.File, Excerpt: input.Excerpt, Kind: kind, Title: input.Title,
+			Body: input.Body, Author: agentAuthor(request),
 		})
 		if err != nil {
 			return nil, MutationOutput{}, err

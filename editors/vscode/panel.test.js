@@ -6,6 +6,23 @@ const { escape, panelHTML, paragraphs } = require('./panel');
 
 const render = (items) => panelHTML({ items, file: 'internal/store/ulid.go', nonce: 'n1', styleNonce: 's1' });
 
+// The title is what the editor shows beside the code; the panel is where the
+// body it stands for is actually read, so both have to be present.
+test('an entry carries its title above its body', () => {
+  const html = render([
+    { kind: 'why', status: 'ok', line: 4, title: 'Retry once before giving up', body: 'The upstream closes idle connections.' }
+  ]);
+  assert.ok(html.includes('Retry once before giving up'));
+  assert.ok(html.includes('The upstream closes idle connections.'));
+  assert.ok(html.indexOf('Retry once') < html.indexOf('The upstream'), 'the title should precede the body');
+});
+
+test('a title cannot inject markup either', () => {
+  const html = render([{ kind: 'why', status: 'ok', line: 1, title: '<img src=x onerror=y>', body: 'fine' }]);
+  assert.ok(!html.includes('<img src=x'));
+  assert.ok(html.includes('&lt;img src=x'));
+});
+
 // An annotation body is prose from the repository, and the panel puts it in a
 // document. Anything that reaches the markup unescaped executes there.
 test('a body cannot inject markup or script', () => {

@@ -185,6 +185,7 @@
 
 {{define "note"}}
 <article class="note {{.Status}}{{if .Stale}} stale{{end}}"{{if .Line}} data-for="{{.Line}}"{{end}}>
+  {{if .Title}}<h3 class="note-title">{{.Title}}</h3>{{end}}
   <div class="note-head">
     <span class="kind">{{.Kind}}</span>
     <span class="sep">·</span><span>{{.Status}}</span>

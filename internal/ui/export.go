@@ -260,6 +260,7 @@ type staticFile struct {
 type staticAnnotation struct {
 	ID          string        `json:"id"`
 	Kind        string        `json:"kind"`
+	Title       string        `json:"title"`
 	Body        string        `json:"body"`
 	Created     string        `json:"created"`
 	Status      string        `json:"status"`
@@ -305,6 +306,7 @@ type searchEntry struct {
 	File    string `json:"file"`
 	ID      string `json:"id"`
 	Kind    string `json:"kind"`
+	Title   string `json:"title"`
 	Body    string `json:"body"`
 	Author  string `json:"author"`
 	Status  string `json:"status"`
@@ -327,7 +329,7 @@ func staticData(repositorySnapshot *application.RepositorySnapshot, name string,
 		for _, annotation := range file.Annotations {
 			record := annotation.Record
 			publishedAnnotation := staticAnnotation{
-				ID: record.ID, Kind: string(record.Kind), Body: record.Body,
+				ID: record.ID, Kind: string(record.Kind), Title: record.Headline(), Body: record.Body,
 				Created: record.Created.Format("2006-01-02"), Status: string(annotation.Status),
 				Line: annotation.Line, Occurrences: annotation.Occurrences, Warning: annotation.Warning,
 				Anchor: staticAnchor{
@@ -362,7 +364,8 @@ func searchData(repositorySnapshot *application.RepositorySnapshot) []searchEntr
 		for _, annotation := range file.Annotations {
 			entries = append(entries, searchEntry{
 				File: file.Path, ID: annotation.Record.ID, Kind: string(annotation.Record.Kind),
-				Body: annotation.Record.Body, Author: annotation.Record.Author.Name,
+				Title: annotation.Record.Headline(),
+				Body:  annotation.Record.Body, Author: annotation.Record.Author.Name,
 				Status: string(annotation.Status), Warning: annotation.Warning, Line: annotation.Line,
 			})
 		}

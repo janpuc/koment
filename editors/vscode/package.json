@@ -99,13 +99,6 @@
           "default": "",
           "description": "Path to a koment binary. Leave empty to use the one bundled with this extension, falling back to `koment` on PATH when the universal package is installed."
         },
-        "koment.inlineMaxLength": {
-          "type": "integer",
-          "default": 100,
-          "minimum": 20,
-          "maximum": 300,
-          "description": "Maximum annotation body length rendered as virtual inline text."
-        },
         "koment.promptOnCommentIntent": {
           "type": "boolean",
           "default": true,
