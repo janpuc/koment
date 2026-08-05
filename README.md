@@ -292,4 +292,19 @@ invisible layer visible for Flux the way koment tries to for rationale.
 
 ## License
 
-MIT
+[AGPL-3.0-or-later](LICENSE) for the open-source grant. Commercial licences
+are available on request for organisations whose policy excludes AGPL, or
+that want warranty or indemnification — write to
+[licensing@koment.dev](mailto:licensing@koment.dev).
+
+Releases ≤ v0.6.0 were distributed under the MIT licence and remain MIT in
+perpetuity. The last MIT-tagged source may be forked from
+[`v0.6.0`](https://github.com/janpuc/koment/tree/v0.6.0) under those terms
+indefinitely. The decision is recorded in [ADR 0117](docs/decisions/0117-relicense-to-agpl-with-commercial-dual-licensing.md).
+
+**Does using koment make my code AGPL?** No. koment is a *tool*; annotations
+it writes are data, not derivative works of the tool. The same legal class
+applies as compiling a program with GCC: the tool's licence governs the tool,
+not what you build with it. This is the intent of every OSI-approved AGPL
+deployment that processes external input; if your organisation's counsel
+disagrees, the commercial licence resolves it.
