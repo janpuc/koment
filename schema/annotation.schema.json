@@ -4,7 +4,16 @@
   "title": "koment annotation record",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "id", "file", "kind", "body", "created", "anchor", "author"],
+  "required": [
+    "version",
+    "id",
+    "file",
+    "kind",
+    "body",
+    "created",
+    "anchor",
+    "author"
+  ],
   "properties": {
     "version": {
       "const": 1
@@ -17,7 +26,18 @@
       "$ref": "#/$defs/sourcePath"
     },
     "kind": {
-      "enum": ["why", "gotcha", "invariant", "anti-pattern"]
+      "enum": [
+        "why",
+        "gotcha",
+        "invariant",
+        "anti-pattern"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 72,
+      "pattern": "^[^\\n\\r]*\\S[^\\n\\r]*$"
     },
     "body": {
       "type": "string",
@@ -43,7 +63,9 @@
   "allOf": [
     {
       "if": {
-        "required": ["policy"]
+        "required": [
+          "policy"
+        ]
       },
       "then": {
         "properties": {
@@ -52,7 +74,10 @@
           },
           "anchor": {
             "type": "object",
-            "required": ["scope", "excerpt"],
+            "required": [
+              "scope",
+              "excerpt"
+            ],
             "properties": {
               "scope": {
                 "const": "excerpt"
@@ -105,7 +130,9 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["scope"],
+          "required": [
+            "scope"
+          ],
           "properties": {
             "scope": {
               "const": "file"
@@ -115,7 +142,11 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["scope", "excerpt", "last_seen_line"],
+          "required": [
+            "scope",
+            "excerpt",
+            "last_seen_line"
+          ],
           "properties": {
             "scope": {
               "const": "excerpt"
@@ -143,9 +174,14 @@
     "git": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["commit", "path"],
+      "required": [
+        "commit",
+        "path"
+      ],
       "dependentRequired": {
-        "end_line": ["line"]
+        "end_line": [
+          "line"
+        ]
       },
       "properties": {
         "commit": {
@@ -168,7 +204,11 @@
     "author": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "kind", "source"],
+      "required": [
+        "name",
+        "kind",
+        "source"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -178,10 +218,21 @@
           "type": "string"
         },
         "kind": {
-          "enum": ["human", "agent", "unknown"]
+          "enum": [
+            "human",
+            "agent",
+            "unknown"
+          ]
         },
         "source": {
-          "enum": ["git-config", "explicit", "session", "migration", "oidc-proxy", "bearer-credential"]
+          "enum": [
+            "git-config",
+            "explicit",
+            "session",
+            "migration",
+            "oidc-proxy",
+            "bearer-credential"
+          ]
         },
         "account": {
           "type": "string"
@@ -221,7 +272,10 @@
     "policy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["exception", "acknowledged"],
+      "required": [
+        "exception",
+        "acknowledged"
+      ],
       "properties": {
         "exception": {
           "const": "inline-comment"

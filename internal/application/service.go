@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/janpuc/koment/internal/anchor"
@@ -23,6 +24,7 @@ type AddInput struct {
 	File    string
 	Excerpt string
 	Kind    store.Kind
+	Title   string
 	Body    string
 	Author  store.Author
 	Policy  *store.Policy
@@ -70,7 +72,8 @@ func (s *Service) Add(input AddInput) (Mutation, error) {
 	}
 	record := store.Annotation{
 		Version: store.RecordVersion, ID: id, File: file, Kind: input.Kind,
-		Body: store.WrapProse(input.Body), Created: store.Today(), Author: input.Author,
+		Title: strings.TrimSpace(input.Title),
+		Body:  store.WrapProse(input.Body), Created: store.Today(), Author: input.Author,
 		Policy: input.Policy,
 	}
 	if err := s.anchor(&record, file, input.Excerpt); err != nil {

@@ -39,6 +39,7 @@ the approved destination.
 - [0112 — Publish one editor package per marketplace, and configuration everywhere else](0112-publish-one-editor-package-per-marketplace.md)
 - [0113 — Bundle the released binary in the extension](0113-bundle-the-release-binary-in-the-extension.md)
 - [0114 — Show rationale in a panel, and stop diagnosing what is healthy](0114-show-rationale-in-a-panel-and-stop-diagnosing-health.md)
+- [0115 — Give an annotation a title](0115-an-annotation-has-a-title.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

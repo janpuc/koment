@@ -105,7 +105,8 @@ func annotationItems(file workspaceFile) ([]annotationItem, error) {
 			End:   position{Line: line - 1, Character: lineUTF16Length(file.content, line-1)},
 		}
 		items = append(items, annotationItem{
-			ID: view.Record.ID, Kind: string(view.Record.Kind), Body: view.Record.Body,
+			ID: view.Record.ID, Kind: string(view.Record.Kind),
+			Title: view.Record.Headline(), Body: view.Record.Body,
 			Status: string(view.Status), Line: line, Warning: view.Warning, Range: annotationRange,
 		})
 	}
@@ -209,7 +210,7 @@ func lineUTF16Length(content []byte, wanted int) int {
 
 func markdown(item annotationItem) string {
 	var text strings.Builder
-	fmt.Fprintf(&text, "**%s** · `%s` · `%s`\n\n%s", item.Kind, item.Status, item.ID, item.Body)
+	fmt.Fprintf(&text, "### %s\n\n**%s** · `%s` · `%s`\n\n%s", item.Title, item.Kind, item.Status, item.ID, item.Body)
 	if item.Warning != "" {
 		fmt.Fprintf(&text, "\n\n> %s", item.Warning)
 	}

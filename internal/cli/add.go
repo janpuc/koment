@@ -14,6 +14,7 @@ func runAdd(args []string, env Environment) int {
 	flags := flagSet("add", env)
 	excerpt := flags.String("excerpt", "", "verbatim snippet to anchor to; omit to annotate the whole file")
 	kind := flags.String("kind", "", "one of why, gotcha, invariant, anti-pattern")
+	title := flags.String("title", "", "short headline shown beside the code; derived from the body when omitted")
 	body := flags.String("body", "", "the rationale; - reads it from stdin")
 	author := flags.String("author", "", `override the git identity; "Name" or "Name <email>"`)
 	byAgent := flags.Bool("agent", false, "record this as written by an agent, not a person")
@@ -44,7 +45,7 @@ func runAdd(args []string, env Environment) int {
 	}
 
 	mutation, err := service.Add(application.AddInput{
-		File: file, Excerpt: *excerpt, Kind: parsedKind, Body: text, Author: createdBy,
+		File: file, Excerpt: *excerpt, Kind: parsedKind, Title: *title, Body: text, Author: createdBy,
 	})
 	if err != nil {
 		return fail(env, err)

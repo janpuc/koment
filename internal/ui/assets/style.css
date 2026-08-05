@@ -523,6 +523,15 @@ body {
 .note.orphaned { --note-marker: var(--orphaned); }
 .note.lit { border-color: var(--accent); border-left-color: var(--note-marker); }
 
+.note-title {
+  margin: 0 0 .3rem;
+  font-size: .92rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
 .note-head {
   display: flex;
   align-items: center;

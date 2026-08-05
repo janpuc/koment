@@ -252,16 +252,16 @@ async function refreshAnnotations(document) {
   }
   const resolved = items ?? [];
   setPanelContent(document, resolved);
-  const configured = vscode.workspace.getConfiguration('koment').get('inlineMaxLength', 100);
-  const maximum = inlineDetail ? Number.MAX_SAFE_INTEGER : configured;
   const decorations = resolved.map((item) => {
-    const body = oneLine(item.body, maximum);
-    const status = item.status === 'ok' ? '💬' : `💬 ${item.status}`;
-    const hoverMessage = new vscode.MarkdownString(`**${item.kind}** · \`${item.status}\`\n\n${item.body}`);
+    const headline = item.status === 'ok' ? item.title : `${item.title} · ${item.status}`;
+    const detail = inlineDetail ? `\u2003${oneLine(item.body, Number.MAX_SAFE_INTEGER)}` : '';
+    const hoverMessage = new vscode.MarkdownString(
+      `### ${item.title}\n\n**${item.kind}** · \`${item.status}\`\n\n${item.body}`
+    );
     hoverMessage.isTrusted = false;
     return {
       range: toRange(item.range), hoverMessage,
-      renderOptions: { after: { contentText: `${status} ${body}` } }
+      renderOptions: { after: { contentText: `${headline}${detail}` } }
     };
   });
   for (const editor of vscode.window.visibleTextEditors.filter((value) => value.document.uri.toString() === document.uri.toString())) {

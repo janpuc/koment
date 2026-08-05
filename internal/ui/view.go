@@ -111,6 +111,7 @@ type line struct {
 type note struct {
 	ID      string
 	Kind    string
+	Title   string
 	Status  anchor.Status
 	Line    int
 	Body    []string
@@ -159,7 +160,7 @@ func build(repositorySnapshot *application.RepositorySnapshot, requested string,
 			if statusSeverity[annotation.Status] > statusSeverity[worst] {
 				worst = annotation.Status
 			}
-			searchable.WriteString("\n" + string(annotation.Record.Kind) + "\n" + annotation.Record.Body + "\n" + annotation.Record.Author.Name)
+			searchable.WriteString("\n" + string(annotation.Record.Kind) + "\n" + annotation.Record.Headline() + "\n" + annotation.Record.Body + "\n" + annotation.Record.Author.Name)
 		}
 
 		listed = append(listed, entry{
@@ -240,6 +241,7 @@ func describe(annotation application.AnnotationView) note {
 		Kind:    string(annotation.Record.Kind),
 		Status:  annotation.Status,
 		Line:    annotation.Line,
+		Title:   annotation.Record.Headline(),
 		Body:    store.Paragraphs(annotation.Record.Body),
 		Created: annotation.Record.Created.Format("2006-01-02"),
 		Excerpt: annotation.Record.Anchor.Excerpt,

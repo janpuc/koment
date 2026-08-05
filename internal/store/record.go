@@ -12,6 +12,10 @@ import (
 
 const RecordVersion = 1
 
+// TitleLimit keeps a title short enough to render beside code without being
+// shortened, which is the only reason it exists (ADR 0115).
+const TitleLimit = 72
+
 const SchemaURL = "https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json"
 
 type Kind string
@@ -158,12 +162,64 @@ type Annotation struct {
 	ID      string      `yaml:"id"`
 	File    string      `yaml:"file"`
 	Kind    Kind        `yaml:"kind"`
+	Title   string      `yaml:"title,omitempty"`
 	Body    string      `yaml:"body"`
 	Created Date        `yaml:"created"`
 	Anchor  Anchor      `yaml:"anchor"`
 	Git     *GitContext `yaml:"git,omitempty"`
 	Author  Author      `yaml:"author"`
 	Policy  *Policy     `yaml:"policy,omitempty"`
+}
+
+// Headline is what a reader sees beside the code. A record written before
+// titles existed still has to show something, so the first sentence of the body
+// stands in, shortened at a word boundary. It is never written back: a derived
+// title in the record would become a second copy of the body that drifts.
+func (a Annotation) Headline() string {
+	if title := strings.TrimSpace(a.Title); title != "" {
+		return title
+	}
+	return shorten(firstSentence(a.Body), TitleLimit)
+}
+
+func firstSentence(body string) string {
+	flattened := strings.Join(strings.Fields(body), " ")
+	for index, character := range flattened {
+		if character != '.' && character != '!' && character != '?' {
+			continue
+		}
+		if index+1 >= len(flattened) || flattened[index+1] == ' ' {
+			return flattened[:index]
+		}
+	}
+	return flattened
+}
+
+func shorten(text string, limit int) string {
+	if len([]rune(text)) <= limit {
+		return text
+	}
+	runes := []rune(text)[:limit]
+	if space := strings.LastIndex(string(runes), " "); space > limit/2 {
+		return strings.TrimRight(string(runes)[:space], " ,;:") + "\u2026"
+	}
+	return strings.TrimRight(string(runes), " ,;:") + "\u2026"
+}
+
+func validTitle(id, title string) error {
+	if title == "" {
+		return nil
+	}
+	if strings.TrimSpace(title) == "" {
+		return fmt.Errorf("annotation %s: blank title", id)
+	}
+	if strings.ContainsAny(title, "\n\r") {
+		return fmt.Errorf("annotation %s: a title is one line", id)
+	}
+	if count := len([]rune(title)); count > TitleLimit {
+		return fmt.Errorf("annotation %s: title is %d characters, the limit is %d so it never needs shortening", id, count, TitleLimit)
+	}
+	return nil
 }
 
 func (a Annotation) Validate() error {
@@ -178,6 +234,9 @@ func (a Annotation) Validate() error {
 	}
 	if _, err := ParseKind(string(a.Kind)); err != nil {
 		return fmt.Errorf("annotation %s: %w", a.ID, err)
+	}
+	if err := validTitle(a.ID, a.Title); err != nil {
+		return err
 	}
 	if strings.TrimSpace(a.Body) == "" {
 		return fmt.Errorf("annotation %s: empty body", a.ID)

@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/janpuc/koment/internal/anchor"
 	"github.com/janpuc/koment/internal/application"
 	"github.com/janpuc/koment/internal/provenance"
 	"github.com/janpuc/koment/internal/store"
@@ -285,7 +286,10 @@ func (s *server) codeLenses(raw json.RawMessage) (any, *rpcError, error) {
 	}
 	lenses := make([]any, 0, len(items))
 	for _, item := range items {
-		title := fmt.Sprintf("💬 %s · %s", item.Kind, item.Status)
+		title := item.Kind
+		if item.Status != string(anchor.StatusOK) {
+			title = fmt.Sprintf("%s · %s", item.Kind, item.Status)
+		}
 		lenses = append(lenses, map[string]any{
 			"range":   item.Range,
 			"command": command{Title: title, Command: "koment.showAnnotation", Arguments: []any{item}},

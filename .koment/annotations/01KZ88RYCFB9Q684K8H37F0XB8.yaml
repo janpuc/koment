@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+version: 1
+id: 01KZ88RYCFB9Q684K8H37F0XB8
+file: internal/store/record.go
+kind: why
+title: A title is capped so nothing has to truncate it
+body: |-
+  The limit is the feature, not a guard. A title short enough to render beside
+  code never needs shortening, so no surface has to choose where to cut.
+  koment refuses a longer title at write time rather than accepting it and
+  truncating on every read, which is what the removed inlineMaxLength setting
+  used to tune (ADR 0115).
+created: "2026-08-05"
+anchor:
+  scope: excerpt
+  excerpt: const TitleLimit = 72
+  before: |2-
+
+    // TitleLimit keeps a title short enough to render beside code without being
+    // shortened, which is the only reason it exists (ADR 0115).
+  after: |2
+
+    const SchemaURL = "https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json"
+  last_seen_line: 17
+git:
+  commit: eee7b5cfc0776c68816d7fdaa8af9d7a0e0da2e6
+  path: internal/store/record.go
+  line: 17
+author:
+  name: janpuc
+  email: janpuc@proton.me
+  kind: agent
+  source: git-config
