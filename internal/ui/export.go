@@ -329,26 +329,26 @@ func staticData(repositorySnapshot *application.RepositorySnapshot, name string,
 		for _, annotation := range file.Annotations {
 			record := annotation.Record
 			publishedAnnotation := staticAnnotation{
-				ID: record.ID, Kind: string(record.Kind), Title: record.Headline(), Body: record.Body,
-				Created: record.Created.Format("2006-01-02"), Status: string(annotation.Status),
+				ID: record.Metadata.ID, Kind: string(record.Spec.Type), Title: record.Headline(), Body: record.Spec.Body,
+				Created: record.Metadata.Created.Format("2006-01-02"), Status: string(annotation.Status),
 				Line: annotation.Line, Occurrences: annotation.Occurrences, Warning: annotation.Warning,
 				Anchor: staticAnchor{
-					Scope: string(record.Anchor.Scope), Excerpt: record.Anchor.Excerpt,
-					Before: record.Anchor.Before, After: record.Anchor.After, LastSeenLine: record.Anchor.LastSeenLine,
+					Scope: string(record.Spec.Anchor.Scope), Excerpt: record.Spec.Anchor.Excerpt,
+					Before: record.Spec.Anchor.Before, After: record.Spec.Anchor.After, LastSeenLine: record.Status.LastSeenLine,
 				},
 				Author: staticAuthor{
-					Name: record.Author.Name, Email: record.Author.Email, Kind: string(record.Author.Kind),
-					Source: string(record.Author.Source), Account: record.Author.Account, Verified: record.Author.Verified,
+					Name: record.Spec.Author.Name, Email: record.Spec.Author.Email, Kind: string(record.Spec.Author.Kind),
+					Source: string(record.Spec.Author.Source), Account: record.Spec.Author.Account, Verified: record.Spec.Author.Verified,
 				},
 			}
-			if record.Git != nil {
+			if record.Spec.Git != nil {
 				publishedAnnotation.Git = &staticGit{
-					Commit: record.Git.Commit, Path: record.Git.Path, Line: record.Git.Line, EndLine: record.Git.EndLine,
+					Commit: record.Spec.Git.Commit, Path: record.Spec.Git.Path, Line: record.Spec.Git.Line, EndLine: record.Spec.Git.EndLine,
 				}
 			}
-			if record.Policy != nil {
+			if record.Spec.Policy != nil {
 				publishedAnnotation.Policy = &staticPolicy{
-					Exception: record.Policy.Exception, Acknowledged: record.Policy.Acknowledged,
+					Exception: record.Spec.Policy.Exception, Acknowledged: record.Spec.Policy.Acknowledged,
 				}
 			}
 			publishedFile.Annotations = append(publishedFile.Annotations, publishedAnnotation)
@@ -363,9 +363,9 @@ func searchData(repositorySnapshot *application.RepositorySnapshot) []searchEntr
 	for _, file := range repositorySnapshot.Files {
 		for _, annotation := range file.Annotations {
 			entries = append(entries, searchEntry{
-				File: file.Path, ID: annotation.Record.ID, Kind: string(annotation.Record.Kind),
+				File: file.Path, ID: annotation.Record.Metadata.ID, Kind: string(annotation.Record.Spec.Type),
 				Title: annotation.Record.Headline(),
-				Body:  annotation.Record.Body, Author: annotation.Record.Author.Name,
+				Body:  annotation.Record.Spec.Body, Author: annotation.Record.Spec.Author.Name,
 				Status: string(annotation.Status), Warning: annotation.Warning, Line: annotation.Line,
 			})
 		}

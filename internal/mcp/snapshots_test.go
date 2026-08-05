@@ -27,7 +27,7 @@ func (materializer *recordingMaterializer) Materialize(
 	defer materializer.mu.Unlock()
 	materializer.record = record
 	return serving.Materialization{
-		Branch: "koment/" + record.ID, Commit: servedCommit, PullRequest: 42,
+		Branch: "koment/" + record.Metadata.ID, Commit: servedCommit, PullRequest: 42,
 		URL: "https://github.com/example/api/pull/42",
 	}, nil
 }
@@ -46,11 +46,17 @@ func servedCatalog(t *testing.T) *serving.Catalog {
 	}
 	for index, repository := range repositories {
 		record := store.Annotation{
-			Version: store.RecordVersion, ID: []string{"01JQ8ZK3M4N5P6R7S8T9V0W1X2", "01JQ8ZK3M4N5P6R7S8T9V0W1X3"}[index], File: "main.go",
-			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: "serve()", LastSeenLine: 3},
-			Kind:   store.KindWhy, Body: "The provider snapshot is immutable.",
-			Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-			Author:  store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+			APIVersion: store.APIVersion,
+			Kind:       store.KindAnnotation,
+			Metadata:   store.Metadata{ID: []string{"01JQ8ZK3M4N5P6R7S8T9V0W1X2", "01JQ8ZK3M4N5P6R7S8T9V0W1X3"}[index], Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+			Spec: store.Spec{
+				Target: store.Target{File: "main.go"},
+				Type:   store.TypeWhy,
+				Body:   "The provider snapshot is immutable.",
+				Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: "serve()"},
+				Author: store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+			},
+			Status: store.Status{LastSeenLine: 3},
 		}
 		snapshot, assembleErr := application.AssembleSnapshot(application.SnapshotInput{
 			Repository: repository.Identity, Commit: servedCommit, Records: []store.Annotation{record},
@@ -155,7 +161,7 @@ func TestWritableSnapshotServerMaterializesAnAttributedPullRequest(t *testing.T)
 	}
 	materializer.mu.Lock()
 	defer materializer.mu.Unlock()
-	if materializer.record.Author != author || materializer.record.Git.Commit != servedCommit {
+	if materializer.record.Spec.Author != author || materializer.record.Spec.Git.Commit != servedCommit {
 		t.Fatalf("record = %#v", materializer.record)
 	}
 }

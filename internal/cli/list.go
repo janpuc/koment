@@ -13,9 +13,9 @@ func runList(args []string, env Environment) int {
 		return ExitUsage
 	}
 
-	wanted := store.Kind("")
+	wanted := store.Type("")
 	if *kind != "" {
-		parsed, err := store.ParseKind(*kind)
+		parsed, err := store.ParseType(*kind)
 		if err != nil {
 			return misuse(env, "%v", err)
 		}
@@ -35,7 +35,7 @@ func runList(args []string, env Environment) int {
 	for _, entry := range resolved {
 		header := false
 		for _, resolution := range entry.resolutions {
-			if wanted != "" && resolution.Annotation.Kind != wanted {
+			if wanted != "" && resolution.Annotation.Spec.Type != wanted {
 				continue
 			}
 			if !header {

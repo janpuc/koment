@@ -160,7 +160,7 @@ func build(repositorySnapshot *application.RepositorySnapshot, requested string,
 			if statusSeverity[annotation.Status] > statusSeverity[worst] {
 				worst = annotation.Status
 			}
-			searchable.WriteString("\n" + string(annotation.Record.Kind) + "\n" + annotation.Record.Headline() + "\n" + annotation.Record.Body + "\n" + annotation.Record.Author.Name)
+			searchable.WriteString("\n" + string(annotation.Record.Spec.Type) + "\n" + annotation.Record.Headline() + "\n" + annotation.Record.Spec.Body + "\n" + annotation.Record.Spec.Author.Name)
 		}
 
 		listed = append(listed, entry{
@@ -237,14 +237,14 @@ func buildFile(file application.FileSnapshot) *fileView {
 func describe(annotation application.AnnotationView) note {
 	stale := annotation.Status.IsFailure()
 	return note{
-		ID:      annotation.Record.ID,
-		Kind:    string(annotation.Record.Kind),
+		ID:      annotation.Record.Metadata.ID,
+		Kind:    string(annotation.Record.Spec.Type),
 		Status:  annotation.Status,
 		Line:    annotation.Line,
 		Title:   annotation.Record.Headline(),
-		Body:    store.Paragraphs(annotation.Record.Body),
-		Created: annotation.Record.Created.Format("2006-01-02"),
-		Excerpt: annotation.Record.Anchor.Excerpt,
+		Body:    store.Paragraphs(annotation.Record.Spec.Body),
+		Created: annotation.Record.Metadata.Created.Format("2006-01-02"),
+		Excerpt: annotation.Record.Spec.Anchor.Excerpt,
 		Stale:   stale,
 		Warning: annotation.Warning,
 	}

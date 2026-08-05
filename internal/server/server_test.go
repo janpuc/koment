@@ -27,7 +27,7 @@ func (materializer *testMaterializer) Materialize(
 ) (serving.Materialization, error) {
 	materializer.record = record
 	return serving.Materialization{
-		Branch: "koment/" + record.ID, Commit: testCommit, PullRequest: 42,
+		Branch: "koment/" + record.Metadata.ID, Commit: testCommit, PullRequest: 42,
 		URL: "https://github.com/example/api/pull/42",
 	}, nil
 }
@@ -48,11 +48,17 @@ func testCatalog(t *testing.T, synchronized bool) *serving.Catalog {
 		return catalog
 	}
 	record := store.Annotation{
-		Version: store.RecordVersion, ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", File: "main.go",
-		Kind: store.KindWhy, Body: "The service owns synchronization.",
-		Created: store.Date{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)},
-		Anchor:  store.Anchor{Scope: store.ScopeExcerpt, Excerpt: "serve()", LastSeenLine: 3},
-		Author:  store.Author{Name: "Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 8, 3, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "main.go"},
+			Type:   store.TypeWhy,
+			Body:   "The service owns synchronization.",
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: "serve()"},
+			Author: store.Author{Name: "Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+		},
+		Status: store.Status{LastSeenLine: 3},
 	}
 	snapshot, err := application.AssembleSnapshot(application.SnapshotInput{
 		Repository: repository.Identity, Commit: testCommit, Records: []store.Annotation{record},
@@ -170,7 +176,7 @@ func TestAuthenticatedHumanWriteMaterializesAndRedirectsToReview(t *testing.T) {
 	if !strings.Contains(location, "created=") || !strings.Contains(location, "review=https") {
 		t.Fatalf("location = %q", location)
 	}
-	if materializer.record.Author.Verified != "loopback" || materializer.record.Git.Commit != testCommit {
+	if materializer.record.Spec.Author.Verified != "loopback" || materializer.record.Spec.Git.Commit != testCommit {
 		t.Fatalf("record = %#v", materializer.record)
 	}
 }

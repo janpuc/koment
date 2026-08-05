@@ -24,7 +24,7 @@ func DraftAnnotation(snapshot *RepositorySnapshot, input AddInput) (store.Annota
 	if err := input.Author.Validate(); err != nil {
 		return store.Annotation{}, err
 	}
-	if _, err := store.ParseKind(string(input.Kind)); err != nil {
+	if _, err := store.ParseType(string(input.Kind)); err != nil {
 		return store.Annotation{}, err
 	}
 	id, err := store.NewID(time.Now())
@@ -32,13 +32,20 @@ func DraftAnnotation(snapshot *RepositorySnapshot, input AddInput) (store.Annota
 		return store.Annotation{}, err
 	}
 	record := store.Annotation{
-		Version: store.RecordVersion, ID: id, File: file.Path, Kind: input.Kind,
-		Body: store.WrapProse(input.Body), Created: store.Today(), Author: input.Author, Policy: input.Policy,
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: id, Created: store.Now()},
+		Spec: store.Spec{
+			Target: store.Target{File: file.Path},
+			Type:   input.Kind,
+			Body:   store.WrapProse(input.Body),
+			Anchor: store.Anchor{Scope: store.ScopeFile},
+			Author: input.Author,
+			Policy: input.Policy,
+		},
 	}
-	if input.Excerpt == "" {
-		record.Anchor = store.Anchor{Scope: store.ScopeFile}
-	} else {
-		captured, captureErr := anchor.Capture(file.Content, input.Excerpt)
+	if input.Excerpt != "" {
+		captured, line, captureErr := anchor.Capture(file.Content, input.Excerpt)
 		if captureErr != nil {
 			lines := anchor.ExcerptLines(file.Content, input.Excerpt)
 			if len(lines) == 0 {
@@ -46,14 +53,16 @@ func DraftAnnotation(snapshot *RepositorySnapshot, input AddInput) (store.Annota
 			}
 			return store.Annotation{}, fmt.Errorf("excerpt matches %d places in %s (lines %v); extend it until it is unique", len(lines), file.Path, lines)
 		}
-		record.Anchor = captured
+		record.Spec.Anchor = captured
+		record.Status.LastSeenLine = line
 	}
-	line := record.Anchor.LastSeenLine
+	line := record.Status.LastSeenLine
 	endLine := line
 	if line > 0 {
 		endLine += strings.Count(strings.TrimSuffix(input.Excerpt, "\n"), "\n")
 	}
-	record.Git = &store.GitContext{Commit: snapshot.Commit, Path: file.Path, Line: line, EndLine: endLine}
+	record.Spec.Git = &store.GitContext{Commit: snapshot.Commit, Path: file.Path, Line: line, EndLine: endLine}
+	record.Status.Observe(store.AnchorOK, snapshot.Commit, store.Now())
 	if err := record.Validate(); err != nil {
 		return store.Annotation{}, err
 	}

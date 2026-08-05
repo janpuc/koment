@@ -165,7 +165,7 @@ func identity(repository serving.Repository) application.RepositoryIdentity {
 func uniqueSourcePaths(records []store.Annotation) []string {
 	seen := make(map[string]struct{}, len(records))
 	for _, record := range records {
-		seen[record.File] = struct{}{}
+		seen[record.Spec.Target.File] = struct{}{}
 	}
 	paths := make([]string, 0, len(seen))
 	for sourcePath := range seen {

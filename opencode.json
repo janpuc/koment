@@ -2,9 +2,15 @@
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "koment": {
-      "type": "local",
-      "command": ["koment", "mcp", "--write"]
+      "command": [
+        "koment",
+        "mcp",
+        "--write"
+      ],
+      "type": "local"
     }
   },
-  "plugin": ["./.opencode/plugins/koment.js"]
+  "plugin": [
+    "./.opencode/plugins/koment.js"
+  ]
 }

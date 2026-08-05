@@ -18,9 +18,9 @@ var ErrNoGit = errors.New("no usable git context")
 // ErrNoGit rather than guessing when git cannot answer, because a fabricated
 // commit reference is worse than an absent one.
 func Capture(root, file string, line, endLine int) (*store.GitContext, error) {
-	commit, err := git(root, "rev-parse", "HEAD")
+	commit, err := Head(root)
 	if err != nil {
-		return nil, ErrNoGit
+		return nil, err
 	}
 	if tracked, err := git(root, "ls-files", "--error-unmatch", file); err != nil || tracked == "" {
 		return nil, ErrNoGit
@@ -39,6 +39,17 @@ func endLineOrZero(line, endLine int) int {
 		return 0
 	}
 	return endLine
+}
+
+// Head is the full commit a record is stamped against. A record never stores
+// the abbreviated form, because an abbreviation stops being unique as history
+// grows.
+func Head(root string) (string, error) {
+	commit, err := git(root, "rev-parse", "HEAD")
+	if err != nil || commit == "" {
+		return "", ErrNoGit
+	}
+	return commit, nil
 }
 
 // HeadCommit is the abbreviated commit a snapshot was taken at. It reports

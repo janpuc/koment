@@ -262,31 +262,36 @@ is an editor presentation feature and never changes the source buffer.
 `.koment/annotations/<id>.yaml`:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYW1ETE3CVB6S0ND70GGZVWM
-file: internal/store/ulid.go
-kind: gotcha
-body: |-
-  26 Crockford characters carry 130 bits but a ULID holds 128, so the
-  value is left-padded by two.
-created: "2026-07-31"
-anchor:
-  scope: excerpt
-  excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(...)"
-  before: const (
-  after: )
-  last_seen_line: 18
-author:
-  name: Jan Pucilowski
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYW1ETE3CVB6S0ND70GGZVWM
+  created: "2026-07-31T10:04:00Z"
+spec:
+  target:
+    file: internal/store/ulid.go
+  type: gotcha
+  body: |-
+    26 Crockford characters carry 130 bits but a ULID holds 128, so the
+    value is left-padded by two.
+  anchor:
+    scope: excerpt
+    excerpt: "\tpaddingBits = ulidLength*bitsPerChar - 8*(...)"
+    before: const (
+    after: )
+  author:
+    name: Jan Pucilowski
+    kind: human
+    source: git-config
+status:
+  lastSeenLine: 18
 ```
 
 Hand-editing works, with schema completion in editors that support YAML schemas.
 Unknown fields and a filename that differs from `id` are rejected. `reanchor`
 exists so context is normally captured from source rather than typed.
 
-`last_seen_line` is descriptive, never an anchor: exact text and the captured
+`status.lastSeenLine` is descriptive, never an anchor: exact text and the captured
 `before` and `after` context choose identity. The line only distinguishes `ok`
 after one candidate remains.

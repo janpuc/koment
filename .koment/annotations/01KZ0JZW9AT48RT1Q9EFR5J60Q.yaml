@@ -1,32 +1,37 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0JZW9AT48RT1Q9EFR5J60Q
-file: internal/metrics/metrics.go
-kind: why
-title: Servers depend on a Recorder interface, never on Prometheus types
-body: |-
-  The Recorder interface exists so that neither server names a Prometheus
-  type. Discard satisfies it, so a deployment without --metrics pays one
-  interface call per request and links nothing it uses. This is weaker
-  confinement than ADR 0007 bought for the MCP SDK - the servers do import
-  this package - but it keeps every Prometheus API call inside
-  internal/metrics, so removing the dependency stays mechanical.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: type Recorder interface {
-  before: |2-
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0JZW9AT48RT1Q9EFR5J60Q
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/metrics/metrics.go
+  type: why
+  title: Servers depend on a Recorder interface, never on Prometheus types
+  body: |-
+    The Recorder interface exists so that neither server names a Prometheus
+    type. Discard satisfies it, so a deployment without --metrics pays one
+    interface call per request and links nothing it uses. This is weaker
+    confinement than ADR 0007 bought for the MCP SDK - the servers do import
+    this package - but it keeps every Prometheus API call inside
+    internal/metrics, so removing the dependency stays mechanical.
+  anchor:
+    scope: excerpt
+    excerpt: type Recorder interface {
+    before: |2-
 
-    // Recorder is what the servers depend on, so that neither imports Prometheus
-    // and a build without metrics costs nothing (ADR 0020).
-  after: "\tObserveRepository(resolved map[anchor.Status]int, files int, took time.Duration)\n\tObserveHTTP(handler string, code int, took time.Duration)\n\tObserveMCPCall(tool, outcome string, took time.Duration)"
-  last_seen_line: 32
-git:
-  commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
-  path: internal/metrics/metrics.go
-  line: 32
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+      // Recorder is what the servers depend on, so that neither imports Prometheus
+      // and a build without metrics costs nothing (ADR 0020).
+    after: "\tObserveRepository(resolved map[anchor.Status]int, files int, took time.Duration)\n\tObserveHTTP(handler string, code int, took time.Duration)\n\tObserveMCPCall(tool, outcome string, took time.Duration)"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 85803cbb596ba6f32014fa0bf4f573738ff43f80
+    path: internal/metrics/metrics.go
+    line: 32
+status:
+  lastSeenLine: 32

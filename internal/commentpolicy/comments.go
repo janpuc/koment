@@ -145,7 +145,7 @@ func Convert(content []byte, comment SourceComment) (Conversion, error) {
 
 // AcknowledgementExcerpt selects a unique anchor that contains the retained comment.
 func AcknowledgementExcerpt(content []byte, comment SourceComment) (string, error) {
-	if _, err := anchor.Capture(content, comment.Raw); err == nil {
+	if _, _, err := anchor.Capture(content, comment.Raw); err == nil {
 		return comment.Raw, nil
 	}
 	starts := lineStarts(content)
@@ -156,7 +156,7 @@ func AcknowledgementExcerpt(content []byte, comment SourceComment) (string, erro
 		last := min(len(starts)-1, endLine+radius)
 		excerpt := strings.TrimSpace(string(content[starts[first]:lineEnd(content, starts, last)]))
 		if strings.Contains(excerpt, comment.Raw) {
-			if _, err := anchor.Capture(content, excerpt); err == nil {
+			if _, _, err := anchor.Capture(content, excerpt); err == nil {
 				return excerpt, nil
 			}
 		}
@@ -334,9 +334,9 @@ func hasDirectivePrefix(text string) bool {
 
 func acknowledged(comment SourceComment, content []byte, records []store.Annotation) bool {
 	for _, record := range records {
-		if record.File != comment.File || record.Policy == nil ||
-			record.Policy.Exception != "inline-comment" || !record.Policy.Acknowledged ||
-			!strings.Contains(record.Anchor.Excerpt, comment.Raw) {
+		if record.Spec.Target.File != comment.File || record.Spec.Policy == nil ||
+			record.Spec.Policy.Exception != "inline-comment" || !record.Spec.Policy.Acknowledged ||
+			!strings.Contains(record.Spec.Anchor.Excerpt, comment.Raw) {
 			continue
 		}
 		if !anchor.Resolve(record, content).Status.IsFailure() {
@@ -451,8 +451,8 @@ func codeAnchor(content, original []byte, near int) (string, error) {
 				if excerpt == "" || strings.HasPrefix(excerpt, "//") || strings.HasPrefix(excerpt, "/*") {
 					continue
 				}
-				if _, err := anchor.Capture(content, excerpt); err == nil {
-					if _, originalErr := anchor.Capture(original, excerpt); originalErr == nil {
+				if _, _, err := anchor.Capture(content, excerpt); err == nil {
+					if _, _, originalErr := anchor.Capture(original, excerpt); originalErr == nil {
 						return excerpt, nil
 					}
 				}

@@ -1,28 +1,36 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0BD2G026QVYB3BCP5QBKGJ
-file: internal/store/context.go
-kind: why
-title: Full commit SHA only; an abbreviation becomes ambiguous later
-body: |-
-  A full SHA is required rather than an abbreviation. Git will happily accept
-  a 7-character prefix today and refuse it as ambiguous once the repository
-  grows, which turns a stored reference into a time bomb that only fires on
-  large histories. Storing the full hash costs 33 characters and removes the
-  failure entirely.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: var fullCommitSHA = regexp.MustCompile(`^[0-9a-f]{40}$|^[0-9a-f]{64}$`)
-  before: "\tEndLine int    `yaml:\"end_line,omitempty\"`\n}\n"
-  after: "\nfunc (g GitContext) Validate() error {\n\tif !fullCommitSHA.MatchString(g.Commit) {"
-  last_seen_line: 19
-git:
-  commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
-  path: internal/store/context.go
-  line: 19
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0BD2G026QVYB3BCP5QBKGJ
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/store/context.go
+  type: why
+  title: Full commit SHA only; an abbreviation becomes ambiguous later
+  body: |-
+    A full SHA is required rather than an abbreviation. Git will happily accept
+    a 7-character prefix today and refuse it as ambiguous once the repository
+    grows, which turns a stored reference into a time bomb that only fires on
+    large histories. Storing the full hash costs 33 characters and removes the
+    failure entirely.
+  anchor:
+    scope: excerpt
+    excerpt: var fullCommitSHA = regexp.MustCompile(`^[0-9a-f]{40}$|^[0-9a-f]{64}$`)
+    before: "\tEndLine int    `yaml:\"endLine,omitempty\"`\n}\n"
+    after: "\nfunc (g GitContext) Validate() error {\n\tif !fullCommitSHA.MatchString(g.Commit) {"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 9bfce6fe3d13c18065d1d798b73837ab6dfc0239
+    path: internal/store/context.go
+    line: 19
+status:
+  lastSeenLine: 19
+  resolution: ok
+  resolvedAt: "2026-08-05T11:47:26Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

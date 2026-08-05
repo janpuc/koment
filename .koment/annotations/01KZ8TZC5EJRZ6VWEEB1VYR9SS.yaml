@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8TZC5EJRZ6VWEEB1VYR9SS
+  created: "2026-08-05T11:29:40Z"
+spec:
+  target:
+    file: internal/application/service.go
+  type: invariant
+  body: |-
+    observe stamps the record with what this write saw. Anchoring succeeded, so
+    the resolution is ok; the commit is what lets a later reader tell how old
+    that observation is, and stays empty where there is no git to compare with.
+  anchor:
+    scope: excerpt
+    excerpt: func (s *Service) observe(record *store.Annotation) {
+    before: "\treturn nil\n}\n"
+    after: "\tcommit, err := provenance.Head(s.repository.Root)\n\tif err != nil {\n\t\tcommit = \"\""
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: fbd0ac77620b20dcea5f61ea20dc849c3a01252d
+    path: internal/application/service.go
+    line: 153
+status:
+  lastSeenLine: 150
+  resolution: ok
+  resolvedAt: "2026-08-05T11:29:40Z"
+  resolvedCommit: fbd0ac77620b20dcea5f61ea20dc849c3a01252d

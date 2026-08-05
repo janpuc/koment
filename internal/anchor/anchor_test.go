@@ -17,18 +17,17 @@ const excerptLineInBefore = 6
 
 func annotation(excerpt string, lastSeenLine int) store.Annotation {
 	return store.Annotation{
-		Version: store.RecordVersion,
-		ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-		File:    "resolve.go",
-		Kind:    store.KindGotcha,
-		Body:    "An empty excerpt means file scope, not a wildcard.",
-		Created: store.Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		Anchor: store.Anchor{
-			Scope:        store.ScopeExcerpt,
-			Excerpt:      excerpt,
-			LastSeenLine: lastSeenLine,
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "resolve.go"},
+			Type:   store.TypeGotcha,
+			Body:   "An empty excerpt means file scope, not a wildcard.",
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+			Author: store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
 		},
-		Author: store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+		Status: store.Status{LastSeenLine: lastSeenLine},
 	}
 }
 
@@ -53,11 +52,11 @@ func resolveAcrossExcerpt(t *testing.T, before, after, excerpt string) Resolutio
 		t.Fatal(err)
 	}
 	record := annotation(excerpt, excerptLineInBefore)
-	captured, err := Capture(beforeContent, excerpt)
+	captured, _, err := Capture(beforeContent, excerpt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	record.Anchor = captured
+	record.Spec.Anchor = captured
 	if err := record.Validate(); err != nil {
 		t.Fatalf("the before-state record is not valid: %v", err)
 	}
@@ -98,7 +97,7 @@ func TestCodeInsertedAboveStillResolvesCleanlyAtTheNewLine(t *testing.T) {
 	if got.Line != 10 {
 		t.Errorf("want the excerpt found at line 10, got %d", got.Line)
 	}
-	if got.Line == got.Annotation.Anchor.LastSeenLine {
+	if got.Line == got.Annotation.Status.LastSeenLine {
 		t.Fatal("this proves nothing unless the recorded line is stale")
 	}
 }
@@ -130,7 +129,7 @@ func TestDeletingTheFileResolvesOrphaned(t *testing.T) {
 
 func TestFileScopeResolvesOKWhateverTheContent(t *testing.T) {
 	fileScoped := annotation("unused", 1)
-	fileScoped.Anchor = store.Anchor{Scope: store.ScopeFile}
+	fileScoped.Spec.Anchor = store.Anchor{Scope: store.ScopeFile}
 	got := Resolve(fileScoped, testdata(t, "after-drifted.go.txt"))
 	if got.Status != StatusOK || got.Line != 0 {
 		t.Errorf("want file-scoped %s at no line, got %s at line %d", StatusOK, got.Status, got.Line)
@@ -155,8 +154,8 @@ func TestIdenticalContextResolvesAmbiguous(t *testing.T) {
 func TestLastSeenLineNeverChoosesAmongRepeatedExcerpts(t *testing.T) {
 	content := testdata(t, "after-ambiguous.go.txt")
 	record := annotation("\ttarget()", 17)
-	record.Anchor.Before = "\tprepareOne()\n\tprepareTwo()\n\tprepareThree()"
-	record.Anchor.After = "\tfinishOne()\n\tfinishTwo()\n\tfinishThree()"
+	record.Spec.Anchor.Before = "\tprepareOne()\n\tprepareTwo()\n\tprepareThree()"
+	record.Spec.Anchor.After = "\tfinishOne()\n\tfinishTwo()\n\tfinishThree()"
 	got := Resolve(record, content)
 	if got.Status != StatusAmbiguous {
 		t.Errorf("last_seen_line must not select a candidate, got %s at line %d", got.Status, got.Line)
@@ -164,14 +163,14 @@ func TestLastSeenLineNeverChoosesAmongRepeatedExcerpts(t *testing.T) {
 }
 
 func TestCaptureRejectsARepeatedExcerpt(t *testing.T) {
-	_, err := Capture(testdata(t, "after-contextual.go.txt"), "\ttarget()")
+	_, _, err := Capture(testdata(t, "after-contextual.go.txt"), "\ttarget()")
 	if err == nil || !strings.Contains(err.Error(), "2 times") {
 		t.Fatalf("want an actionable repeated-excerpt error, got %v", err)
 	}
 }
 
 func TestCaptureStoresAtMostThreeCompleteLinesOfContext(t *testing.T) {
-	captured, err := Capture(testdata(t, "before-repeated.go.txt"), "\ttarget()")
+	captured, _, err := Capture(testdata(t, "before-repeated.go.txt"), "\ttarget()")
 	if err != nil {
 		t.Fatal(err)
 	}

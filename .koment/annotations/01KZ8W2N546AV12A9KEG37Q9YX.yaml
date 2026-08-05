@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8W2N546AV12A9KEG37Q9YX
+  created: "2026-08-05T11:48:56Z"
+spec:
+  target:
+    file: internal/store/store.go
+  type: invariant
+  title: The upgrade happens in memory before it is ever written
+  body: |-
+    Order matters here. The record is fully upgraded and validated before
+    anything touches the filesystem, which is what lets a read-only mount serve
+    a v1 repository correctly: only the rewrite fails, and the caller gets the
+    same record either way. Reversing this - rewriting first, then returning
+    what was written - would make a container with a read-only workspace refuse
+    a repository it can read perfectly well. ADR 0119.
+  anchor:
+    scope: excerpt
+    excerpt: "\tannotation, upgraded, err := decodeAnnotation(id, content)"
+    before: "\tif err != nil {\n\t\treturn nil, err\n\t}"
+    after: "\tif err != nil {\n\t\treturn nil, err\n\t}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c
+    path: internal/store/store.go
+    line: 193
+status:
+  lastSeenLine: 193
+  resolution: ok
+  resolvedAt: "2026-08-05T11:48:56Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

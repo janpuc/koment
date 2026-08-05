@@ -55,7 +55,7 @@ func runCommentsCheck(args []string, env Environment) int {
 func runCommentsConvert(args []string, env Environment) int {
 	flags := flagSet("comments convert", env)
 	excerpt := flags.String("excerpt", "", "complete verbatim comment group to convert")
-	kind := flags.String("kind", string(store.KindWhy), "one of why, gotcha, invariant, anti-pattern")
+	kind := flags.String("kind", string(store.TypeWhy), "one of why, gotcha, invariant, anti-pattern")
 	author := flags.String("author", "", `override the git identity; "Name" or "Name <email>"`)
 	byAgent := flags.Bool("agent", false, "record this as written by an agent, not a person")
 	target, ok := onePositional("comments convert", "a file", flags, args, env)
@@ -65,7 +65,7 @@ func runCommentsConvert(args []string, env Environment) int {
 	if *excerpt == "" {
 		return misuse(env, "comments convert needs --excerpt")
 	}
-	parsedKind, err := store.ParseKind(*kind)
+	parsedKind, err := store.ParseType(*kind)
 	if err != nil {
 		return misuse(env, "%v", err)
 	}
@@ -136,6 +136,6 @@ func runCommentsAcknowledge(args []string, env Environment) int {
 
 func writeMutation(env Environment, mutation application.Mutation) {
 	writeMutationWarnings(env, mutation)
-	fmt.Fprintf(env.Stdout, "%s  %s %s  %s\n", mutation.Record.ID, mutation.Record.Kind,
-		location(mutation.Record.File, mutation.Record.Anchor.LastSeenLine), mutation.Path)
+	fmt.Fprintf(env.Stdout, "%s  %s %s  %s\n", mutation.Record.Metadata.ID, mutation.Record.Spec.Type,
+		location(mutation.Record.Spec.Target.File, mutation.Record.Status.LastSeenLine), mutation.Path)
 }

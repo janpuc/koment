@@ -1,23 +1,31 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYW1ETEEVMZ8QGW15J0WSBM9
-file: internal/store/record.go
-kind: gotcha
-title: An empty excerpt means file scope, never a wildcard match
-body: |-
-  An empty excerpt means file scope, not "matches everything". Treating it as
-  a wildcard makes every annotation resolve at offset zero and report ok
-  forever - which is precisely the silent-staleness failure koment exists to
-  prevent. ExcerptLines returns no matches for an empty needle for the same
-  reason, so the two halves agree.
-created: "2026-07-31"
-anchor:
-  scope: excerpt
-  excerpt: "\t\tif a.Excerpt == \"\" {"
-  before: "\t\t}\n\t\treturn nil\n\tcase ScopeExcerpt:"
-  after: "\t\t\treturn fmt.Errorf(\"annotation %s: excerpt anchor requires a non-empty excerpt\", id)\n\t\t}\n\t\tif a.LastSeenLine < 1 {"
-  last_seen_line: 112
-author:
-  name: Legacy import
-  kind: unknown
-  source: migration
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYW1ETEEVMZ8QGW15J0WSBM9
+  created: "2026-07-31T00:00:00Z"
+spec:
+  target:
+    file: internal/store/anchor.go
+  type: gotcha
+  title: An empty excerpt means file scope, never a wildcard match
+  body: |-
+    An empty excerpt means file scope, not "matches everything". Treating it as
+    a wildcard makes every annotation resolve at offset zero and report ok
+    forever - which is precisely the silent-staleness failure koment exists to
+    prevent. ExcerptLines returns no matches for an empty needle for the same
+    reason, so the two halves agree.
+  anchor:
+    scope: excerpt
+    excerpt: "\t\tif a.Excerpt == \"\" {"
+    before: "\t\t}\n\t\treturn nil\n\tcase ScopeExcerpt:"
+    after: "\t\t\treturn fmt.Errorf(\"annotation %s: excerpt anchor requires a non-empty excerpt\", id)\n\t\t}\n\t\tif err := validateContext(\"before\", a.Before); err != nil {"
+  author:
+    name: Legacy import
+    kind: unknown
+    source: migration
+status:
+  lastSeenLine: 76
+  resolution: ok
+  resolvedAt: "2026-08-05T11:47:26Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

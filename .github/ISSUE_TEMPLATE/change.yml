@@ -1,0 +1,48 @@
+---
+name: Proposed change
+description: Something koment should do differently, or should start doing.
+labels: [proposal]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        koment records the reasoning behind decisions, so a proposal is judged
+        on the same terms an ADR is: what problem, what alternatives, what is
+        given up.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What you were trying to do, and where koment got in the way. Describe
+        the situation, not the feature you already have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would change
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What else you considered, and why it is worse
+      description: >
+        A proposal with no rejected alternative has not been thought about
+        yet. Include anything already in koment that nearly does this.
+    validations:
+      required: true
+
+  - type: textarea
+    id: cost
+    attributes:
+      label: What this would make harder
+      description: >
+        Every change costs something. Naming the cost is how a maintainer can
+        agree with you quickly.
+    validations:
+      required: true

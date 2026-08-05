@@ -1,26 +1,31 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0AW2AGNWS4W18JRBS8CJ3Z
-file: internal/store/ulid.go
-kind: why
-title: ULIDs are minted and compared, never decoded back into a timestamp
-body: |-
-  Encoding is generate-only: koment mints ids and compares them as strings,
-  never parses one back into a timestamp. That is why there is no decoder to
-  keep in step with this.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: func encodeCrockford(id [timestampBytes + entropyBytes]byte) string {
-  before: "\treturn true\n}\n"
-  after: "\tout := make([]byte, ulidLength)\n\tfor i := range out {\n\t\tout[i] = crockfordAlphabet[fiveBitsAt(id, i*bitsPerChar)]"
-  last_seen_line: 53
-git:
-  commit: c5d12fbd8f95821b46dda2a1cb0ffefbdf923b7c
-  path: internal/store/ulid.go
-  line: 40
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0AW2AGNWS4W18JRBS8CJ3Z
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: internal/store/ulid.go
+  type: why
+  title: ULIDs are minted and compared, never decoded back into a timestamp
+  body: |-
+    Encoding is generate-only: koment mints ids and compares them as strings,
+    never parses one back into a timestamp. That is why there is no decoder to
+    keep in step with this.
+  anchor:
+    scope: excerpt
+    excerpt: func encodeCrockford(id [timestampBytes + entropyBytes]byte) string {
+    before: "\treturn true\n}\n"
+    after: "\tout := make([]byte, ulidLength)\n\tfor i := range out {\n\t\tout[i] = crockfordAlphabet[fiveBitsAt(id, i*bitsPerChar)]"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: c5d12fbd8f95821b46dda2a1cb0ffefbdf923b7c
+    path: internal/store/ulid.go
+    line: 40
+status:
+  lastSeenLine: 53

@@ -1,12 +1,14 @@
 package store
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -188,39 +190,105 @@ func (s *Store) Load(id string) (_ *Annotation, returnedError error) {
 	if err != nil {
 		return nil, err
 	}
-	return DecodeAnnotation(id, content)
-}
-
-// DecodeAnnotation validates one record read from a non-filesystem source.
-func DecodeAnnotation(id string, content []byte) (*Annotation, error) {
-	name, err := recordName(id)
+	annotation, upgraded, err := decodeAnnotation(id, content)
 	if err != nil {
 		return nil, err
 	}
-	var annotation Annotation
-	decoder := yaml.NewDecoder(strings.NewReader(string(content)))
+	if upgraded {
+		persistUpgrade(root, name, annotation)
+	}
+	return annotation, nil
+}
+
+func persistUpgrade(root *os.Root, name string, annotation *Annotation) {
+	encoded, err := EncodeAnnotation(annotation)
+	if err == nil {
+		err = writeAtomically(root, name, encoded)
+	}
+	if err != nil {
+		slog.Warn("koment left a record in the v1 shape", "record", name, "error", err)
+	}
+}
+
+// DecodeAnnotation validates one record read from a non-filesystem source. A
+// v1 record is upgraded in memory; only Store.Load writes the upgrade back.
+func DecodeAnnotation(id string, content []byte) (*Annotation, error) {
+	annotation, _, err := decodeAnnotation(id, content)
+	return annotation, err
+}
+
+type recordShape struct {
+	APIVersion string `yaml:"apiVersion"`
+	Version    *int   `yaml:"version"`
+}
+
+func decodeAnnotation(id string, content []byte) (*Annotation, bool, error) {
+	name, err := recordName(id)
+	if err != nil {
+		return nil, false, err
+	}
+	var shape recordShape
+	if err := yaml.Unmarshal(content, &shape); err != nil {
+		return nil, false, fmt.Errorf("parsing %s: %w", name, err)
+	}
+
+	annotation, upgraded, err := decodeShape(name, shape, content)
+	if err != nil {
+		return nil, false, err
+	}
+	if err := annotation.Validate(); err != nil {
+		return nil, false, fmt.Errorf("in %s: %w", name, err)
+	}
+	if annotation.Metadata.ID != id {
+		return nil, false, fmt.Errorf("in %s: record claims id %s but filename claims %s", name, annotation.Metadata.ID, id)
+	}
+	return annotation, upgraded, nil
+}
+
+func decodeShape(name string, shape recordShape, content []byte) (*Annotation, bool, error) {
+	switch {
+	case shape.APIVersion == APIVersion:
+		var annotation Annotation
+		if err := decodeOneDocument(name, content, &annotation); err != nil {
+			return nil, false, err
+		}
+		return &annotation, false, nil
+	case shape.APIVersion != "":
+		return nil, false, fmt.Errorf(
+			"incompatible %s: apiVersion %q is not supported; this binary reads %s (ADR 0119)",
+			name, shape.APIVersion, APIVersion)
+	case shape.Version != nil && *shape.Version == LegacyRecordVersion:
+		var legacy legacyRecord
+		if err := decodeOneDocument(name, content, &legacy); err != nil {
+			return nil, false, err
+		}
+		upgraded := upgradeLegacy(legacy)
+		return &upgraded, true, nil
+	default:
+		return nil, false, fmt.Errorf(
+			"incompatible %s: no apiVersion; a koment record starts with `apiVersion: %s` (ADR 0119)",
+			name, APIVersion)
+	}
+}
+
+func decodeOneDocument(name string, content []byte, into any) error {
+	decoder := yaml.NewDecoder(bytes.NewReader(content))
 	decoder.KnownFields(true)
-	if err := decoder.Decode(&annotation); err != nil {
-		return nil, fmt.Errorf("parsing %s: %w", name, err)
+	if err := decoder.Decode(into); err != nil {
+		return fmt.Errorf("parsing %s: %w", name, err)
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
 		if err == nil {
-			return nil, fmt.Errorf("parsing %s: multiple YAML documents are not allowed", name)
+			return fmt.Errorf("parsing %s: multiple YAML documents are not allowed", name)
 		}
-		return nil, fmt.Errorf("parsing %s after the annotation: %w", name, err)
+		return fmt.Errorf("parsing %s after the annotation: %w", name, err)
 	}
-	if err := annotation.Validate(); err != nil {
-		return nil, fmt.Errorf("in %s: %w", name, err)
-	}
-	if annotation.ID != id {
-		return nil, fmt.Errorf("in %s: record claims id %s but filename claims %s", name, annotation.ID, id)
-	}
-	return &annotation, nil
+	return nil
 }
 
 func (s *Store) Save(annotation *Annotation) (returnedError error) {
-	name, err := recordName(annotation.ID)
+	name, err := recordName(annotation.Metadata.ID)
 	if err != nil {
 		return err
 	}
@@ -249,10 +317,10 @@ func EncodeAnnotation(annotation *Annotation) ([]byte, error) {
 	encoder := yaml.NewEncoder(&encoded)
 	encoder.SetIndent(yamlIndent)
 	if err := encoder.Encode(annotation); err != nil {
-		return nil, fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
+		return nil, fmt.Errorf("encoding annotation %s: %w", annotation.Metadata.ID, err)
 	}
 	if err := encoder.Close(); err != nil {
-		return nil, fmt.Errorf("encoding annotation %s: %w", annotation.ID, err)
+		return nil, fmt.Errorf("encoding annotation %s: %w", annotation.Metadata.ID, err)
 	}
 	return []byte(encoded.String()), nil
 }
@@ -358,7 +426,7 @@ func (s *Store) ForFile(file string) ([]Annotation, error) {
 	}
 	annotations := make([]Annotation, 0)
 	for _, annotation := range all {
-		if annotation.File == clean {
+		if annotation.Spec.Target.File == clean {
 			annotations = append(annotations, annotation)
 		}
 	}
@@ -372,7 +440,7 @@ func (s *Store) AnnotatedFiles() ([]string, error) {
 	}
 	unique := make(map[string]struct{}, len(annotations))
 	for _, annotation := range annotations {
-		unique[annotation.File] = struct{}{}
+		unique[annotation.Spec.Target.File] = struct{}{}
 	}
 	files := make([]string, 0, len(unique))
 	for file := range unique {

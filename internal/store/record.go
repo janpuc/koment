@@ -3,141 +3,159 @@ package store
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
-	"time"
 
-	yaml "go.yaml.in/yaml/v3"
+	"github.com/janpuc/koment/internal/api"
 )
 
-const RecordVersion = 1
+// APIVersion is matched exactly. A record carrying anything else is refused
+// rather than guessed at.
+const APIVersion = api.Version
+
+// KindAnnotation is the resource kind of an annotation record.
+const KindAnnotation = "Annotation"
 
 // TitleLimit keeps a title short enough to render beside code without being
 // shortened, which is the only reason it exists (ADR 0115).
 const TitleLimit = 72
 
-const SchemaURL = "https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json"
+const SchemaURL = api.SchemaBase + "annotation.schema.json"
 
-type Kind string
+// Type is the category of rationale a record carries.
+type Type string
 
 const (
-	KindWhy         Kind = "why"
-	KindGotcha      Kind = "gotcha"
-	KindInvariant   Kind = "invariant"
-	KindAntiPattern Kind = "anti-pattern"
+	TypeWhy         Type = "why"
+	TypeGotcha      Type = "gotcha"
+	TypeInvariant   Type = "invariant"
+	TypeAntiPattern Type = "anti-pattern"
 )
 
-var Kinds = []Kind{KindWhy, KindGotcha, KindInvariant, KindAntiPattern}
+var Types = []Type{TypeWhy, TypeGotcha, TypeInvariant, TypeAntiPattern}
 
-func ParseKind(text string) (Kind, error) {
-	for _, kind := range Kinds {
-		if Kind(text) == kind {
-			return kind, nil
+func ParseType(text string) (Type, error) {
+	for _, candidate := range Types {
+		if Type(text) == candidate {
+			return candidate, nil
 		}
 	}
-	return "", fmt.Errorf("unknown kind %q, want one of %s", text, joinKinds())
+	return "", fmt.Errorf("unknown type %q, want one of %s", text, joinTypes())
 }
 
-func joinKinds() string {
-	names := make([]string, len(Kinds))
-	for index, kind := range Kinds {
-		names[index] = string(kind)
+func joinTypes() string {
+	names := make([]string, len(Types))
+	for index, annotationType := range Types {
+		names[index] = string(annotationType)
 	}
 	return strings.Join(names, ", ")
 }
 
-type Scope string
+// AnchorStatus is the verdict of resolving an anchor against a file. It is
+// computed by reading the file, never by trusting a stored value.
+type AnchorStatus string
 
 const (
-	ScopeFile    Scope = "file"
-	ScopeExcerpt Scope = "excerpt"
+	AnchorOK        AnchorStatus = "ok"
+	AnchorAmbiguous AnchorStatus = "ambiguous"
+	AnchorDrifted   AnchorStatus = "drifted"
+	AnchorOrphaned  AnchorStatus = "orphaned"
 )
 
-func ParseScope(text string) (Scope, error) {
-	switch Scope(text) {
+var AnchorStatuses = []AnchorStatus{AnchorOK, AnchorAmbiguous, AnchorDrifted, AnchorOrphaned}
+
+func (s AnchorStatus) IsFailure() bool {
+	return s == AnchorAmbiguous || s == AnchorDrifted || s == AnchorOrphaned
+}
+
+func ParseAnchorStatus(text string) (AnchorStatus, error) {
+	for _, candidate := range AnchorStatuses {
+		if AnchorStatus(text) == candidate {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("unknown resolution %q", text)
+}
+
+// Annotation is one rationale record on disk.
+type Annotation struct {
+	APIVersion string   `yaml:"apiVersion"`
+	Kind       string   `yaml:"kind"`
+	Metadata   Metadata `yaml:"metadata"`
+	Spec       Spec     `yaml:"spec"`
+	Status     Status   `yaml:"status,omitempty"`
+}
+
+// Metadata identifies the record. Kubernetes names this field name; a ULID is
+// not a DNS-1123 name, so koment diverges deliberately and calls it id. Do not
+// align it without a migration.
+type Metadata struct {
+	ID      string    `yaml:"id"`
+	Created Timestamp `yaml:"created"`
+}
+
+// Target is what the annotation is about. It is a mapping rather than a bare
+// path so that a function or a member can join the file without reshaping the
+// record again.
+type Target struct {
+	File string `yaml:"file"`
+}
+
+// Spec is the authored intent: everything a person or agent decided.
+type Spec struct {
+	Target Target      `yaml:"target"`
+	Type   Type        `yaml:"type"`
+	Title  string      `yaml:"title,omitempty"`
+	Body   string      `yaml:"body"`
+	Anchor Anchor      `yaml:"anchor"`
+	Author Author      `yaml:"author"`
+	Git    *GitContext `yaml:"git,omitempty"`
+	Policy *Policy     `yaml:"policy,omitempty"`
+}
+
+// Status is what the last write observed, stamped with the commit it observed
+// it at. Nothing reads it back as a verdict: a reader resolves the anchor
+// against the file in front of it, and ResolvedCommit is what lets that reader
+// see how old the recorded observation is.
+type Status struct {
+	LastSeenLine   int          `yaml:"lastSeenLine,omitempty"`
+	Resolution     AnchorStatus `yaml:"resolution,omitempty"`
+	ResolvedAt     Timestamp    `yaml:"resolvedAt,omitempty"`
+	ResolvedCommit string       `yaml:"resolvedCommit,omitempty"`
+}
+
+// Observe records a resolution, leaving ResolvedAt alone when the verdict and
+// the commit are already the ones recorded. ResolvedAt then answers "since
+// when has this been true" instead of "when did a command last run".
+func (s *Status) Observe(resolution AnchorStatus, commit string, at Timestamp) {
+	if s.Resolution == resolution && s.ResolvedCommit == commit {
+		return
+	}
+	s.Resolution = resolution
+	s.ResolvedCommit = commit
+	s.ResolvedAt = at
+}
+
+func (s Status) Validate(id string, scope Scope) error {
+	switch scope {
 	case ScopeFile:
-		return ScopeFile, nil
+		if s.LastSeenLine != 0 {
+			return fmt.Errorf("annotation %s: a file-scoped record has no line to observe", id)
+		}
 	case ScopeExcerpt:
-		return ScopeExcerpt, nil
-	}
-	return "", fmt.Errorf("unknown scope %q, want one of %s, %s", text, ScopeFile, ScopeExcerpt)
-}
-
-type Anchor struct {
-	Scope        Scope  `yaml:"scope"`
-	Excerpt      string `yaml:"excerpt,omitempty"`
-	Before       string `yaml:"before,omitempty"`
-	After        string `yaml:"after,omitempty"`
-	LastSeenLine int    `yaml:"last_seen_line,omitempty"`
-}
-
-func (a Anchor) MarshalYAML() (any, error) {
-	node := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
-	appendScalar := func(key, value, tag string, style yaml.Style) {
-		node.Content = append(node.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
-			&yaml.Node{Kind: yaml.ScalarNode, Tag: tag, Value: value, Style: style},
-		)
-	}
-	appendScalar("scope", string(a.Scope), "!!str", 0)
-	if a.Excerpt != "" {
-		appendScalar("excerpt", a.Excerpt, "!!str", safeStringStyle(a.Excerpt))
-	}
-	if a.Before != "" {
-		appendScalar("before", a.Before, "!!str", safeStringStyle(a.Before))
-	}
-	if a.After != "" {
-		appendScalar("after", a.After, "!!str", safeStringStyle(a.After))
-	}
-	if a.LastSeenLine != 0 {
-		appendScalar("last_seen_line", strconv.Itoa(a.LastSeenLine), "!!int", 0)
-	}
-	return node, nil
-}
-
-func safeStringStyle(value string) yaml.Style {
-	if strings.Contains(value, "\t") {
-		return yaml.DoubleQuotedStyle
-	}
-	if strings.Contains(value, "\n") {
-		return yaml.LiteralStyle
-	}
-	return 0
-}
-
-func (a Anchor) Validate(id string) error {
-	switch a.Scope {
-	case ScopeFile:
-		if a.Excerpt != "" || a.Before != "" || a.After != "" || a.LastSeenLine != 0 {
-			return fmt.Errorf("annotation %s: file anchor must not carry excerpt context or a line", id)
+		if s.LastSeenLine < 1 {
+			return fmt.Errorf("annotation %s: status.lastSeenLine %d is not a positive line number", id, s.LastSeenLine)
 		}
-		return nil
-	case ScopeExcerpt:
-		if a.Excerpt == "" {
-			return fmt.Errorf("annotation %s: excerpt anchor requires a non-empty excerpt", id)
-		}
-		if a.LastSeenLine < 1 {
-			return fmt.Errorf("annotation %s: last_seen_line %d is not a positive line number", id, a.LastSeenLine)
-		}
-		if err := validateContext("before", a.Before); err != nil {
+	}
+	if s.Resolution != "" {
+		if _, err := ParseAnchorStatus(string(s.Resolution)); err != nil {
 			return fmt.Errorf("annotation %s: %w", id, err)
 		}
-		if err := validateContext("after", a.After); err != nil {
-			return fmt.Errorf("annotation %s: %w", id, err)
-		}
-		return nil
-	default:
-		_, err := ParseScope(string(a.Scope))
-		return fmt.Errorf("annotation %s: %w", id, err)
 	}
-}
-
-func validateContext(name, context string) error {
-	if context == "" {
-		return nil
+	if (s.Resolution == "") != s.ResolvedAt.IsZero() {
+		return fmt.Errorf("annotation %s: status.resolution and status.resolvedAt are recorded together or not at all", id)
 	}
-	if strings.Count(strings.TrimSuffix(context, "\n"), "\n") >= 3 {
-		return fmt.Errorf("anchor.%s contains more than three lines", name)
+	if s.ResolvedCommit != "" && !fullCommitSHA.MatchString(s.ResolvedCommit) {
+		return fmt.Errorf("annotation %s: status.resolvedCommit %q is not a full SHA", id, s.ResolvedCommit)
 	}
 	return nil
 }
@@ -149,26 +167,12 @@ type Policy struct {
 
 func (p Policy) Validate(annotation Annotation) error {
 	if p.Exception != "inline-comment" || !p.Acknowledged {
-		return fmt.Errorf("annotation %s: policy must explicitly acknowledge an inline-comment exception", annotation.ID)
+		return fmt.Errorf("annotation %s: policy must explicitly acknowledge an inline-comment exception", annotation.Metadata.ID)
 	}
-	if annotation.Kind != KindWhy || annotation.Anchor.Scope != ScopeExcerpt {
-		return fmt.Errorf("annotation %s: inline-comment policy requires a why annotation with an excerpt anchor", annotation.ID)
+	if annotation.Spec.Type != TypeWhy || annotation.Spec.Anchor.Scope != ScopeExcerpt {
+		return fmt.Errorf("annotation %s: inline-comment policy requires a why annotation with an excerpt anchor", annotation.Metadata.ID)
 	}
 	return nil
-}
-
-type Annotation struct {
-	Version int         `yaml:"version"`
-	ID      string      `yaml:"id"`
-	File    string      `yaml:"file"`
-	Kind    Kind        `yaml:"kind"`
-	Title   string      `yaml:"title,omitempty"`
-	Body    string      `yaml:"body"`
-	Created Date        `yaml:"created"`
-	Anchor  Anchor      `yaml:"anchor"`
-	Git     *GitContext `yaml:"git,omitempty"`
-	Author  Author      `yaml:"author"`
-	Policy  *Policy     `yaml:"policy,omitempty"`
 }
 
 // Headline is what a reader sees beside the code. A record written before
@@ -176,10 +180,10 @@ type Annotation struct {
 // stands in, shortened at a word boundary. It is never written back: a derived
 // title in the record would become a second copy of the body that drifts.
 func (a Annotation) Headline() string {
-	if title := strings.TrimSpace(a.Title); title != "" {
+	if title := strings.TrimSpace(a.Spec.Title); title != "" {
 		return title
 	}
-	return shorten(firstSentence(a.Body), TitleLimit)
+	return shorten(firstSentence(a.Spec.Body), TitleLimit)
 }
 
 func firstSentence(body string) string {
@@ -201,9 +205,9 @@ func shorten(text string, limit int) string {
 	}
 	runes := []rune(text)[:limit]
 	if space := strings.LastIndex(string(runes), " "); space > limit/2 {
-		return strings.TrimRight(string(runes)[:space], " ,;:") + "\u2026"
+		return strings.TrimRight(string(runes)[:space], " ,;:") + "…"
 	}
-	return strings.TrimRight(string(runes), " ,;:") + "\u2026"
+	return strings.TrimRight(string(runes), " ,;:") + "…"
 }
 
 func validTitle(id, title string) error {
@@ -223,64 +227,59 @@ func validTitle(id, title string) error {
 }
 
 func (a Annotation) Validate() error {
-	if a.Version != RecordVersion {
-		return fmt.Errorf("annotation %s has version %d, want %d", a.ID, a.Version, RecordVersion)
+	if a.APIVersion != APIVersion {
+		return fmt.Errorf("annotation %s has apiVersion %q, want %q", a.Metadata.ID, a.APIVersion, APIVersion)
 	}
-	if !ValidID(a.ID) {
-		return fmt.Errorf("annotation id %q is not a canonical ULID", a.ID)
+	if a.Kind != KindAnnotation {
+		return fmt.Errorf("annotation %s has kind %q, want %q", a.Metadata.ID, a.Kind, KindAnnotation)
 	}
-	if _, err := validSourcePath(a.File); err != nil {
-		return fmt.Errorf("annotation %s file: %w", a.ID, err)
-	}
-	if _, err := ParseKind(string(a.Kind)); err != nil {
-		return fmt.Errorf("annotation %s: %w", a.ID, err)
-	}
-	if err := validTitle(a.ID, a.Title); err != nil {
+	if err := a.Metadata.Validate(); err != nil {
 		return err
 	}
-	if strings.TrimSpace(a.Body) == "" {
-		return fmt.Errorf("annotation %s: empty body", a.ID)
-	}
-	if a.Created.IsZero() {
-		return fmt.Errorf("annotation %s: missing created date", a.ID)
-	}
-	if err := a.Anchor.Validate(a.ID); err != nil {
+	if err := a.Spec.Validate(a.Metadata.ID); err != nil {
 		return err
 	}
-	if a.Git != nil {
-		if err := a.Git.Validate(); err != nil {
-			return fmt.Errorf("annotation %s: %w", a.ID, err)
-		}
-	}
-	if err := a.Author.Validate(); err != nil {
-		return fmt.Errorf("annotation %s: %w", a.ID, err)
-	}
-	if a.Policy != nil {
-		if err := a.Policy.Validate(a); err != nil {
+	if a.Spec.Policy != nil {
+		if err := a.Spec.Policy.Validate(a); err != nil {
 			return err
 		}
+	}
+	return a.Status.Validate(a.Metadata.ID, a.Spec.Anchor.Scope)
+}
+
+func (m Metadata) Validate() error {
+	if !ValidID(m.ID) {
+		return fmt.Errorf("annotation id %q is not a canonical ULID", m.ID)
+	}
+	if m.Created.IsZero() {
+		return fmt.Errorf("annotation %s: missing metadata.created", m.ID)
 	}
 	return nil
 }
 
-// Date is a calendar date with no time or zone, written as YYYY-MM-DD.
-type Date struct{ time.Time }
-
-const dateLayout = "2006-01-02"
-
-func Today() Date { return Date{time.Now().UTC().Truncate(24 * time.Hour)} }
-
-func (d Date) MarshalYAML() (any, error) { return d.Format(dateLayout), nil }
-
-func (d *Date) UnmarshalYAML(unmarshal func(any) error) error {
-	var text string
-	if err := unmarshal(&text); err != nil {
-		return fmt.Errorf("created must be a %s date: %w", dateLayout, err)
+func (s Spec) Validate(id string) error {
+	if _, err := validSourcePath(s.Target.File); err != nil {
+		return fmt.Errorf("annotation %s target.file: %w", id, err)
 	}
-	parsed, err := time.Parse(dateLayout, text)
-	if err != nil {
-		return fmt.Errorf("created %q is not a %s date", text, dateLayout)
+	if _, err := ParseType(string(s.Type)); err != nil {
+		return fmt.Errorf("annotation %s: %w", id, err)
 	}
-	d.Time = parsed
+	if err := validTitle(id, s.Title); err != nil {
+		return err
+	}
+	if strings.TrimSpace(s.Body) == "" {
+		return fmt.Errorf("annotation %s: empty body", id)
+	}
+	if err := s.Anchor.Validate(id); err != nil {
+		return err
+	}
+	if s.Git != nil {
+		if err := s.Git.Validate(); err != nil {
+			return fmt.Errorf("annotation %s: %w", id, err)
+		}
+	}
+	if err := s.Author.Validate(); err != nil {
+		return fmt.Errorf("annotation %s: %w", id, err)
+	}
 	return nil
 }

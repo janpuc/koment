@@ -34,18 +34,17 @@ func repositoryWithOneAnnotation(t *testing.T) *store.Store {
 	annotations := store.Open(root)
 	excerpt := "\tserve()"
 	record := &store.Annotation{
-		Version: store.RecordVersion,
-		ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-		File:    "main.go",
-		Anchor: store.Anchor{
-			Scope:        store.ScopeExcerpt,
-			Excerpt:      excerpt,
-			LastSeenLine: 4,
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "main.go"},
+			Type:   store.TypeInvariant,
+			Body:   "serve must be the last call: it blocks until the process is signalled.",
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+			Author: store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
 		},
-		Kind:    store.KindInvariant,
-		Body:    "serve must be the last call: it blocks until the process is signalled.",
-		Created: store.Date{Time: time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)},
-		Author:  store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit},
+		Status: store.Status{LastSeenLine: 4},
 	}
 	if err := annotations.Save(record); err != nil {
 		t.Fatal(err)

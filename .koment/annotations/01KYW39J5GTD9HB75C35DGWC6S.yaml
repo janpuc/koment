@@ -1,26 +1,31 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYW39J5GTD9HB75C35DGWC6S
-file: internal/application/service.go
-kind: why
-title: Reanchor keeps the same id and date; only the target moves
-body: |-
-  Re-anchoring keeps the annotation's ULID and its created date on purpose.
-  The annotation is the same annotation; only where it points changed.
-  Deleting and re-adding would be simpler code but would mint a new id and a
-  new date, so the record would claim to be younger than the thinking in it,
-  and would sever it from its own git history. ADR 0012.
-created: "2026-07-31"
-anchor:
-  scope: excerpt
-  excerpt: func (s *Service) Reanchor(input ReanchorInput) (Mutation, error) {
-  before: |-
-    }
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYW39J5GTD9HB75C35DGWC6S
+  created: "2026-07-31T00:00:00Z"
+spec:
+  target:
+    file: internal/application/service.go
+  type: why
+  title: Reanchor keeps the same id and date; only the target moves
+  body: |-
+    Re-anchoring keeps the annotation's ULID and its created date on purpose.
+    The annotation is the same annotation; only where it points changed.
+    Deleting and re-adding would be simpler code but would mint a new id and a
+    new date, so the record would claim to be younger than the thinking in it,
+    and would sever it from its own git history. ADR 0012.
+  anchor:
+    scope: excerpt
+    excerpt: func (s *Service) Reanchor(input ReanchorInput) (Mutation, error) {
+    before: |-
+      }
 
-    // Reanchor changes only an annotation's target.
-  after: "\trecord, err := s.store.FindByID(input.ID)\n\tif err != nil {\n\t\treturn Mutation{}, err"
-  last_seen_line: 87
-author:
-  name: Legacy import
-  kind: unknown
-  source: migration
+      // Reanchor changes only an annotation's target.
+    after: "\trecord, err := s.store.FindByID(input.ID)\n\tif err != nil {\n\t\treturn Mutation{}, err"
+  author:
+    name: Legacy import
+    kind: unknown
+    source: migration
+status:
+  lastSeenLine: 87

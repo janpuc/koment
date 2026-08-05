@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8W2918N9BDME5E95ZQ297P
+  created: "2026-08-05T11:48:43Z"
+spec:
+  target:
+    file: internal/store/timestamp.go
+  type: gotcha
+  title: Reading the node is what makes an unquoted date parse
+  body: |-
+    An unquoted `2026-08-05` resolves to the YAML `!!timestamp` tag, which
+    refuses to decode into a string, so the obsolete `UnmarshalYAML(unmarshal
+    func(any))` form fails on exactly the hand-written records this has to
+    accept. koment's own writes are quoted and would have worked either way; a
+    record a person typed would not. Reading `node.Value` skips tag resolution
+    and gets the bytes as written. Keep the Node signature: yaml.v3 dispatches
+    to it in preference to the obsolete one, and swapping back reintroduces the
+    failure silently.
+  anchor:
+    scope: excerpt
+    excerpt: func (t *Timestamp) UnmarshalYAML(node *yaml.Node) error {
+    before: |-
+      // UnmarshalYAML reads the node rather than a decoded value because an
+      // unquoted 2026-08-05 resolves to !!timestamp, which will not decode into a
+      // string at all. Reading Value sidesteps tag resolution entirely.
+    after: "\tif node.Kind != yaml.ScalarNode {\n\t\treturn fmt.Errorf(\"a timestamp is a single value, got %s\", node.Tag)\n\t}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c
+    path: internal/store/timestamp.go
+    line: 37
+status:
+  lastSeenLine: 37
+  resolution: ok
+  resolvedAt: "2026-08-05T11:48:43Z"
+  resolvedCommit: 5b6d11a9591e13bd2cce0fdedb44f7acbcd8823c

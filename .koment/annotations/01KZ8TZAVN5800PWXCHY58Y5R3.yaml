@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8TZAVN5800PWXCHY58Y5R3
+  created: "2026-08-05T11:29:38Z"
+spec:
+  target:
+    file: internal/store/store.go
+  type: why
+  body: |-
+    recordShape carries just enough of a record to tell the generations apart.
+    It is decoded without KnownFields so that a record from either generation
+    parses; the strict pass follows once the shape is known.
+  anchor:
+    scope: excerpt
+    excerpt: type recordShape struct {
+    before: "\treturn annotation, err\n}\n"
+    after: "\tAPIVersion string `yaml:\"apiVersion\"`\n\tVersion    *int   `yaml:\"version\"`\n}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: fbd0ac77620b20dcea5f61ea20dc849c3a01252d
+    path: internal/store/store.go
+    line: 223
+status:
+  lastSeenLine: 220
+  resolution: ok
+  resolvedAt: "2026-08-05T11:29:38Z"
+  resolvedCommit: fbd0ac77620b20dcea5f61ea20dc849c3a01252d

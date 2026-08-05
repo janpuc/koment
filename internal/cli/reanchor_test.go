@@ -73,7 +73,7 @@ func TestReanchorRecapturesTheExcerptAndLine(t *testing.T) {
 	if strings.Contains(text, "excerpt: \"\\tserve()\"") {
 		t.Errorf("old excerpt still present:\n%s", text)
 	}
-	if !strings.Contains(text, "last_seen_line: 4") {
+	if !strings.Contains(text, "lastSeenLine: 4") {
 		t.Errorf("last_seen_line was not recomputed:\n%s", text)
 	}
 }

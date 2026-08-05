@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8WC9HR3HGEYPRTKBAWJCHH
+  created: "2026-08-05T11:54:11Z"
+spec:
+  target:
+    file: schema/v1alpha/annotation_schema_test.go
+  type: why
+  body: |-
+    No committed record is file-scoped, so nothing else exercises the branch
+    that forbids an observed line on a whole-file anchor.
+  anchor:
+    scope: excerpt
+    excerpt: func TestAnnotationSchemaAcceptsAFileScopedRecordWithNoObservedLine(t *testing.T) {
+    before: "\t}\n}\n"
+    after: "\trecord := decodeRecord(t, validRecord)\n\tspecOf(record)[\"anchor\"] = map[string]any{\"scope\": \"file\"}\n\trecord[\"status\"] = map[string]any{"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: b9fb0f8a53412f8b257c4dcb9e8cfad2fd8b4d62
+    path: schema/v1alpha/annotation_schema_test.go
+    line: 93
+status:
+  lastSeenLine: 91
+  resolution: ok
+  resolvedAt: "2026-08-05T11:54:11Z"
+  resolvedCommit: b9fb0f8a53412f8b257c4dcb9e8cfad2fd8b4d62

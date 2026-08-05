@@ -1,27 +1,32 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYWG17GDDCHE8Q05N8PQ62H2
-file: internal/ui/ui.go
-kind: invariant
-title: Every request rebuilds the view from disk; nothing is cached
-body: |-
-  Every request rebuilds the whole view from the working tree rather than
-  caching it at startup. This is the point of a local tool: what is on screen
-  is what is on disk, so editing a file and refreshing shows the drift you
-  just caused. Caching would reintroduce exactly the staleness koment exists
-  to detect. The cost is re-reading every annotated file per request, which is
-  milliseconds at repository scale.
-created: "2026-07-31"
-anchor:
-  scope: excerpt
-  excerpt: func Handler(repositories *repository.Set) http.Handler {
-  before: |-
-    // Handler routes the view. Every request re-reads the working tree, so what is
-    // rendered is what is on disk rather than what was on disk at startup. Paths
-    // are /r/<repository>/f/<file>.
-  after: "\ttemplates := template.Must(template.ParseFS(assets, \"assets/*.html\"))\n\n\tmux := http.NewServeMux()"
-  last_seen_line: 177
-author:
-  name: Legacy import
-  kind: unknown
-  source: migration
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYWG17GDDCHE8Q05N8PQ62H2
+  created: "2026-07-31T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/ui.go
+  type: invariant
+  title: Every request rebuilds the view from disk; nothing is cached
+  body: |-
+    Every request rebuilds the whole view from the working tree rather than
+    caching it at startup. This is the point of a local tool: what is on screen
+    is what is on disk, so editing a file and refreshing shows the drift you
+    just caused. Caching would reintroduce exactly the staleness koment exists
+    to detect. The cost is re-reading every annotated file per request, which is
+    milliseconds at repository scale.
+  anchor:
+    scope: excerpt
+    excerpt: func Handler(repositories *repository.Set) http.Handler {
+    before: |-
+      // Handler routes the view. Every request re-reads the working tree, so what is
+      // rendered is what is on disk rather than what was on disk at startup. Paths
+      // are /r/<repository>/f/<file>.
+    after: "\ttemplates := template.Must(template.ParseFS(assets, \"assets/*.html\"))\n\n\tmux := http.NewServeMux()"
+  author:
+    name: Legacy import
+    kind: unknown
+    source: migration
+status:
+  lastSeenLine: 177

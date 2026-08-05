@@ -1,26 +1,31 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ0B8PN23QDZMGDN5XZV7X6A
-file: session/store.go
-kind: why
-body: |-
-  Put overwrites silently. Sessions are keyed by an id the caller already
-  holds, so a second Put for the same id is a refresh rather than a collision,
-  and returning an error would make every renewal path handle a case that
-  cannot happen.
-created: "2026-08-02"
-anchor:
-  scope: excerpt
-  excerpt: func (s *Store) Put(id string, token Token) {
-  before: "\treturn &Store{sessions: make(map[string]Token)}\n}\n"
-  after: "\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.sessions[id] = token"
-  last_seen_line: 19
-git:
-  commit: 7521fbee8c45c8ac07412f8b4dd927f82cfeabc2
-  path: src/store.go
-  line: 19
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ0B8PN23QDZMGDN5XZV7X6A
+  created: "2026-08-02T00:00:00Z"
+spec:
+  target:
+    file: session/store.go
+  type: why
+  body: |-
+    Put overwrites silently. Sessions are keyed by an id the caller already
+    holds, so a second Put for the same id is a refresh rather than a collision,
+    and returning an error would make every renewal path handle a case that
+    cannot happen.
+  anchor:
+    scope: excerpt
+    excerpt: func (s *Store) Put(id string, token Token) {
+    before: "\treturn &Store{sessions: make(map[string]Token)}\n}\n"
+    after: "\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.sessions[id] = token"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: 7521fbee8c45c8ac07412f8b4dd927f82cfeabc2
+    path: src/store.go
+    line: 19
+status:
+  lastSeenLine: 19

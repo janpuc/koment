@@ -24,7 +24,7 @@ func runSearch(args []string, env Environment) int {
 
 	matches := snapshot.Search(query)
 	for _, match := range matches {
-		writeResolution(env.Stdout, match.Record.File, anchor.Resolution{
+		writeResolution(env.Stdout, match.Record.Spec.Target.File, anchor.Resolution{
 			Annotation: match.Record, Status: match.Status, Line: match.Line, Occurrences: match.Occurrences,
 		})
 	}

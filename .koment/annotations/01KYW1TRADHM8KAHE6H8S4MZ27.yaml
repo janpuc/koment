@@ -1,28 +1,33 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYW1TRADHM8KAHE6H8S4MZ27
-file: internal/listen/listen.go
-kind: invariant
-title: Loopback by default; bare ports must not bind every interface
-body: |-
-  The HTTP transports have no authentication: anything that can reach the port
-  reads every annotation in the repository. That is only tolerable because the
-  default bind is loopback and the surface is read-only. Do not "helpfully"
-  change this to 0.0.0.0 to make containers easier - ADR 0011 rejected that
-  explicitly, and net.SplitHostPort treats a bare ":8765" as an empty host,
-  which binds every interface. The empty-host case is why this function exists
-  at all.
-created: "2026-07-31"
-anchor:
-  scope: excerpt
-  excerpt: func Address(address string) (string, error) {
-  before: |2-
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYW1TRADHM8KAHE6H8S4MZ27
+  created: "2026-07-31T00:00:00Z"
+spec:
+  target:
+    file: internal/listen/listen.go
+  type: invariant
+  title: Loopback by default; bare ports must not bind every interface
+  body: |-
+    The HTTP transports have no authentication: anything that can reach the port
+    reads every annotation in the repository. That is only tolerable because the
+    default bind is loopback and the surface is read-only. Do not "helpfully"
+    change this to 0.0.0.0 to make containers easier - ADR 0011 rejected that
+    explicitly, and net.SplitHostPort treats a bare ":8765" as an empty host,
+    which binds every interface. The empty-host case is why this function exists
+    at all.
+  anchor:
+    scope: excerpt
+    excerpt: func Address(address string) (string, error) {
+    before: |2-
 
-    // Address fills in a missing host with the loopback interface, so that a bare
-    // port never publishes a repository to the local network.
-  after: "\thost, port, err := net.SplitHostPort(address)\n\tif err != nil {\n\t\tbare, bareErr := barePort(address)"
-  last_seen_line: 17
-author:
-  name: Legacy import
-  kind: unknown
-  source: migration
+      // Address fills in a missing host with the loopback interface, so that a bare
+      // port never publishes a repository to the local network.
+    after: "\thost, port, err := net.SplitHostPort(address)\n\tif err != nil {\n\t\tbare, bareErr := barePort(address)"
+  author:
+    name: Legacy import
+    kind: unknown
+    source: migration
+status:
+  lastSeenLine: 17

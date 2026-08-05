@@ -12,13 +12,20 @@ import (
 	"strings"
 
 	yaml "go.yaml.in/yaml/v3"
+
+	"github.com/janpuc/koment/internal/api"
 )
 
 const (
-	Version    = 1
+	// APIVersion is matched exactly, exactly as an annotation record's is.
+	APIVersion = api.Version
+
+	// KindPolicy is the resource kind of a repository policy.
+	KindPolicy = "Policy"
+
 	ModeStrict = "strict"
 	FileName   = ".koment/policy.yaml"
-	SchemaURL  = "https://raw.githubusercontent.com/janpuc/koment/main/schema/policy.schema.json"
+	SchemaURL  = api.SchemaBase + "policy.schema.json"
 )
 
 // Intrinsic names one class of source comment that may remain inline.
@@ -32,6 +39,22 @@ const (
 	IntrinsicPublicAPI       Intrinsic = "public-api"
 )
 
+// Principle names one extra rule the generated agent contract states. A
+// principle is a claim a reviewer can check, not a preference.
+type Principle string
+
+const (
+	PrincipleBackCompatEvidence Principle = "back-compat-evidence"
+)
+
+var Principles = []Principle{PrincipleBackCompatEvidence}
+
+var principleText = map[Principle]string{
+	PrincipleBackCompatEvidence: "A back-compatibility claim needs evidence: a migration path the binary performs, " +
+		"or an ADR naming the version the old shape was cut off at. Without either, the change is breaking " +
+		"and its commit subject says so with `feat!:`.",
+}
+
 // Adapter names one generated agent instruction surface.
 type Adapter string
 
@@ -44,9 +67,17 @@ const (
 	AdapterOpencode Adapter = "opencode"
 )
 
-// Policy is the version-1 repository enforcement contract.
+// Policy is the repository enforcement contract, shaped like every other
+// committed koment resource (ADR 0121).
 type Policy struct {
-	Version  int            `yaml:"version"`
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Spec       Spec   `yaml:"spec"`
+}
+
+// Spec is everything the repository decided. A policy has no metadata because
+// it is a singleton with no identity of its own: the file path is the name.
+type Spec struct {
 	Comments CommentsPolicy `yaml:"comments"`
 	Agents   AgentsPolicy   `yaml:"agents"`
 }
@@ -55,32 +86,40 @@ type Policy struct {
 type CommentsPolicy struct {
 	Mode           string      `yaml:"mode"`
 	Intrinsic      []Intrinsic `yaml:"intrinsic"`
-	GeneratedPaths []string    `yaml:"generated_paths,omitempty"`
-	VendoredPaths  []string    `yaml:"vendored_paths,omitempty"`
+	GeneratedPaths []string    `yaml:"generatedPaths,omitempty"`
+	VendoredPaths  []string    `yaml:"vendoredPaths,omitempty"`
 }
 
-// AgentsPolicy selects generated instruction adapters.
+// AgentsPolicy selects generated instruction adapters and the principles they
+// state.
 type AgentsPolicy struct {
-	Adapters []Adapter `yaml:"adapters"`
+	Adapters   []Adapter   `yaml:"adapters"`
+	Principles []Principle `yaml:"principles,omitempty"`
 }
 
 // Default returns the strict policy installed for a new repository.
 func Default() Policy {
 	return Policy{
-		Version: Version,
-		Comments: CommentsPolicy{
-			Mode: ModeStrict,
-			Intrinsic: []Intrinsic{
-				IntrinsicToolchain, IntrinsicGeneratedMarker, IntrinsicUpstreamLink,
-				IntrinsicDeprecated, IntrinsicPublicAPI,
+		APIVersion: APIVersion,
+		Kind:       KindPolicy,
+		Spec: Spec{
+			Comments: CommentsPolicy{
+				Mode: ModeStrict,
+				Intrinsic: []Intrinsic{
+					IntrinsicToolchain, IntrinsicGeneratedMarker, IntrinsicUpstreamLink,
+					IntrinsicDeprecated, IntrinsicPublicAPI,
+				},
+				GeneratedPaths: []string{"**/*.gen.go", "**/*.generated.go"},
+				VendoredPaths:  []string{"vendor/**"},
 			},
-			GeneratedPaths: []string{"**/*.gen.go", "**/*.generated.go"},
-			VendoredPaths:  []string{"vendor/**"},
+			Agents: AgentsPolicy{
+				Adapters: []Adapter{
+					AdapterAgents, AdapterClaude, AdapterCopilot, AdapterCursor, AdapterCodex,
+					AdapterOpencode,
+				},
+				Principles: []Principle{PrincipleBackCompatEvidence},
+			},
 		},
-		Agents: AgentsPolicy{Adapters: []Adapter{
-			AdapterAgents, AdapterClaude, AdapterCopilot, AdapterCursor, AdapterCodex,
-			AdapterOpencode,
-		}},
 	}
 }
 
@@ -99,22 +138,69 @@ func Load(rootPath string) (configured Policy, returnedError error) {
 	if err != nil {
 		return Policy{}, fmt.Errorf("reading %s: %w", FileName, err)
 	}
-	decoder := yaml.NewDecoder(strings.NewReader(string(content)))
-	decoder.KnownFields(true)
-	if err := decoder.Decode(&configured); err != nil {
-		return Policy{}, fmt.Errorf("parsing %s: %w", FileName, err)
-	}
-	var trailing any
-	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
-		if err == nil {
-			return Policy{}, fmt.Errorf("parsing %s: multiple YAML documents are not allowed", FileName)
-		}
-		return Policy{}, fmt.Errorf("parsing %s after the policy: %w", FileName, err)
+	configured, upgraded, err := decode(content)
+	if err != nil {
+		return Policy{}, err
 	}
 	if err := configured.Validate(); err != nil {
 		return Policy{}, fmt.Errorf("in %s: %w", FileName, err)
 	}
+	if upgraded {
+		if err := writeTo(root, configured); err != nil {
+			return Policy{}, err
+		}
+	}
 	return configured, nil
+}
+
+type policyShape struct {
+	APIVersion string `yaml:"apiVersion"`
+	Version    *int   `yaml:"version"`
+}
+
+func decode(content []byte) (Policy, bool, error) {
+	var shape policyShape
+	if err := yaml.Unmarshal(content, &shape); err != nil {
+		return Policy{}, false, fmt.Errorf("parsing %s: %w", FileName, err)
+	}
+	switch {
+	case shape.APIVersion == APIVersion:
+		var configured Policy
+		if err := decodeOneDocument(content, &configured); err != nil {
+			return Policy{}, false, err
+		}
+		return configured, false, nil
+	case shape.APIVersion != "":
+		return Policy{}, false, fmt.Errorf(
+			"incompatible %s: apiVersion %q is not supported; this binary reads %s (ADR 0121)",
+			FileName, shape.APIVersion, APIVersion)
+	case shape.Version != nil && *shape.Version == LegacyVersion:
+		var legacy legacyPolicy
+		if err := decodeOneDocument(content, &legacy); err != nil {
+			return Policy{}, false, err
+		}
+		return upgradeLegacy(legacy), true, nil
+	default:
+		return Policy{}, false, fmt.Errorf(
+			"incompatible %s: no apiVersion; a koment policy starts with `apiVersion: %s` (ADR 0121)",
+			FileName, APIVersion)
+	}
+}
+
+func decodeOneDocument(content []byte, into any) error {
+	decoder := yaml.NewDecoder(strings.NewReader(string(content)))
+	decoder.KnownFields(true)
+	if err := decoder.Decode(into); err != nil {
+		return fmt.Errorf("parsing %s: %w", FileName, err)
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return fmt.Errorf("parsing %s: multiple YAML documents are not allowed", FileName)
+		}
+		return fmt.Errorf("parsing %s after the policy: %w", FileName, err)
+	}
+	return nil
 }
 
 // Install writes the default policy only when none exists.
@@ -138,17 +224,6 @@ func Save(rootPath string, configured Policy) (returnedError error) {
 	if err := configured.Validate(); err != nil {
 		return err
 	}
-	var encoded strings.Builder
-	encoded.WriteString("# yaml-language-server: $schema=" + SchemaURL + "\n")
-	encoder := yaml.NewEncoder(&encoded)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(configured); err != nil {
-		return fmt.Errorf("encoding %s: %w", FileName, err)
-	}
-	if err := encoder.Close(); err != nil {
-		return fmt.Errorf("encoding %s: %w", FileName, err)
-	}
-
 	root, err := os.OpenRoot(rootPath)
 	if err != nil {
 		return fmt.Errorf("opening repository root %s: %w", rootPath, err)
@@ -158,35 +233,78 @@ func Save(rootPath string, configured Policy) (returnedError error) {
 			returnedError = errors.Join(returnedError, closeErr)
 		}
 	}()
+	return writeTo(root, configured)
+}
+
+func writeTo(root *os.Root, configured Policy) error {
+	encoded, err := encode(configured)
+	if err != nil {
+		return err
+	}
 	if err := root.MkdirAll(path.Dir(FileName), 0o755); err != nil {
 		return fmt.Errorf("creating %s: %w", path.Dir(FileName), err)
 	}
-	return writeAtomically(root, FileName, []byte(encoded.String()))
+	return writeAtomically(root, FileName, encoded)
+}
+
+func encode(configured Policy) ([]byte, error) {
+	var encoded strings.Builder
+	encoded.WriteString("# yaml-language-server: $schema=" + SchemaURL + "\n")
+	encoder := yaml.NewEncoder(&encoded)
+	encoder.SetIndent(2)
+	if err := encoder.Encode(configured); err != nil {
+		return nil, fmt.Errorf("encoding %s: %w", FileName, err)
+	}
+	if err := encoder.Close(); err != nil {
+		return nil, fmt.Errorf("encoding %s: %w", FileName, err)
+	}
+	return []byte(encoded.String()), nil
 }
 
 // Validate rejects policy drift and unsupported bypasses.
 func (p Policy) Validate() error {
-	if p.Version != Version {
-		return fmt.Errorf("version %d, want %d", p.Version, Version)
+	if p.APIVersion != APIVersion {
+		return fmt.Errorf("apiVersion %q, want %q", p.APIVersion, APIVersion)
 	}
-	if p.Comments.Mode != ModeStrict {
-		return fmt.Errorf("comments.mode %q, want %q", p.Comments.Mode, ModeStrict)
+	if p.Kind != KindPolicy {
+		return fmt.Errorf("kind %q, want %q", p.Kind, KindPolicy)
 	}
-	if err := validateIntrinsics(p.Comments.Intrinsic); err != nil {
+	if p.Spec.Comments.Mode != ModeStrict {
+		return fmt.Errorf("spec.comments.mode %q, want %q", p.Spec.Comments.Mode, ModeStrict)
+	}
+	if err := validateIntrinsics(p.Spec.Comments.Intrinsic); err != nil {
 		return err
 	}
-	if err := validateGlobs("comments.generated_paths", p.Comments.GeneratedPaths); err != nil {
+	if err := validateGlobs("spec.comments.generatedPaths", p.Spec.Comments.GeneratedPaths); err != nil {
 		return err
 	}
-	if err := validateGlobs("comments.vendored_paths", p.Comments.VendoredPaths); err != nil {
+	if err := validateGlobs("spec.comments.vendoredPaths", p.Spec.Comments.VendoredPaths); err != nil {
 		return err
 	}
-	return validateAdapters(p.Agents.Adapters)
+	if err := validatePrinciples(p.Spec.Agents.Principles); err != nil {
+		return err
+	}
+	return validateAdapters(p.Spec.Agents.Adapters)
+}
+
+// States returns the wording of every principle this policy enables, in the
+// order the vocabulary declares them so that a regenerated contract does not
+// diff against itself.
+func (p Policy) States() []string {
+	stated := make([]string, 0, len(p.Spec.Agents.Principles))
+	for _, principle := range Principles {
+		for _, enabled := range p.Spec.Agents.Principles {
+			if enabled == principle {
+				stated = append(stated, principleText[principle])
+			}
+		}
+	}
+	return stated
 }
 
 // Allows reports whether an intrinsic class is enabled.
 func (p Policy) Allows(intrinsic Intrinsic) bool {
-	for _, allowed := range p.Comments.Intrinsic {
+	for _, allowed := range p.Spec.Comments.Intrinsic {
 		if allowed == intrinsic {
 			return true
 		}
@@ -196,7 +314,7 @@ func (p Policy) Allows(intrinsic Intrinsic) bool {
 
 // Excludes reports whether a generated or vendored path is outside enforcement.
 func (p Policy) Excludes(file string) bool {
-	for _, pattern := range append(append([]string{}, p.Comments.GeneratedPaths...), p.Comments.VendoredPaths...) {
+	for _, pattern := range append(append([]string{}, p.Spec.Comments.GeneratedPaths...), p.Spec.Comments.VendoredPaths...) {
 		if matches(pattern, file) {
 			return true
 		}
@@ -212,10 +330,24 @@ func validateIntrinsics(values []Intrinsic) error {
 	seen := map[Intrinsic]bool{}
 	for _, value := range values {
 		if !allowed[value] {
-			return fmt.Errorf("comments.intrinsic contains unsupported class %q", value)
+			return fmt.Errorf("spec.comments.intrinsic contains unsupported class %q", value)
 		}
 		if seen[value] {
-			return fmt.Errorf("comments.intrinsic contains %q more than once", value)
+			return fmt.Errorf("spec.comments.intrinsic contains %q more than once", value)
+		}
+		seen[value] = true
+	}
+	return nil
+}
+
+func validatePrinciples(values []Principle) error {
+	seen := map[Principle]bool{}
+	for _, value := range values {
+		if _, known := principleText[value]; !known {
+			return fmt.Errorf("spec.agents.principles contains unsupported principle %q", value)
+		}
+		if seen[value] {
+			return fmt.Errorf("spec.agents.principles contains %q more than once", value)
 		}
 		seen[value] = true
 	}
@@ -230,10 +362,10 @@ func validateAdapters(values []Adapter) error {
 	seen := map[Adapter]bool{}
 	for _, value := range values {
 		if !allowed[value] {
-			return fmt.Errorf("agents.adapters contains unsupported adapter %q", value)
+			return fmt.Errorf("spec.agents.adapters contains unsupported adapter %q", value)
 		}
 		if seen[value] {
-			return fmt.Errorf("agents.adapters contains %q more than once", value)
+			return fmt.Errorf("spec.agents.adapters contains %q more than once", value)
 		}
 		seen[value] = true
 	}

@@ -255,7 +255,7 @@ func addRemoteAnnotation(
 		http.Error(writer, "invalid annotation form: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	kind, err := store.ParseKind(request.Form.Get("kind"))
+	kind, err := store.ParseType(request.Form.Get("kind"))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -273,8 +273,8 @@ func addRemoteAnnotation(
 		http.Error(writer, err.Error(), http.StatusBadGateway)
 		return
 	}
-	query := url.Values{"created": []string{record.ID}, "review": []string{review.URL}}
-	target := "/r/" + url.PathEscape(repositoryID) + "/f/" + escapeSourcePath(record.File) + "?" + query.Encode()
+	query := url.Values{"created": []string{record.Metadata.ID}, "review": []string{review.URL}}
+	target := "/r/" + url.PathEscape(repositoryID) + "/f/" + escapeSourcePath(record.Spec.Target.File) + "?" + query.Encode()
 	http.Redirect(writer, request, target, http.StatusSeeOther)
 }
 

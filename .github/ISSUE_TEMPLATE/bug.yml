@@ -1,0 +1,60 @@
+---
+name: Bug report
+description: koment did something other than what it says it does.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report a security vulnerability here. Use
+        [a private advisory](https://github.com/janpuc/koment/security/advisories/new).
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `koment version`.
+      placeholder: koment 1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where it happened
+      options:
+        - CLI
+        - MCP server
+        - Language server or editor extension
+        - HTTP server or published site
+        - Helm chart or container image
+        - Setup action or installation
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: What you ran, and what happened
+      description: >
+        Paste the command and its real output. A paraphrase of an error is not
+        an error. If an annotation is involved, paste the record.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+      description: If the documentation says otherwise, link the line that does.
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: macOS 15 arm64, Ubuntu 24.04 x86_64, Windows 11
+    validations:
+      required: true

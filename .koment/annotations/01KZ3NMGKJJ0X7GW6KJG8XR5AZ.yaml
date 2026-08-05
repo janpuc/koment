@@ -1,25 +1,30 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ3NMGKJJ0X7GW6KJG8XR5AZ
-file: internal/mcp/transport.go
-kind: why
-title: Sweep metrics sum across repositories; drift is a deployment question
-body: |-
-  sweepAll reports the whole deployment. Gauges are summed across repositories
-  because the metric answers "how much drift is there", which is a deployment
-  question rather than a per-repository one.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: func sweepAll(repositories *repository.Set, recorder metrics.Recorder) error {
-  before: "\treturn repository.Load(workingDirectory)\n}\n"
-  after: "\tfor _, entry := range repositories.All() {\n\t\tif err := metrics.Sweep(entry.Store(), recorder); err != nil {\n\t\t\treturn err"
-  last_seen_line: 94
-git:
-  commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
-  path: internal/mcp/transport.go
-  line: 97
-author:
-  name: Codex
-  kind: agent
-  source: explicit
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ3NMGKJJ0X7GW6KJG8XR5AZ
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/mcp/transport.go
+  type: why
+  title: Sweep metrics sum across repositories; drift is a deployment question
+  body: |-
+    sweepAll reports the whole deployment. Gauges are summed across repositories
+    because the metric answers "how much drift is there", which is a deployment
+    question rather than a per-repository one.
+  anchor:
+    scope: excerpt
+    excerpt: func sweepAll(repositories *repository.Set, recorder metrics.Recorder) error {
+    before: "\treturn repository.Load(workingDirectory)\n}\n"
+    after: "\tfor _, entry := range repositories.All() {\n\t\tif err := metrics.Sweep(entry.Store(), recorder); err != nil {\n\t\t\treturn err"
+  author:
+    name: Codex
+    kind: agent
+    source: explicit
+  git:
+    commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
+    path: internal/mcp/transport.go
+    line: 97
+status:
+  lastSeenLine: 94

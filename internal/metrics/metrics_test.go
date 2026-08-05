@@ -129,18 +129,17 @@ func TestSweepCountsTheRepository(t *testing.T) {
 	annotations := store.Open(root)
 	excerpt := "func main() {}"
 	if err := annotations.Save(&store.Annotation{
-		Version: store.RecordVersion,
-		ID:      "01JQ8ZK3M4N5P6R7S8T9V0W1X2",
-		File:    "main.go",
-		Anchor: store.Anchor{
-			Scope:        store.ScopeExcerpt,
-			Excerpt:      excerpt,
-			LastSeenLine: 3,
+		APIVersion: store.APIVersion,
+		Kind:       store.KindAnnotation,
+		Metadata:   store.Metadata{ID: "01JQ8ZK3M4N5P6R7S8T9V0W1X2", Created: store.Timestamp{Time: time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)}},
+		Spec: store.Spec{
+			Target: store.Target{File: "main.go"},
+			Type:   store.TypeWhy,
+			Body:   "Entry point only.",
+			Anchor: store.Anchor{Scope: store.ScopeExcerpt, Excerpt: excerpt},
+			Author: store.Author{Name: "Test", Kind: store.AuthorHuman, Source: store.FromExplicit},
 		},
-		Kind:    store.KindWhy,
-		Body:    "Entry point only.",
-		Created: store.Date{Time: time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)},
-		Author:  store.Author{Name: "Test", Kind: store.AuthorHuman, Source: store.FromExplicit},
+		Status: store.Status{LastSeenLine: 3},
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -1,29 +1,34 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ3QTM6V153DW27XPF3DH1E7
-file: internal/ui/ui.go
-kind: invariant
-title: No Secure on loopback cookies; loopback is enforced before the token
-body: |-
-  The capability server intentionally uses plain HTTP on an ephemeral loopback
-  listener, so a Secure cookie would not be returned by browsers and would
-  disable write mode. Loopback is enforced before the token is created;
-  HttpOnly and SameSite=Strict protect the cookie at the browser boundary, the
-  form repeats the token, Origin must match Host, and the bootstrap redirects
-  to a fixed clean path. The gosec G124 directive covers only the incompatible
-  Secure-cookie requirement.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: "\t\t\thttp.SetCookie(w, &http.Cookie{\n\t\t\t\tName: capabilityCookie, Value: writeToken, Path: \"/\", HttpOnly: true,\n\t\t\t\tSameSite: http.SameSiteStrictMode,\n\t\t\t})"
-  before: "\t\tgiven := r.URL.Query().Get(capabilityQuery)\n\t\tif r.Method == http.MethodGet && sameSecret(given, writeToken) {\n\t\t\t//nolint:gosec"
-  after: "\t\t\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n\t\t\treturn\n\t\t}"
-  last_seen_line: 272
-git:
-  commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
-  path: internal/ui/ui.go
-  line: 272
-author:
-  name: Codex
-  kind: agent
-  source: explicit
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ3QTM6V153DW27XPF3DH1E7
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/ui.go
+  type: invariant
+  title: No Secure on loopback cookies; loopback is enforced before the token
+  body: |-
+    The capability server intentionally uses plain HTTP on an ephemeral loopback
+    listener, so a Secure cookie would not be returned by browsers and would
+    disable write mode. Loopback is enforced before the token is created;
+    HttpOnly and SameSite=Strict protect the cookie at the browser boundary, the
+    form repeats the token, Origin must match Host, and the bootstrap redirects
+    to a fixed clean path. The gosec G124 directive covers only the incompatible
+    Secure-cookie requirement.
+  anchor:
+    scope: excerpt
+    excerpt: "\t\t\thttp.SetCookie(w, &http.Cookie{\n\t\t\t\tName: capabilityCookie, Value: writeToken, Path: \"/\", HttpOnly: true,\n\t\t\t\tSameSite: http.SameSiteStrictMode,\n\t\t\t})"
+    before: "\t\tgiven := r.URL.Query().Get(capabilityQuery)\n\t\tif r.Method == http.MethodGet && sameSecret(given, writeToken) {\n\t\t\t//nolint:gosec"
+    after: "\t\t\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n\t\t\treturn\n\t\t}"
+  author:
+    name: Codex
+    kind: agent
+    source: explicit
+  git:
+    commit: 2cee30a10a8483f4cf0f48625aade0f0cc850130
+    path: internal/ui/ui.go
+    line: 272
+status:
+  lastSeenLine: 272

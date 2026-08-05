@@ -41,6 +41,11 @@ the approved destination.
 - [0114 — Show rationale in a panel, and stop diagnosing what is healthy](0114-show-rationale-in-a-panel-and-stop-diagnosing-health.md)
 - [0115 — Give an annotation a title](0115-an-annotation-has-a-title.md)
 - [0116 — Stop reporting a stale line number as a status](0116-moved-is-not-a-status.md)
+- [0117 — Relicense to AGPL-3.0-or-later with commercial dual licensing](0117-relicense-to-agpl-with-commercial-dual-licensing.md)
+- [0118 — Translate opencode edits into apply_patch so one comment walker serves every client](0118-translate-opencode-edits-into-apply-patch.md)
+- [0119 — Make the annotation a Kubernetes-shaped resource, cut off v1 records, and freeze the API](0119-make-the-annotation-a-kubernetes-shaped-resource.md)
+- [0120 — Promote koment to v1.0.0](0120-promote-koment-to-v1-0-0.md)
+- [0121 — Every committed koment file is a resource, and its schema is pinned to the API version](0121-every-committed-koment-file-is-a-resource-with-a-pinned-schema.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

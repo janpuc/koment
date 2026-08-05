@@ -312,7 +312,7 @@ func addFromBrowser(w http.ResponseWriter, request *http.Request, repositories *
 		http.Error(w, "repository not found", http.StatusNotFound)
 		return
 	}
-	kind, err := store.ParseKind(request.Form.Get("kind"))
+	kind, err := store.ParseType(request.Form.Get("kind"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -330,11 +330,11 @@ func addFromBrowser(w http.ResponseWriter, request *http.Request, repositories *
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	query := url.Values{"created": []string{mutation.Record.ID}}
+	query := url.Values{"created": []string{mutation.Record.Metadata.ID}}
 	if len(mutation.Warnings) > 0 {
 		query.Set("warning", strings.Join(mutation.Warnings, "; "))
 	}
-	target := repositoryPrefix + entry.ID + "/f/" + escapedFilePath(mutation.Record.File) + "?" + query.Encode()
+	target := repositoryPrefix + entry.ID + "/f/" + escapedFilePath(mutation.Record.Spec.Target.File) + "?" + query.Encode()
 	http.Redirect(w, request, target, http.StatusSeeOther)
 }
 

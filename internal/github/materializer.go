@@ -25,12 +25,12 @@ func (c *Client) Materialize(ctx context.Context, repository serving.Repository,
 		return serving.Materialization{}, err
 	}
 	if len(encoded) > maximumAnnotation {
-		return serving.Materialization{}, fmt.Errorf("annotation %s is %d bytes; limit is %d", record.ID, len(encoded), maximumAnnotation)
+		return serving.Materialization{}, fmt.Errorf("annotation %s is %d bytes; limit is %d", record.Metadata.ID, len(encoded), maximumAnnotation)
 	}
 	owner, name, _ := strings.Cut(repository.Remote, "/")
 	base := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name)
-	branch := "koment/" + record.ID
-	path := store.DirName + "/annotations/" + record.ID + ".yaml"
+	branch := "koment/" + record.Metadata.ID
+	path := store.DirName + "/annotations/" + record.Metadata.ID + ".yaml"
 
 	branchCommit, exists, err := c.existingMaterialization(ctx, base, branch, path, encoded)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *Client) Materialize(ctx context.Context, repository serving.Repository,
 				return serving.Materialization{}, err
 			}
 			if !exists {
-				return serving.Materialization{}, fmt.Errorf("github rejected branch %s but it does not contain annotation %s", branch, record.ID)
+				return serving.Materialization{}, fmt.Errorf("github rejected branch %s but it does not contain annotation %s", branch, record.Metadata.ID)
 			}
 		}
 	}
@@ -144,7 +144,7 @@ func (c *Client) createMaterializationCommit(
 		SHA string `json:"sha"`
 	}
 	if err := c.requestJSON(ctx, http.MethodPost, base+"/git/commits", map[string]any{
-		"message": "koment: add " + record.ID, "tree": tree.SHA, "parents": []string{parent},
+		"message": "koment: add " + record.Metadata.ID, "tree": tree.SHA, "parents": []string{parent},
 	}, &commit); err != nil {
 		return "", fmt.Errorf("creating annotation commit: %w", err)
 	}
@@ -188,9 +188,9 @@ func (c *Client) ensurePullRequest(ctx context.Context, base, owner, branch, def
 	}
 	var created pullRequest
 	err := c.requestJSON(ctx, http.MethodPost, base+"/pulls", map[string]any{
-		"title": "koment: add rationale for " + record.File,
+		"title": "koment: add rationale for " + record.Spec.Target.File,
 		"head":  branch, "base": defaultBranch,
-		"body": "Adds koment annotation `" + record.ID + "` for `" + record.File + "`.",
+		"body": "Adds koment annotation `" + record.Metadata.ID + "` for `" + record.Spec.Target.File + "`.",
 	}, &created)
 	if err == nil {
 		if created.Number < 1 || created.URL == "" {

@@ -1,24 +1,29 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KYWG17GJZTM91CZ23D8B1RK8
-file: internal/ui/view.go
-kind: invariant
-title: Drifted and orphaned notes are rendered detached, never over code
-body: |-
-  A drifted or orphaned annotation is deliberately rendered away from the
-  code: its excerpt is shown struck through and labelled as no longer present,
-  never laid over the current source. Anchoring a stale note to whatever now
-  occupies that line would assert something false, which is worse than showing
-  nothing. ADR 0005 requires this in the MCP payload; this is the same
-  guarantee expressed visually.
-created: "2026-07-31"
-anchor:
-  scope: excerpt
-  excerpt: "\t\tif annotation.Line == 0 {\n\t\t\tbuilt.Detached = append(built.Detached, described)"
-  before: "\tmarked := map[int]anchor.Status{}\n\tfor _, annotation := range file.Annotations {\n\t\tdescribed := describe(annotation)"
-  after: "\t\t\tcontinue\n\t\t}\n\t\tbuilt.Notes = append(built.Notes, described)"
-  last_seen_line: 203
-author:
-  name: Legacy import
-  kind: unknown
-  source: migration
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KYWG17GJZTM91CZ23D8B1RK8
+  created: "2026-07-31T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/view.go
+  type: invariant
+  title: Drifted and orphaned notes are rendered detached, never over code
+  body: |-
+    A drifted or orphaned annotation is deliberately rendered away from the
+    code: its excerpt is shown struck through and labelled as no longer present,
+    never laid over the current source. Anchoring a stale note to whatever now
+    occupies that line would assert something false, which is worse than showing
+    nothing. ADR 0005 requires this in the MCP payload; this is the same
+    guarantee expressed visually.
+  anchor:
+    scope: excerpt
+    excerpt: "\t\tif annotation.Line == 0 {\n\t\t\tbuilt.Detached = append(built.Detached, described)"
+    before: "\tmarked := map[int]anchor.Status{}\n\tfor _, annotation := range file.Annotations {\n\t\tdescribed := describe(annotation)"
+    after: "\t\t\tcontinue\n\t\t}\n\t\tbuilt.Notes = append(built.Notes, described)"
+  author:
+    name: Legacy import
+    kind: unknown
+    source: migration
+status:
+  lastSeenLine: 203

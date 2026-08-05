@@ -12,7 +12,7 @@ import (
 type ConvertCommentInput struct {
 	File    string
 	Comment string
-	Kind    store.Kind
+	Kind    store.Type
 	Author  store.Author
 }
 
@@ -45,7 +45,7 @@ func (s *Service) ConvertComment(input ConvertCommentInput) (Mutation, error) {
 	}
 	kind := input.Kind
 	if kind == "" {
-		kind = store.KindWhy
+		kind = store.TypeWhy
 	}
 	created, err := s.Add(AddInput{
 		File: file, Excerpt: conversion.Excerpt, Kind: kind,
@@ -55,11 +55,11 @@ func (s *Service) ConvertComment(input ConvertCommentInput) (Mutation, error) {
 		return Mutation{}, err
 	}
 	if err := s.store.WriteSource(file, conversion.Content); err != nil {
-		return Mutation{}, fmt.Errorf("annotation %s was written before source conversion failed: %w", created.Record.ID, err)
+		return Mutation{}, fmt.Errorf("annotation %s was written before source conversion failed: %w", created.Record.Metadata.ID, err)
 	}
-	reanchored, err := s.Reanchor(ReanchorInput{ID: created.Record.ID, File: file, Excerpt: conversion.Excerpt})
+	reanchored, err := s.Reanchor(ReanchorInput{ID: created.Record.Metadata.ID, File: file, Excerpt: conversion.Excerpt})
 	if err != nil {
-		return Mutation{}, fmt.Errorf("comment was converted and annotation %s exists, but refreshing its line failed: %w", created.Record.ID, err)
+		return Mutation{}, fmt.Errorf("comment was converted and annotation %s exists, but refreshing its line failed: %w", created.Record.Metadata.ID, err)
 	}
 	reanchored.Warnings = created.Warnings
 	return reanchored, nil
@@ -87,7 +87,7 @@ func (s *Service) AcknowledgeComment(input AcknowledgeCommentInput) (Mutation, e
 		return Mutation{}, err
 	}
 	return s.Add(AddInput{
-		File: file, Excerpt: excerpt, Kind: store.KindWhy, Body: input.Body, Author: input.Author,
+		File: file, Excerpt: excerpt, Kind: store.TypeWhy, Body: input.Body, Author: input.Author,
 		Policy: &store.Policy{Exception: "inline-comment", Acknowledged: true},
 	})
 }

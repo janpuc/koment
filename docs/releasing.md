@@ -22,16 +22,21 @@ mise run fmt-check && mise run vet && mise run tidy-check && mise run generate-c
 mise run lint && mise run test
 mise run annotations && mise run comments && mise run agent-policy
 mise run workflow-lint && mise run helm-lint && mise run helm-template && mise run vulncheck
+mise run extension-test
 ```
 
-All thirteen must pass. `koment check` failing means a release would ship
+All fourteen must pass. `koment check` failing means a release would ship
 annotations that no longer describe the code.
 
 `main` is protected by a ruleset — pull request required, signed commits,
-linear history, and these checks must be green: **`test`, `lint`,
-`container build`, `helm chart`**. The classic branch-protection API returns
-404 for this repository; that means the rules live in a ruleset, not that the
-branch is unprotected. Check with:
+linear history, and one required status check: **`ci`**. That is the
+aggregating job in `.github/workflows/ci.yml`; it depends on every other job,
+so requiring it requires all of them, and adding a job to CI does not mean
+editing the ruleset. `cla`, `codeql` and `scorecard` are not required — they
+report, and `cla` cannot be required at all because a release pull request is
+opened by `GITHUB_TOKEN` and never gets a `cla` run. The classic
+branch-protection API returns 404 for this repository; that means the rules
+live in a ruleset, not that the branch is unprotected. Check with:
 
 ```sh
 gh api repos/janpuc/koment/rulesets
@@ -42,15 +47,19 @@ gh api repos/janpuc/koment/rulesets
 Merge every change through a pull request with a conventional subject. The
 subject decides the version, so it is a release decision, not a formatting one:
 
-| Subject | Effect while below 1.0 |
+| Subject | Effect |
 |---|---|
-| `feat:` | minor bump — 0.2.0 → 0.3.0 |
+| `feat:` | minor bump — 1.0.0 → 1.1.0 |
 | `fix:`, `perf:`, `refactor:` | patch bump |
 | `docs:`, `test:`, `build:`, `ci:` | patch bump, listed in the changelog |
 | `chore:` | no release on its own |
-| any `!` or `BREAKING CHANGE:` | minor bump while below 1.0 |
+| any `!` or `BREAKING CHANGE:` | major bump — 1.4.2 → 2.0.0 |
 
-`bump-minor-pre-major` is on, so a feature never hides inside a patch.
+`bump-minor-pre-major` was turned off when 1.0.0 shipped (ADR 0120), so a `!`
+is a major version and not a quiet minor one. Before writing `!`, check whether
+the change is breaking at all: a claim of backward compatibility needs a
+migration the binary performs or an ADR naming the version the old shape was
+cut off at. Without either, it is breaking, and the subject has to say so.
 
 ## 2. Let release-please open the release pull request
 
@@ -92,7 +101,7 @@ Before merging, confirm:
 
 - the version in the title is the one you intend;
 - the changelog describes real changes;
-- the four required checks are green, not skipped.
+- `ci` is green and not skipped, and every job it aggregates ran.
 
 ## 5. Watch publication — human approval required to retry anything
 
@@ -134,6 +143,22 @@ Expect 6 archives, 1 checksum manifest, 2 signature bundles for the manifest and
 binaries, 7 VSIX and 7 VSIX signatures. A release missing the archives breaks
 every workflow using `janpuc/koment@v<version>`, because the setup action
 downloads them.
+
+## 7. Bump the development pin
+
+`.mise/config.toml` pins `github:janpuc/koment` to a released version, which is
+the `koment` a contributor gets in their shell. It is not what any gate runs —
+every `mise run` task uses `go run ./cmd/koment` — so it lags a release rather
+than blocking one. It still has to be caught up, because a pinned binary older
+than the record shape in `.koment/` cannot read this repository at all.
+
+```sh
+mise use "github:janpuc/koment@<version>"
+mise run annotations
+```
+
+Land it as `chore:`, which release-please does not turn into a release of its
+own.
 
 ---
 

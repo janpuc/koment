@@ -1,35 +1,40 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ8BSMF4E5FJE09S43K9EEJS
-file: internal/anchor/anchor.go
-kind: invariant
-title: A unique resolution is ok, wherever it was found
-body: |-
-  The recorded line is deliberately not compared here. Resolution is a search,
-  so an annotation follows its excerpt down the file on its own; comparing
-  where it landed against last_seen_line reported a cache miss, not a fact
-  about the code, and it was the ordinary case rather than the exception.
-  Refreshing the record instead would make a read write, so koment check would
-  dirty the working tree it was asked to inspect (ADR 0116).
-created: "2026-08-05"
-anchor:
-  scope: excerpt
-  excerpt: 'return Resolution{Annotation: annotation, Status: StatusOK, Line: found.line, Occurrences: count}'
-  before: |-
-    }
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8BSMF4E5FJE09S43K9EEJS
+  created: "2026-08-05T00:00:00Z"
+spec:
+  target:
+    file: internal/anchor/anchor.go
+  type: invariant
+  title: A unique resolution is ok, wherever it was found
+  body: |-
+    The recorded line is deliberately not compared here. Resolution is a search,
+    so an annotation follows its excerpt down the file on its own; comparing
+    where it landed against last_seen_line reported a cache miss, not a fact
+    about the code, and it was the ordinary case rather than the exception.
+    Refreshing the record instead would make a read write, so koment check would
+    dirty the working tree it was asked to inspect (ADR 0116).
+  anchor:
+    scope: excerpt
+    excerpt: 'return Resolution{Annotation: annotation, Status: StatusOK, Line: found.line, Occurrences: count}'
+    before: |-
+      }
 
-    func resolved(annotation store.Annotation, found occurrence, count int) Resolution {
-  after: |-
-    }
+      func resolved(annotation store.Annotation, found occurrence, count int) Resolution {
+    after: |-
+      }
 
-    func ResolveOrphaned(annotation store.Annotation) Resolution {
-  last_seen_line: 65
-git:
-  commit: 6df04d7b5d907e213bce554648a5019662ca6ec4
-  path: internal/anchor/anchor.go
-  line: 65
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+      func ResolveOrphaned(annotation store.Annotation) Resolution {
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 6df04d7b5d907e213bce554648a5019662ca6ec4
+    path: internal/anchor/anchor.go
+    line: 65
+status:
+  lastSeenLine: 65

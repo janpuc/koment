@@ -1,21 +1,26 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ5HRCY21K1SFHJV2WZWNVFC
-file: packaging/naming_test.go
-kind: gotcha
-title: Each package manager derives its URL from the archive name
-body: |-
-  Each consumer derives its download URL from the archive name, so a rename in
-  the release workflow breaks them silently and only after a release ships.
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: var consumers = map[string]string{
-  before: "\treturn \"tar.gz\"\n}\n"
-  after: "\t\"the Homebrew tap\":  \"packaging/homebrew/koment.rb.tmpl\",\n\t\"the Scoop bucket\":  \"packaging/scoop/koment.json.tmpl\",\n\t\"the WinGet bundle\": \"packaging/winget/JanPuc.Koment.installer.yaml.tmpl\","
-  last_seen_line: 89
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ5HRCY21K1SFHJV2WZWNVFC
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: packaging/naming_test.go
+  type: gotcha
+  title: Each package manager derives its URL from the archive name
+  body: |-
+    Each consumer derives its download URL from the archive name, so a rename in
+    the release workflow breaks them silently and only after a release ships.
+  anchor:
+    scope: excerpt
+    excerpt: var consumers = map[string]string{
+    before: "\treturn \"tar.gz\"\n}\n"
+    after: "\t\"the Homebrew tap\":  \"packaging/homebrew/koment.rb.tmpl\",\n\t\"the Scoop bucket\":  \"packaging/scoop/koment.json.tmpl\",\n\t\"the WinGet bundle\": \"packaging/winget/JanPuc.Koment.installer.yaml.tmpl\","
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 89

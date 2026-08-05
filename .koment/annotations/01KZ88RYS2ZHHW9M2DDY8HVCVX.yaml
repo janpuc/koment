@@ -1,30 +1,35 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ88RYS2ZHHW9M2DDY8HVCVX
-file: internal/store/record.go
-kind: invariant
-title: A derived headline is never written back
-body: |-
-  Records written before titles existed fall back to the first sentence of the
-  body. That fallback is computed on read and must stay that way. Storing it
-  would put a second copy of the body in the record, free to drift from the
-  prose it summarises, which is the failure this project exists to prevent.
-created: "2026-08-05"
-anchor:
-  scope: excerpt
-  excerpt: func (a Annotation) Headline() string {
-  before: |-
-    // titles existed still has to show something, so the first sentence of the body
-    // stands in, shortened at a word boundary. It is never written back: a derived
-    // title in the record would become a second copy of the body that drifts.
-  after: "\tif title := strings.TrimSpace(a.Title); title != \"\" {\n\t\treturn title\n\t}"
-  last_seen_line: 178
-git:
-  commit: eee7b5cfc0776c68816d7fdaa8af9d7a0e0da2e6
-  path: internal/store/record.go
-  line: 178
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ88RYS2ZHHW9M2DDY8HVCVX
+  created: "2026-08-05T00:00:00Z"
+spec:
+  target:
+    file: internal/store/record.go
+  type: invariant
+  title: A derived headline is never written back
+  body: |-
+    Records written before titles existed fall back to the first sentence of the
+    body. That fallback is computed on read and must stay that way. Storing it
+    would put a second copy of the body in the record, free to drift from the
+    prose it summarises, which is the failure this project exists to prevent.
+  anchor:
+    scope: excerpt
+    excerpt: func (a Annotation) Headline() string {
+    before: |-
+      // titles existed still has to show something, so the first sentence of the body
+      // stands in, shortened at a word boundary. It is never written back: a derived
+      // title in the record would become a second copy of the body that drifts.
+    after: "\tif title := strings.TrimSpace(a.Title); title != \"\" {\n\t\treturn title\n\t}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: eee7b5cfc0776c68816d7fdaa8af9d7a0e0da2e6
+    path: internal/store/record.go
+    line: 178
+status:
+  lastSeenLine: 178

@@ -1,34 +1,39 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ2Z612541PPNB754VBK5E7X
-file: internal/ui/ui.go
-kind: why
-title: Every URL names its repository; single-repo deploys still carry /r/
-body: |-
-  Every path carries its repository, including when only one is served. A URL
-  whose meaning depends on how the server happens to be configured is a URL
-  nobody can share, and the single-repository case is exactly where that would
-  go unnoticed until someone deployed a second one.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ2Z612541PPNB754VBK5E7X
+  created: "2026-08-03T00:00:00Z"
+spec:
+  target:
+    file: internal/ui/ui.go
+  type: why
+  title: Every URL names its repository; single-repo deploys still carry /r/
+  body: |-
+    Every path carries its repository, including when only one is served. A URL
+    whose meaning depends on how the server happens to be configured is a URL
+    nobody can share, and the single-repository case is exactly where that would
+    go unnoticed until someone deployed a second one.
 
-  Unlike koment_get, which refuses an ambiguous path (ADR 0025), the UI serves
-  every configured repository. A person can see which one they are looking at,
-  so there is no ambiguity to refuse.
-created: "2026-08-03"
-anchor:
-  scope: excerpt
-  excerpt: func Handler(repositories *repository.Set) http.Handler {
-  before: |-
-    // Handler routes the view. Every request re-reads the working tree, so what is
-    // rendered is what is on disk rather than what was on disk at startup. Paths
-    // are /r/<repository>/f/<file>.
-  after: "\ttemplates := template.Must(template.ParseFS(assets, \"assets/*.html\"))\n\n\tmux := http.NewServeMux()"
-  last_seen_line: 177
-git:
-  commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
-  path: internal/ui/ui.go
-  line: 182
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+    Unlike koment_get, which refuses an ambiguous path (ADR 0025), the UI serves
+    every configured repository. A person can see which one they are looking at,
+    so there is no ambiguity to refuse.
+  anchor:
+    scope: excerpt
+    excerpt: func Handler(repositories *repository.Set) http.Handler {
+    before: |-
+      // Handler routes the view. Every request re-reads the working tree, so what is
+      // rendered is what is on disk rather than what was on disk at startup. Paths
+      // are /r/<repository>/f/<file>.
+    after: "\ttemplates := template.Must(template.ParseFS(assets, \"assets/*.html\"))\n\n\tmux := http.NewServeMux()"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: da6a27ee00b7a5abcf5d9f7bfe44d33ff0347a3e
+    path: internal/ui/ui.go
+    line: 182
+status:
+  lastSeenLine: 177

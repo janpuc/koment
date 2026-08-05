@@ -9,6 +9,7 @@
 - Completed comment intent must use `koment_convert_comment`. Keeping an inline comment requires `koment_acknowledge_comment` with the explicit acknowledgement set to true.
 - Before finishing, run `koment check`, `koment comments check` and `koment agents check`. Do not report success while any fails.
 - Releases follow `docs/releasing.md` exactly. Published versions are permanent. Never publish an artifact by hand, never hand-edit a version, and get explicit human approval before merging a release pull request.
+- A back-compatibility claim needs evidence: a migration path the binary performs, or an ADR naming the version the old shape was cut off at. Without either, the change is breaking and its commit subject says so with `feat!:`.
 <!-- koment:managed-end -->
 
 You are working on a tool whose entire purpose is to make code understandable

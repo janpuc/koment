@@ -61,7 +61,7 @@ func snapshotAdd(catalog *serving.Catalog, access RepositoryAccess, writer snaps
 		if writer.materializer == nil {
 			return nil, MutationOutput{}, errors.New("remote materializer is not configured")
 		}
-		kind, err := store.ParseKind(input.Kind)
+		kind, err := store.ParseType(input.Kind)
 		if err != nil {
 			return nil, MutationOutput{}, err
 		}
@@ -80,7 +80,7 @@ func snapshotAdd(catalog *serving.Catalog, access RepositoryAccess, writer snaps
 			return nil, MutationOutput{}, err
 		}
 		out := mutationOutput(state.Repository.Identity.ID, application.Mutation{
-			Record: record, Path: store.DirName + "/annotations/" + record.ID + ".yaml",
+			Record: record, Path: store.DirName + "/annotations/" + record.Metadata.ID + ".yaml",
 		})
 		out.Review = &MutationReview{
 			BaseCommit: state.Snapshot.Commit, Branch: materialized.Branch, Commit: materialized.Commit,

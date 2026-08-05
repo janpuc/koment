@@ -1,39 +1,44 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ6416GSBA5CRC4XJZC6TTFQ
-file: .github/workflows/ci.yml
-kind: invariant
-title: Only the ci aggregate is required; its name equals its job id
-body: |-
-  Every job's name equals its id, so a required check names the job that
-  produced it. The aggregate is called ci rather than test because a job that
-  runs the tests should be allowed to be called test.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ6416GSBA5CRC4XJZC6TTFQ
+  created: "2026-08-04T00:00:00Z"
+spec:
+  target:
+    file: .github/workflows/ci.yml
+  type: invariant
+  title: Only the ci aggregate is required; its name equals its job id
+  body: |-
+    Every job's name equals its id, so a required check names the job that
+    produced it. The aggregate is called ci rather than test because a job that
+    runs the tests should be allowed to be called test.
 
-  The branch ruleset requires only this job. It already fails when any
-  dependency failed, was cancelled or was skipped, so listing the others as
-  required checks duplicated that logic in a second place that no test covers.
-  Adding a job to needs now gates merges without touching repository settings.
-created: "2026-08-04"
-anchor:
-  scope: excerpt
-  excerpt: |2-
-      ci:
-        if: ${{ always() }}
-        name: ci
-  before: |2
-              fi
-              echo "$universal: no binary, falls back to PATH"
-  after: |2-
-        needs:
-          - container
-          - editor
-  last_seen_line: 451
-git:
-  commit: 2ff1ed471065e23cd09057197ed8d26400b76168
-  path: .github/workflows/ci.yml
-  line: 451
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: agent
-  source: git-config
+    The branch ruleset requires only this job. It already fails when any
+    dependency failed, was cancelled or was skipped, so listing the others as
+    required checks duplicated that logic in a second place that no test covers.
+    Adding a job to needs now gates merges without touching repository settings.
+  anchor:
+    scope: excerpt
+    excerpt: |2-
+        ci:
+          if: ${{ always() }}
+          name: ci
+    before: |2
+                fi
+                echo "$universal: no binary, falls back to PATH"
+    after: |2-
+          needs:
+            - container
+            - editor
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 2ff1ed471065e23cd09057197ed8d26400b76168
+    path: .github/workflows/ci.yml
+    line: 451
+status:
+  lastSeenLine: 451

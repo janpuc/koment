@@ -1,29 +1,34 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
-version: 1
-id: 01KZ8KTTXGPJTX4KXWW5Z6B827
-file: internal/agentpolicy/hooks.go
-kind: why
-title: Opencode synthesises an apply_patch so one walker handles both clients
-body: |-
-  Two clients (codex apply_patch, opencode edit/write) feed the same
-  addedCommentIntent walker, but only the first produces the patch shape that
-  walker expects. Rather than fork the analyzer, the opencode plugin sends a
-  synthetic apply_patch whose lines are all marked added so the walker
-  evaluates the post-edit file content unchanged. The cost is one tiny adapter
-  function; the benefit is one comment-policy implementation.
-created: "2026-08-05"
-anchor:
-  scope: excerpt
-  excerpt: func syntheticPatchFromEdit(filePath, content string) string {
-  before: "\treturn append(encoded, '\\n'), nil\n}\n"
-  after: "\tvar builder strings.Builder\n\tbuilder.WriteString(\"*** Update File: \")\n\tbuilder.WriteString(filepath.ToSlash(filePath))"
-  last_seen_line: 57
-git:
-  commit: d5235ae2dfc507fedbd77768188e6f7b97f0df82
-  path: internal/agentpolicy/hooks.go
-  line: 57
-author:
-  name: janpuc
-  email: janpuc@proton.me
-  kind: human
-  source: git-config
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8KTTXGPJTX4KXWW5Z6B827
+  created: "2026-08-05T00:00:00Z"
+spec:
+  target:
+    file: internal/agentpolicy/hooks.go
+  type: why
+  title: Opencode synthesises an apply_patch so one walker handles both clients
+  body: |-
+    Two clients (codex apply_patch, opencode edit/write) feed the same
+    addedCommentIntent walker, but only the first produces the patch shape that
+    walker expects. Rather than fork the analyzer, the opencode plugin sends a
+    synthetic apply_patch whose lines are all marked added so the walker
+    evaluates the post-edit file content unchanged. The cost is one tiny adapter
+    function; the benefit is one comment-policy implementation.
+  anchor:
+    scope: excerpt
+    excerpt: func syntheticPatchFromEdit(filePath, content string) string {
+    before: "\treturn append(encoded, '\\n'), nil\n}\n"
+    after: "\tvar builder strings.Builder\n\tbuilder.WriteString(\"*** Update File: \")\n\tbuilder.WriteString(filepath.ToSlash(filePath))"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: human
+    source: git-config
+  git:
+    commit: d5235ae2dfc507fedbd77768188e6f7b97f0df82
+    path: internal/agentpolicy/hooks.go
+    line: 57
+status:
+  lastSeenLine: 57

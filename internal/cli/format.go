@@ -14,14 +14,14 @@ const bodyWidth = 74
 func writeResolution(w io.Writer, file string, resolution anchor.Resolution) {
 	fmt.Fprintf(w, "  %-9s %-13s %s  %s\n",
 		resolution.Status,
-		resolution.Annotation.Kind,
+		resolution.Annotation.Spec.Type,
 		location(file, resolution.Line),
-		resolution.Annotation.ID)
+		resolution.Annotation.Metadata.ID)
 
 	if resolution.Occurrences > 1 {
 		fmt.Fprintf(w, "    (excerpt matches %d places in this file)\n", resolution.Occurrences)
 	}
-	for _, line := range wrap(resolution.Annotation.Body, bodyWidth) {
+	for _, line := range wrap(resolution.Annotation.Spec.Body, bodyWidth) {
 		fmt.Fprintf(w, "    %s\n", line)
 	}
 }

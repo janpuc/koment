@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ8TZ0JH9VT7BD7EQXAM9DRA
+  created: "2026-08-05T11:29:28Z"
+spec:
+  target:
+    file: internal/store/store.go
+  type: why
+  body: |-
+    persistUpgrade rewrites a record that was read in the v1 shape. The upgrade
+    itself already happened in memory, so a repository mounted read-only still
+    reads correctly; only the rewrite fails, and the next writable read retries
+    it. Failing the read instead would make every read-only deployment refuse a
+    repository it can serve perfectly well.
+  anchor:
+    scope: excerpt
+    excerpt: func persistUpgrade(root *os.Root, name string, annotation *Annotation) {
+    before: "\treturn annotation, nil\n}\n"
+    after: "\tencoded, err := EncodeAnnotation(annotation)\n\tif err == nil {\n\t\terr = writeAtomically(root, name, encoded)"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: fbd0ac77620b20dcea5f61ea20dc849c3a01252d
+    path: internal/store/store.go
+    line: 208
+status:
+  lastSeenLine: 203
+  resolution: ok
+  resolvedAt: "2026-08-05T11:29:28Z"
+  resolvedCommit: fbd0ac77620b20dcea5f61ea20dc849c3a01252d

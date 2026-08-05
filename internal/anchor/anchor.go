@@ -13,18 +13,16 @@ import (
 	"github.com/janpuc/koment/internal/store"
 )
 
-type Status string
+// Status is the record's own vocabulary. The store owns it because a record
+// persists the last observed one; naming it twice would let the two drift.
+type Status = store.AnchorStatus
 
 const (
-	StatusOK        Status = "ok"
-	StatusAmbiguous Status = "ambiguous"
-	StatusDrifted   Status = "drifted"
-	StatusOrphaned  Status = "orphaned"
+	StatusOK        = store.AnchorOK
+	StatusAmbiguous = store.AnchorAmbiguous
+	StatusDrifted   = store.AnchorDrifted
+	StatusOrphaned  = store.AnchorOrphaned
 )
-
-func (s Status) IsFailure() bool {
-	return s == StatusAmbiguous || s == StatusDrifted || s == StatusOrphaned
-}
 
 type Resolution struct {
 	Annotation  store.Annotation
@@ -42,11 +40,11 @@ type occurrence struct {
 }
 
 func Resolve(annotation store.Annotation, content []byte) Resolution {
-	if annotation.Anchor.Scope == store.ScopeFile {
+	if annotation.Spec.Anchor.Scope == store.ScopeFile {
 		return Resolution{Annotation: annotation, Status: StatusOK}
 	}
 
-	found := findOccurrences(content, annotation.Anchor.Excerpt)
+	found := findOccurrences(content, annotation.Spec.Anchor.Excerpt)
 	if len(found) == 0 {
 		return Resolution{Annotation: annotation, Status: StatusDrifted}
 	}
@@ -54,7 +52,7 @@ func Resolve(annotation store.Annotation, content []byte) Resolution {
 		return resolved(annotation, found[0], 1)
 	}
 
-	contextual := filterByContext(found, annotation.Anchor)
+	contextual := filterByContext(found, annotation.Spec.Anchor)
 	if len(contextual) != 1 {
 		return Resolution{Annotation: annotation, Status: StatusAmbiguous, Occurrences: len(found)}
 	}
@@ -115,25 +113,27 @@ func resolveAll(annotations []store.Annotation, resolve func(store.Annotation) R
 	return resolutions
 }
 
-func Capture(content []byte, excerpt string) (store.Anchor, error) {
+// Capture builds an anchor and reports the line the excerpt was found on. The
+// line comes back separately because it is observed state: it belongs in the
+// record's status, not in the anchor the author decided on.
+func Capture(content []byte, excerpt string) (store.Anchor, int, error) {
 	found := findOccurrences(content, excerpt)
 	switch len(found) {
 	case 0:
-		return store.Anchor{}, fmt.Errorf("excerpt does not occur in the source")
+		return store.Anchor{}, 0, fmt.Errorf("excerpt does not occur in the source")
 	case 1:
-		return anchorFrom(found[0], excerpt), nil
+		return anchorFrom(found[0], excerpt), found[0].line, nil
 	default:
-		return store.Anchor{}, fmt.Errorf("excerpt occurs %d times; provide a more specific excerpt", len(found))
+		return store.Anchor{}, 0, fmt.Errorf("excerpt occurs %d times; provide a more specific excerpt", len(found))
 	}
 }
 
 func anchorFrom(found occurrence, excerpt string) store.Anchor {
 	return store.Anchor{
-		Scope:        store.ScopeExcerpt,
-		Excerpt:      excerpt,
-		Before:       strings.Join(last(found.before, 3), "\n"),
-		After:        strings.Join(first(found.after, 3), "\n"),
-		LastSeenLine: found.line,
+		Scope:   store.ScopeExcerpt,
+		Excerpt: excerpt,
+		Before:  strings.Join(last(found.before, 3), "\n"),
+		After:   strings.Join(first(found.after, 3), "\n"),
 	}
 }
 
