@@ -99,7 +99,7 @@ against the image built from the pull request before running that test.
 | tests.image.repository | string | `"curlimages/curl"` | Image `helm test` uses to probe the service. |
 | tests.image.runAsGroup | int | `102` | Numeric group id of the pinned test image. |
 | tests.image.runAsUser | int | `101` | Numeric user id of the pinned test image. Kubernetes cannot verify `runAsNonRoot` against an image that names its user instead of numbering it, so the ids are pinned with the digest they belong to. |
-| tests.image.tag | string | `"8.16.0"` | Tag of the test image, recorded alongside the digest that pins it. |
+| tests.image.tag | string | `"8.21.0"` | Tag of the test image, recorded alongside the digest that pins it. |
 | tolerations | list | `[]` | Tolerations for pod assignment. |
 | topologySpreadConstraints | list | `[]` | Topology spread constraints for pod assignment. |
 
