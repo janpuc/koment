@@ -3,7 +3,7 @@
   "name": "io.github.janpuc/koment",
   "title": "koment",
   "description": "Read and write checked code rationale stored outside source comments.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "websiteUrl": "https://github.com/janpuc/koment",
   "repository": {
     "url": "https://github.com/janpuc/koment",
