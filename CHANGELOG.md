@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.0](https://github.com/janpuc/koment/compare/v0.8.0...v1.0.0) (2026-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* annotation records adopt the Kubernetes shape (apiVersion: koment.dev/v1alpha, kind: Annotation, metadata/spec/status) and .koment/policy.yaml adopts kind: Policy in the same group. The rationale category moves from `kind` to `spec.type`, `anchor.last_seen_line` moves to `status.lastSeenLine`, `git.end_line` becomes `git.endLine`, `created` becomes an RFC3339 instant, and the published schemas move to schema/v1alpha/. A flat `version: 1` file of either kind is rewritten in place the first time a 1.x binary reads it, so no repository needs a migration command; a 0.x binary cannot read a repository once that has happened. The MCP `koment_add` result replaces `record.version` with `record.api_version`; every other JSON surface is unchanged.
+
+### Features
+
+* reshape the annotation record and cut off v1 ([#45](https://github.com/janpuc/koment/issues/45)) ([cd56145](https://github.com/janpuc/koment/commit/cd56145629bbe01731622910d0d22f0cd16c2bc1))
+
+
+### Bug Fixes
+
+* title every annotation so all 70 records parse under v0.5.0+ ([#43](https://github.com/janpuc/koment/issues/43)) ([5c7b809](https://github.com/janpuc/koment/commit/5c7b8099c049c7ce4a5ca3458c254b0db84c00c9))
+
 ## [0.8.0](https://github.com/janpuc/koment/compare/v0.7.0...v0.8.0) (2026-08-05)
 
 
