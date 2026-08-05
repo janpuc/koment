@@ -10,7 +10,7 @@
   },
   "homepage": "https://github.com/janpuc/koment",
   "repository": "https://github.com/janpuc/koment",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "keywords": [
     "annotations",
     "comments",

@@ -4,7 +4,7 @@
   "description": "Read and write out-of-band code annotations directly in the editor.",
   "version": "0.6.0",
   "publisher": "janpuc",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "engines": {
     "vscode": "^1.100.0"
   },
