@@ -140,8 +140,14 @@ with `GITHUB_TOKEN` starts no workflows and so could never satisfy the required
 To activate it:
 
 1. Create a GitHub App (Settings → Developer settings → GitHub Apps). No webhook.
-   Repository permissions: **Checks**, **Contents**, **Issues**, **Pull
-   requests** and **Workflows**, all read and write. Nothing else.
+   Repository permissions: **Checks**, **Commit statuses**, **Contents**,
+   **Issues**, **Pull requests** and **Workflows** read and write, plus
+   **Dependabot alerts** read. Nothing else.
+
+   Commit statuses is not optional. Renovate writes a `renovate/stability-days`
+   status on its own branch, and a 403 there aborts the whole run — reported as
+   `Repository has changed during renovation`, which names neither the
+   permission nor the request that failed.
 2. Install it on `janpuc/koment` only.
 3. Generate a private key.
 4. Add the app id as the repository variable `RENOVATE_BOT_APP_ID` and the whole
