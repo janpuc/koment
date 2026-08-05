@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z60XJSTBJCXJZM3E0BZN1
 file: internal/ui/view.go
 kind: gotcha
+title: The seen check is load-bearing; severity zero collides with absent
 body: |-
   The absence check is load-bearing. severity[ok] is 0 and severity[missing
   key] is also 0, so a comparison alone never fires for the first annotation

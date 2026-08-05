@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5NZT0H94223K8AR010TK6X
 file: editors/vscode/binary.js
 kind: why
+title: Chmod is asserted; a VSIX expansion is not guaranteed executable
 body: |-
   A VSIX is a zip and nothing in the extension host contract guarantees the
   executable bit survives expansion. It does survive on the paths tested here,

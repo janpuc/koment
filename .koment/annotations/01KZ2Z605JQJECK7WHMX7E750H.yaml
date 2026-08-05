@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z605JQJECK7WHMX7E750H
 file: internal/ui/tree.go
 kind: why
+title: Singleton directories are folded so a Go layout reads as one row
 body: |-
   A directory whose only content is one more directory is scaffolding, not
   structure. Rendering each as its own row spends the rail's width on names

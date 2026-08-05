@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5HRCNT1H2NEGRMSBHFSR72
 file: packaging/naming_test.go
 kind: why
+title: Versions are tokenised so every channel can be compared by name
 body: |-
   Every channel spells the release version differently; comparing names is
   only possible once they all say the same thing.

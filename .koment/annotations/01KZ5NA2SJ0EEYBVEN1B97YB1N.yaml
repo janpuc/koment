@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5NA2SJ0EEYBVEN1B97YB1N
 file: .github/workflows/ci.yml
 kind: anti-pattern
+title: Do not add windows-archive to required (ADR 0111)
 body: |-
   windows-archive is missing from this list on purpose (ADR 0111). It installs
   the last published release rather than this pull request, because no Windows

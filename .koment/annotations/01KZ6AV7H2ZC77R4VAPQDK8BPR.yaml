@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6AV7H2ZC77R4VAPQDK8BPR
 file: .github/workflows/release.yml
 kind: gotcha
+title: 'publish binaries needs id-token: write or cosign waits on a browser'
 body: |-
   This job needs id-token: write for cosign. Without it cosign does not fail
   fast: it decides no ambient credential is available, prints "Non-interactive

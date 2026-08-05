@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETDYF6V8Q9JR83DFNSZ1
 file: internal/application/snapshot.go
 kind: invariant
+title: Every failing status must carry prose spelling the consequence
 body: |-
   ADR 0005 requires that a drifted annotation is never served to an agent as
   though it described the current code. The status field alone does not

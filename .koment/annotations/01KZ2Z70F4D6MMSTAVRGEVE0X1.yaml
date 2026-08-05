@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z70F4D6MMSTAVRGEVE0X1
 file: internal/ui/assets/koment.js
 kind: invariant
+title: Note floor only moves down; code stays still when notes collide
 body: |-
   The floor only ever moves down, which is what guarantees the property this
   layout exists for: when two notes would overlap, the note moves and the code

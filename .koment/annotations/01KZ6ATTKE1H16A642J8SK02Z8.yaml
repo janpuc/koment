@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6ATTKE1H16A642J8SK02Z8
 file: server.json
 kind: gotcha
+title: OCI server.json has no version field; the tag is the version
 body: |-
   An OCI package here must carry no version field. The published JSON Schema
   permits one, so schema validation passes and the registry still rejects the

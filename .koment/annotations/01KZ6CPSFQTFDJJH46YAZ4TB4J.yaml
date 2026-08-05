@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6CPSFQTFDJJH46YAZ4TB4J
 file: .mise/config.toml
 kind: gotcha
+title: Dev pin tracks a release; gates always run from source
 body: |-
   koment depends on a release of itself here, and that is deliberate but
   narrow. This entry exists so .mcp.json and .vscode/mcp.json, which both

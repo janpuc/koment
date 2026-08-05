@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1TRADHM8KAHE6H8S4MZ27
 file: internal/listen/listen.go
 kind: invariant
+title: Loopback by default; bare ports must not bind every interface
 body: |-
   The HTTP transports have no authentication: anything that can reach the port
   reads every annotation in the repository. That is only tolerable because the

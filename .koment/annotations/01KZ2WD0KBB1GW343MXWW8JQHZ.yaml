@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2WD0KBB1GW343MXWW8JQHZ
 file: internal/repository/repository.go
 kind: why
+title: Three sources, each covers a case the others make worse
 body: |-
   Three configuration sources look like too many until you try to collapse
   them. A laptop must need zero configuration; a container with two mounts

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZAAB54QT3DV3GB7YHTP4
 file: internal/metrics/metrics.go
 kind: why
+title: Sweep is timer-driven; scraping the metrics port must not do work
 body: |-
   The sweep runs on a timer rather than when a scrape arrives. A sweep is
   O(annotations) and reads every annotated file, so wiring it to the scrape

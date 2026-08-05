@@ -3,6 +3,7 @@ version: 1
 id: 01KYW39J5GTD9HB75C35DGWC6S
 file: internal/application/service.go
 kind: why
+title: Reanchor keeps the same id and date; only the target moves
 body: |-
   Re-anchoring keeps the annotation's ULID and its created date on purpose.
   The annotation is the same annotation; only where it points changed.

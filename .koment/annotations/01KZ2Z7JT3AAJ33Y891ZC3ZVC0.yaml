@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z7JT3AAJ33Y891ZC3ZVC0
 file: internal/ui/assets/style.css
 kind: why
+title: Code and notes are separate columns, so line heights stay uniform
 body: |-
   Two columns, and the notes are not in the code grid. Previously each line
   was a grid row with the note in a third cell, so the row grew to the tallest

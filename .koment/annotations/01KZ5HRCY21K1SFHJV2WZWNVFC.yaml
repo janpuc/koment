@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5HRCY21K1SFHJV2WZWNVFC
 file: packaging/naming_test.go
 kind: gotcha
+title: Each package manager derives its URL from the archive name
 body: |-
   Each consumer derives its download URL from the archive name, so a rename in
   the release workflow breaks them silently and only after a release ships.

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ3NMJNG4ZD8VHR96PHEGMZ3
 file: internal/metrics/metrics.go
 kind: invariant
+title: A rising drifted rate means agents are served history as current
 body: |-
   The metric this project should watch: a rising drifted rate means agents are
   being handed history as though it described the code.

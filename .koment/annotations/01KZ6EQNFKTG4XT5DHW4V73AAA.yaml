@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6EQNFKTG4XT5DHW4V73AAA
 file: internal/lsp/workspace.go
 kind: invariant
+title: Only failing statuses become diagnostics; moved stays in the gloss
 body: |-
   Only statuses that fail koment check become diagnostics. moved resolves
   uniquely and passes, and publishing it as one drew a blue squiggle under

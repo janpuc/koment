@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETDR0HRXBNS70DQPDSXS
 file: internal/anchor/anchor.go
 kind: invariant
+title: LastSeenLine is a hint, never how an excerpt is located
 body: |-
   LastSeenLine is a hint, never an anchor (ADR 0009). It is consulted only
   after the excerpt has already been located, and only to choose between ok

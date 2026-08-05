@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5NZT45QNB74R1J4YTYEBQS
 file: editors/vscode/package-vsix.sh
 kind: invariant
+title: Bundled binary is the archive the release signed, never a rebuild
 body: |-
   The bundled binary must be the archive the release signed, never a rebuild.
   ADR 0109 rejected letting a channel build its own binary, because that lets

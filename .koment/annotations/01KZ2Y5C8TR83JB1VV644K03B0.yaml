@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Y5C8TR83JB1VV644K03B0
 file: internal/ui/export.go
 kind: invariant
+title: Static site refuses to render without a commit stamp (ADR 0026)
 body: |-
   Refusing here rather than rendering an unstamped page is deliberate. A
   static site is the one tier that cannot re-resolve, so the only thing

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6416GSBA5CRC4XJZC6TTFQ
 file: .github/workflows/ci.yml
 kind: invariant
+title: Only the ci aggregate is required; its name equals its job id
 body: |-
   Every job's name equals its id, so a required check names the job that
   produced it. The aggregate is called ci rather than test because a job that

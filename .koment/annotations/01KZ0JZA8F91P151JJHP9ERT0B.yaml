@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZA8F91P151JJHP9ERT0B
 file: internal/metrics/metrics.go
 kind: invariant
+title: Every status is set on every sweep, zero included, for dashboards
 body: |-
   Every status is set on every sweep, including the ones at zero. Skipping a
   zero would make a drift that someone fixed look identical to a scrape gap:

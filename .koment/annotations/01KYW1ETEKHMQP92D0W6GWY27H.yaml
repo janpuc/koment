@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETEKHMQP92D0W6GWY27H
 file: internal/store/store.go
 kind: why
+title: Temp+rename, so a crash leaves no half-written record
 body: |-
   Records are written to a temporary file and renamed into place. A crash
   during a plain write leaves a truncated record, which is indistinguishable
