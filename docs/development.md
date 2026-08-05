@@ -163,6 +163,12 @@ Renovate can advance a pinned action SHA, and a token carrying that scope
 alongside a person's other scopes turns any workflow change into a path to
 their whole account.
 
+The shared preset attaches `helm-docs` and `helm-schema` as post-upgrade tasks.
+Renovate's container carries neither, so `.github/renovate-entrypoint.sh`
+installs them and `RENOVATE_ALLOWED_COMMANDS` permits them. Without that, a
+Renovate pull request that touches the chart leaves `charts/koment/README.md`
+stale and fails `mise run generate-check`.
+
 Validate a configuration change before pushing it:
 
 ```sh
