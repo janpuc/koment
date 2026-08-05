@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9G9MRAZ5W0BJPEYCQZSCTE
+  created: "2026-08-05T17:42:16Z"
+spec:
+  target:
+    file: .github/workflows/codeql.yml
+  type: gotcha
+  title: Pin a release tag's commit, never the moving major tag's
+  body: |-
+    This pin was wrong for a day. `gh api repos/OWNER/REPO/git/ref/tags/v4`
+    answers happily and returns the commit the *moving* v4 tag currently points
+    at, which is not the commit of any version you can name - so the SHA got a
+    `# v4.32.5` comment describing a different commit entirely. Renovate found
+    it before a human did, reporting an upgrade collision between v4.37.4 and
+    v4.32.5 for one SHA.
+
+    Resolve the concrete tag instead: `gh api repos/OWNER/REPO/commits/v4.37.6
+    --jq .sha`. That endpoint follows an annotated tag through to its commit,
+    which is what `uses:` actually pins. `git/ref/tags/<x>` returns the tag
+    *object* for an annotated tag, so the two disagree exactly where it matters.
+
+    zizmor enforces that a SHA is present. Nothing enforces that the comment
+    beside it is true, which is why an audit comparing every `uses:` label
+    against `commits/<tag>` is worth re-running after any hand-edited pin.
+  anchor:
+    scope: excerpt
+    excerpt: '        uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6'
+    before: |2-
+                cache: true
+
+            - name: Initialize CodeQL
+    after: |2-
+              with:
+                languages: ${{ matrix.language }}
+                build-mode: ${{ matrix.build-mode }}
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
+    path: .github/workflows/codeql.yml
+    line: 49
+status:
+  lastSeenLine: 49
+  resolution: ok
+  resolvedAt: "2026-08-05T17:42:16Z"
+  resolvedCommit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa

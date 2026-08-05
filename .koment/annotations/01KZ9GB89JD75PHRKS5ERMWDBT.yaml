@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9GB89JD75PHRKS5ERMWDBT
+  created: "2026-08-05T17:43:09Z"
+spec:
+  target:
+    file: .github/workflows/renovate.yml
+  type: invariant
+  title: Allowed commands and the entrypoint are one decision
+  body: |-
+    Two halves that only work together. The shared home-operations preset
+    attaches helm-docs and helm-schema as post-upgrade tasks; this list permits
+    them and `.github/renovate-entrypoint.sh` installs them, because Renovate's
+    container carries neither. Allowing a command that is not on PATH fails the
+    task just as surely as not allowing it, so changing one half without the
+    other reintroduces the bug in a form that looks configured.
+
+    The coupling that makes this load-bearing rather than cosmetic: `mise run
+    generate-check` runs helm-docs and fails on a chart README that was not
+    regenerated. A Renovate pull request touching the chart without running the
+    post-upgrade task therefore fails a required check and can never merge - the
+    first run demonstrated exactly that, with `"allowedCommands": []` in the
+    log.
+
+    Verify a change here by watching the next run's first lines for `helm-docs
+    version` and `helm-schema version`, printed by the entrypoint before
+    Renovate starts. Silence there means the tasks will be skipped.
+  anchor:
+    scope: excerpt
+    excerpt: '          RENOVATE_ALLOWED_COMMANDS: ''["^helm-docs ", "^helm-schema "]'''
+    before: |2-
+                RENOVATE_INTERNAL_CHECKS_FILTER: strict
+                RENOVATE_REPOSITORY_CACHE: enabled
+                RENOVATE_PRESET_CACHE_PERSISTENCE: "true"
+    after: |2-
+              with:
+                docker-cmd-file: .github/renovate-entrypoint.sh
+                docker-user: root
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
+    path: .github/workflows/renovate.yml
+    line: 95
+status:
+  lastSeenLine: 95
+  resolution: ok
+  resolvedAt: "2026-08-05T17:43:09Z"
+  resolvedCommit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa

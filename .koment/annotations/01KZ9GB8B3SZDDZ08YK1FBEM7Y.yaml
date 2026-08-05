@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9GB8B3SZDDZ08YK1FBEM7Y
+  created: "2026-08-05T17:43:09Z"
+spec:
+  target:
+    file: .github/renovate-entrypoint.sh
+  type: why
+  title: Renovate updates the tools it needs to update the tools
+  body: |-
+    The `# renovate:` line above each version is what keeps this file from
+    becoming the one place in the repository that rots. Renovate's own container
+    image is pinned by the action SHA, and the two binaries it needs are pinned
+    here, so every version in the loop is proposed as an ordinary pull request
+    by the tool whose container they belong to.
+
+    These stay pinned rather than resolving `latest` at run time for the same
+    reason every action carries a SHA: a post-upgrade task that silently changes
+    behaviour between runs would rewrite `charts/koment/README.md` differently
+    on two otherwise identical pull requests, and the diff would be attributed
+    to the dependency being bumped.
+
+    The version here and the one in `.mise/config.toml` are separate pins of the
+    same tool - one for the Renovate container, one for a contributor's shell.
+    Renovate bumps both, but nothing forces them to agree, so a chart README
+    regenerated in CI can differ from one regenerated locally if they drift.
+  anchor:
+    scope: excerpt
+    excerpt: HELM_DOCS_VERSION=1.14.2
+    before: |-
+      # dependency.
+
+      # renovate: datasource=github-releases depName=norwoodj/helm-docs
+    after: |-
+      curl -fsSL \
+          "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION#v}/helm-docs_${HELM_DOCS_VERSION#v}_Linux_x86_64.tar.gz" \
+          | tar -xz -C /usr/local/bin helm-docs
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
+    path: .github/renovate-entrypoint.sh
+    line: 12
+status:
+  lastSeenLine: 12
+  resolution: ok
+  resolvedAt: "2026-08-05T17:43:09Z"
+  resolvedCommit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa

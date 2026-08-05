@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZ9GAMXBS5402T6ZM5NJTH1Z
+  created: "2026-08-05T17:42:49Z"
+spec:
+  target:
+    file: .github/workflows/renovate.yml
+  type: gotcha
+  title: A permission 403 surfaces as "repository has changed"
+  body: |-
+    Renovate reports a missing token permission as `Repository has changed
+    during renovation - aborting`, with `"result": "repository-changed"`. That
+    message names neither the permission nor the request, and it is a
+    plausible-sounding lie: it sent two investigations after a merge race and
+    then a poisoned repository cache, both wrong, before anyone ran the thing at
+    debug level.
+
+    Five consecutive runs opened nothing because of it. The real error only
+    appears under `LOG_LEVEL=debug`:
+
+    HTTPError: 403 (Forbidden): POST /repos/janpuc/koment/statuses/<sha> Error:
+    integration-unauthorized at Proxy.setBranchStatus -> setStatusCheck ->
+    processBranch DEBUG: Caught error setting branch status - aborting
+
+    Renovate writes a `renovate/stability-days` commit status on its own branch
+    and treats failure as fatal. So `statuses: write` is not optional, and
+    neither is the matching permission on the app itself - a token cannot
+    request more than the installation holds, so the workflow and the app have
+    to be changed together.
+
+    When Renovate does nothing and blames the repository, go to the debug log
+    and grep for `integration-unauthorized` before believing it.
+  anchor:
+    scope: excerpt
+    excerpt: '          permission-statuses: write'
+    before: |2-
+                permission-contents: write
+                permission-issues: write
+                permission-pull-requests: write
+    after: |2
+                permission-vulnerability-alerts: read
+                permission-workflows: write
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 14bec7ede6ef744b2b141f67bdc7554d9157b0fa
+    path: .github/workflows/renovate.yml
+    line: 61
+status:
+  lastSeenLine: 65
+  resolution: ok
+  resolvedAt: "2026-08-05T18:01:08Z"
+  resolvedCommit: 802302ee7d41277964aea39ca6518c7233c4addd
