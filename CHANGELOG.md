@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/janpuc/koment/compare/v0.5.1...v0.6.0) (2026-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* stop reporting a stale line number as a status ([#35](https://github.com/janpuc/koment/issues/35))
+
+### Code Refactoring
+
+* stop reporting a stale line number as a status ([#35](https://github.com/janpuc/koment/issues/35)) ([7509a06](https://github.com/janpuc/koment/commit/7509a06f617103bfa7a9bab3f7d9cebea92bf8d3))
+
 ## [0.5.1](https://github.com/janpuc/koment/compare/v0.5.0...v0.5.1) (2026-08-05)
 
 
