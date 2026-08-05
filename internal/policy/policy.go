@@ -36,11 +36,12 @@ const (
 type Adapter string
 
 const (
-	AdapterAgents  Adapter = "agents"
-	AdapterClaude  Adapter = "claude"
-	AdapterCopilot Adapter = "copilot"
-	AdapterCursor  Adapter = "cursor"
-	AdapterCodex   Adapter = "codex"
+	AdapterAgents   Adapter = "agents"
+	AdapterClaude   Adapter = "claude"
+	AdapterCopilot  Adapter = "copilot"
+	AdapterCursor   Adapter = "cursor"
+	AdapterCodex    Adapter = "codex"
+	AdapterOpencode Adapter = "opencode"
 )
 
 // Policy is the version-1 repository enforcement contract.
@@ -78,6 +79,7 @@ func Default() Policy {
 		},
 		Agents: AgentsPolicy{Adapters: []Adapter{
 			AdapterAgents, AdapterClaude, AdapterCopilot, AdapterCursor, AdapterCodex,
+			AdapterOpencode,
 		}},
 	}
 }
@@ -223,7 +225,7 @@ func validateIntrinsics(values []Intrinsic) error {
 func validateAdapters(values []Adapter) error {
 	allowed := map[Adapter]bool{
 		AdapterAgents: true, AdapterClaude: true, AdapterCopilot: true,
-		AdapterCursor: true, AdapterCodex: true,
+		AdapterCursor: true, AdapterCodex: true, AdapterOpencode: true,
 	}
 	seen := map[Adapter]bool{}
 	for _, value := range values {

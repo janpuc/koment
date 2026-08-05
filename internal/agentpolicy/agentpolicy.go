@@ -127,6 +127,13 @@ func installAdapter(root *os.Root, adapter policy.Adapter) ([]Change, error) {
 			{".codex/hooks.json", func() (bool, error) { return installCodexHooks(root) }},
 			{".codex/config.toml", func() (bool, error) { return installCodexConfig(root) }},
 		})
+	case policy.AdapterOpencode:
+		return installFiles([]installation{
+			{".opencode/plugins/koment.js", func() (bool, error) {
+				return replaceWhenDifferent(root, ".opencode/plugins/koment.js", opencodePlugin())
+			}},
+			{"opencode.json", func() (bool, error) { return installOpencodeConfig(root) }},
+		})
 	default:
 		return nil, fmt.Errorf("unsupported agent adapter %q", adapter)
 	}
@@ -192,6 +199,13 @@ func adapterDrift(root *os.Root, adapter policy.Adapter) ([]Drift, error) {
 		checks = append(checks,
 			adapterCheck{".codex/hooks.json", func() (string, error) { return codexHooksDrift(root) }},
 			adapterCheck{".codex/config.toml", func() (string, error) { return codexConfigDrift(root) }},
+		)
+	case policy.AdapterOpencode:
+		checks = append(checks,
+			adapterCheck{".opencode/plugins/koment.js", func() (string, error) {
+				return exactDrift(root, ".opencode/plugins/koment.js", opencodePlugin())
+			}},
+			adapterCheck{"opencode.json", func() (string, error) { return opencodeConfigDrift(root) }},
 		)
 	default:
 		return nil, fmt.Errorf("unsupported agent adapter %q", adapter)
@@ -517,6 +531,186 @@ func codexHooksDrift(root *os.Root) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+const opencodePluginSource = `import { spawn } from "node:child_process";
+import process from "node:process";
+
+function run(cmd, args, { cwd, stdin } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, {
+      cwd,
+      env: process.env,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => (stdout += chunk.toString("utf8")));
+    child.stderr.on("data", (chunk) => (stderr += chunk.toString("utf8")));
+    child.on("error", reject);
+    if (stdin !== undefined && stdin !== null) {
+      child.stdin.end(stdin);
+    } else {
+      child.stdin.end();
+    }
+    child.on("close", (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else {
+        const error = new Error(
+          "koment " + args.join(" ") + " exited with code " + code
+        );
+        error.stdout = stdout;
+        error.stderr = stderr;
+        error.code = code;
+        reject(error);
+      }
+    });
+  });
+}
+
+function deny(reason) {
+  throw new Error(reason);
+}
+
+export const KomentPolicy = async ({ directory }) => {
+  return {
+    "tool.execute.before": async (input, output) => {
+      const tool = input.tool;
+      if (tool !== "edit" && tool !== "write") return;
+      const args = output.args ?? {};
+      const filePath = args.filePath ?? args.path ?? args.file ?? "";
+      const content = args.content ?? args.newContent ?? args.text ?? "";
+      if (!filePath || typeof content !== "string") return;
+      const payload = JSON.stringify({
+        tool_name: "opencode_edit",
+        tool_input: { filePath, content },
+      });
+      try {
+        await run("koment", ["agents", "hook", "pre-tool"], {
+          cwd: directory,
+          stdin: payload,
+        });
+      } catch (err) {
+        deny(
+          "koment pre-tool hook denied edit of " +
+            filePath +
+            ":\n" +
+            (err.stderr || err.message)
+        );
+      }
+    },
+    "session.idle": async () => {
+      try {
+        await run("koment", ["check"], { cwd: directory });
+        await run("koment", ["comments", "check"], { cwd: directory });
+        await run("koment", ["agents", "check"], { cwd: directory });
+      } catch (err) {
+        deny("koment policy gate failed:\n" + (err.stderr || err.message));
+      }
+    },
+  };
+};
+`
+
+func opencodePlugin() string {
+	return opencodePluginSource + "\n"
+}
+
+func installOpencodeConfig(root *os.Root) (bool, error) {
+	content, err := readOptional(root, "opencode.json")
+	if err != nil {
+		return false, err
+	}
+	document, err := decodeJSONObject("opencode.json", content)
+	if err != nil {
+		return false, err
+	}
+	mcp := map[string]json.RawMessage{}
+	if raw, found := document["mcp"]; found {
+		if err := json.Unmarshal(raw, &mcp); err != nil {
+			return false, fmt.Errorf("parsing opencode.json mcp: %w", err)
+		}
+	}
+	komentServer, err := json.Marshal(map[string]any{
+		"type":    "local",
+		"command": []string{"koment", "mcp", "--write"},
+	})
+	if err != nil {
+		return false, fmt.Errorf("encoding koment MCP configuration: %w", err)
+	}
+	mcp["koment"] = komentServer
+	encodedMCP, err := json.Marshal(mcp)
+	if err != nil {
+		return false, fmt.Errorf("encoding opencode.json mcp: %w", err)
+	}
+	document["mcp"] = encodedMCP
+
+	plugins := []string{}
+	if raw, found := document["plugin"]; found {
+		if err := json.Unmarshal(raw, &plugins); err != nil {
+			return false, fmt.Errorf("parsing opencode.json plugin: %w", err)
+		}
+	}
+	if !containsString(plugins, "./.opencode/plugins/koment.js") {
+		plugins = append(plugins, "./.opencode/plugins/koment.js")
+	}
+	encodedPlugins, err := json.Marshal(plugins)
+	if err != nil {
+		return false, fmt.Errorf("encoding opencode.json plugin: %w", err)
+	}
+	document["plugin"] = encodedPlugins
+
+	if _, found := document["$schema"]; !found {
+		document["$schema"] = json.RawMessage(`"https://opencode.ai/config.json"`)
+	}
+	encoded, err := json.MarshalIndent(document, "", "  ")
+	if err != nil {
+		return false, fmt.Errorf("encoding opencode.json: %w", err)
+	}
+	return replaceWhenDifferent(root, "opencode.json", string(encoded)+"\n")
+}
+
+func opencodeConfigDrift(root *os.Root) (string, error) {
+	content, err := readOptional(root, "opencode.json")
+	if err != nil {
+		return "", err
+	}
+	document, err := decodeJSONObject("opencode.json", content)
+	if err != nil {
+		return "", err
+	}
+	var mcp map[string]json.RawMessage
+	if err := json.Unmarshal(document["mcp"], &mcp); err != nil {
+		return "koment MCP server is missing from opencode.json", nil
+	}
+	var server any
+	if err := json.Unmarshal(mcp["koment"], &server); err != nil {
+		return "koment MCP server is missing from opencode.json", nil
+	}
+	wantedServer := map[string]any{
+		"type":    "local",
+		"command": []any{"koment", "mcp", "--write"},
+	}
+	if !equalJSON(server, wantedServer) {
+		return "koment MCP server in opencode.json has drifted", nil
+	}
+	var plugins []string
+	if err := json.Unmarshal(document["plugin"], &plugins); err != nil {
+		return "koment opencode plugin registration is missing from opencode.json", nil
+	}
+	if !containsString(plugins, "./.opencode/plugins/koment.js") {
+		return "koment opencode plugin registration is missing from opencode.json", nil
+	}
+	return "", nil
+}
+
+func containsString(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 func equalJSON(left, right any) bool {

@@ -11,9 +11,14 @@ import (
 type toolHookInput struct {
 	ToolName  string `json:"tool_name"`
 	ToolInput struct {
-		Command string `json:"command"`
+		Command  string `json:"command"`
+		FilePath string `json:"filePath"`
+		Content  string `json:"content"`
 	} `json:"tool_input"`
 }
+
+const toolHookApplyPatch = "apply_patch"
+const toolHookOpencodeEdit = "opencode_edit"
 
 // PreToolOutput blocks a Go patch that adds ordinary comment intent.
 func PreToolOutput(input []byte) ([]byte, error) {
@@ -21,10 +26,16 @@ func PreToolOutput(input []byte) ([]byte, error) {
 	if err := json.Unmarshal(input, &request); err != nil {
 		return nil, fmt.Errorf("parsing PreToolUse input: %w", err)
 	}
-	if request.ToolName != "apply_patch" {
+	var body string
+	switch request.ToolName {
+	case toolHookApplyPatch:
+		body = request.ToolInput.Command
+	case toolHookOpencodeEdit:
+		body = syntheticPatchFromEdit(request.ToolInput.FilePath, request.ToolInput.Content)
+	default:
 		return []byte("{}\n"), nil
 	}
-	comments := addedCommentIntent(request.ToolInput.Command)
+	comments := addedCommentIntent(body)
 	if len(comments) == 0 {
 		return []byte("{}\n"), nil
 	}
@@ -41,6 +52,20 @@ func PreToolOutput(input []byte) ([]byte, error) {
 		return nil, fmt.Errorf("encoding PreToolUse output: %w", err)
 	}
 	return append(encoded, '\n'), nil
+}
+
+func syntheticPatchFromEdit(filePath, content string) string {
+	var builder strings.Builder
+	builder.WriteString("*** Update File: ")
+	builder.WriteString(filepath.ToSlash(filePath))
+	builder.WriteByte('\n')
+	builder.WriteString("@@\n")
+	for _, line := range strings.Split(content, "\n") {
+		builder.WriteByte('+')
+		builder.WriteString(line)
+		builder.WriteByte('\n')
+	}
+	return builder.String()
 }
 
 // StopWasContinued reports whether the Stop hook already continued this turn.

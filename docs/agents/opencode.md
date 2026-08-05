@@ -13,7 +13,8 @@ your project root.
       "type": "local",
       "command": ["koment", "mcp", "--write"]
     }
-  }
+  },
+  "plugin": ["./.opencode/plugins/koment.js"]
 }
 ```
 
@@ -24,6 +25,12 @@ this wrong.
 
 MCP servers are enabled by default; add `"enabled": false` to switch one off
 without deleting it.
+
+The `plugin` entry loads `.opencode/plugins/koment.js`, which mirrors
+`.codex/hooks.json`: it denies ordinary Go comment intent on `edit`/`write`
+and re-runs the policy gate at session idle. The plugin shells out to
+`koment`, so `koment` must be on `PATH` (or set up via the project setup
+Action). Skip the `plugin` entry if you only want the read tools.
 
 ## Remote
 
@@ -57,3 +64,5 @@ project-wide rationale in an ADR.
 ## Notes
 
 - Commit `opencode.json` and every contributor gets the tools automatically.
+- `koment agents install` regenerates both `opencode.json` and
+  `.opencode/plugins/koment.js`; `koment agents check` flags drift on both.
