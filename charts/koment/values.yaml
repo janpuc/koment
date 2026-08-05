@@ -151,7 +151,7 @@ tests:
     # -- Image `helm test` uses to probe the service.
     repository: curlimages/curl
     # -- Tag of the test image, recorded alongside the digest that pins it.
-    tag: "8.16.0"
+    tag: "8.21.0"
     # -- Digest that pins the test image, so a moving tag cannot change it.
     digest: sha256:463eaf6072688fe96ac64fa623fe73e1dbe25d8ad6c34404a669ad3ce1f104b6
     # -- Pull policy for the test image.
