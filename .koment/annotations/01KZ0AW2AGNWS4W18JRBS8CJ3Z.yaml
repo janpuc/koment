@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0AW2AGNWS4W18JRBS8CJ3Z
 file: internal/store/ulid.go
 kind: why
+title: ULIDs are minted and compared, never decoded back into a timestamp
 body: |-
   Encoding is generate-only: koment mints ids and compares them as strings,
   never parses one back into a timestamp. That is why there is no decoder to

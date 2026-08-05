@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETDJPEK5QSD4YD6MBD9G
 file: internal/store/store.go
 kind: gotcha
+title: Two path bases, deliberately two methods; do not merge
 body: |-
   Two bases, deliberately two methods. A person typing at a shell means a path
   relative to their working directory; an MCP client means one relative to the

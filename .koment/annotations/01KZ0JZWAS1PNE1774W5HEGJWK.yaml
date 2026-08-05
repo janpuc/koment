@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZWAS1PNE1774W5HEGJWK
 file: internal/metrics/middleware.go
 kind: gotcha
+title: net/http discards the status code; capture it via WriteHeader
 body: |-
   net/http throws the status code away once it has been written, so the only
   way to record it is to intercept WriteHeader. The written flag matters: a

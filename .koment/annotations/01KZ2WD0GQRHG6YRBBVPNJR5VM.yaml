@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2WD0GQRHG6YRBBVPNJR5VM
 file: internal/mcp/mcp.go
 kind: invariant
+title: An ambiguous path fails and names the candidates
 body: |-
   An ambiguous path fails and lists the candidates rather than choosing one.
   Answering from whichever repository the server happens to sit in is a

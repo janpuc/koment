@@ -3,6 +3,7 @@ version: 1
 id: 01KYWG17GDDCHE8Q05N8PQ62H2
 file: internal/ui/ui.go
 kind: invariant
+title: Every request rebuilds the view from disk; nothing is cached
 body: |-
   Every request rebuilds the whole view from the working tree rather than
   caching it at startup. This is the point of a local tool: what is on screen

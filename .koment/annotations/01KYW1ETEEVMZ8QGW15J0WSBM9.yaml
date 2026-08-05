@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETEEVMZ8QGW15J0WSBM9
 file: internal/store/record.go
 kind: gotcha
+title: An empty excerpt means file scope, never a wildcard match
 body: |-
   An empty excerpt means file scope, not "matches everything". Treating it as
   a wildcard makes every annotation resolve at offset zero and report ok

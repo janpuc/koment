@@ -3,6 +3,7 @@ version: 1
 id: 01KYW39J5RCPKYCH1865WPHG82
 file: internal/application/service.go
 kind: gotcha
+title: File-only reanchor inherits the existing excerpt
 body: |-
   An annotation that only changes file keeps its existing excerpt rather than
   requiring it to be retyped. This is the renamed-file case, which is the

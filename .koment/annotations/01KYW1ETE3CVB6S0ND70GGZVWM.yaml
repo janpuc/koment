@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETE3CVB6S0ND70GGZVWM
 file: internal/store/ulid.go
 kind: gotcha
+title: ULID is 26 chars carrying 130 bits, so the encoder must pad
 body: |-
   26 Crockford characters carry 130 bits but a ULID holds 128, so the value is
   left-padded by two. Drop the padding and every character shifts: the ids are

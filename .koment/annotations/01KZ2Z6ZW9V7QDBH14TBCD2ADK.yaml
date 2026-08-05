@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z6ZW9V7QDBH14TBCD2ADK
 file: internal/ui/assets/koment.js
 kind: invariant
+title: JavaScript is enhancement only; scripting off must still be complete
 body: |-
   Everything in this file is an enhancement, and it has to stay that way. The
   published tier serves these same files with no server behind them (ADR

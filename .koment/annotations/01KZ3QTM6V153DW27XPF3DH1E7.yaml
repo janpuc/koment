@@ -3,6 +3,7 @@ version: 1
 id: 01KZ3QTM6V153DW27XPF3DH1E7
 file: internal/ui/ui.go
 kind: invariant
+title: No Secure on loopback cookies; loopback is enforced before the token
 body: |-
   The capability server intentionally uses plain HTTP on an ephemeral loopback
   listener, so a Secure cookie would not be returned by browsers and would

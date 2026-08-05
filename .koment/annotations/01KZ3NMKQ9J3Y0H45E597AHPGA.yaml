@@ -3,6 +3,7 @@ version: 1
 id: 01KZ3NMKQ9J3Y0H45E597AHPGA
 file: internal/ui/export.go
 kind: why
+title: Links walk back up to the export root for file:// and subpath alike
 body: |-
   exportedLinks walks back up to the output root from wherever this page sits,
   so the tree works from a file:// path and from a project subpath alike.

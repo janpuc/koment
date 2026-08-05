@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZACMEMDMTB7WKZCJ493P
 file: internal/config/config.go
 kind: invariant
+title: Explicit flag always beats the environment; flags stay overridable
 body: |-
   An explicit flag always beats the environment. That ordering is what makes a
   container debuggable: the deployment sets KOMENT_LISTEN and a person

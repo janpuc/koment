@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETDBHG5PX4SRR8D69J5W
 file: internal/cli/cli.go
 kind: why
+title: Servers injected rather than imported, so cli never links the SDKs
 body: |-
   The servers are injected as function values rather than imported, so that
   package cli links neither the MCP SDK nor the UI templates. ADR 0007

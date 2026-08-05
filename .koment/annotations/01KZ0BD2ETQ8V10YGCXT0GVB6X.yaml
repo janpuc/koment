@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0BD2ETQ8V10YGCXT0GVB6X
 file: internal/store/context.go
 kind: invariant
+title: Excerpt drives resolution; commit is reconstructed only for history
 body: |-
   The excerpt and this context answer different questions and neither replaces
   the other. Resolution searches on the excerpt alone; the commit hash is

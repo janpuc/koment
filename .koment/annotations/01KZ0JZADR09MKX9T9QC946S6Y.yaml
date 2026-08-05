@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZADR09MKX9T9QC946S6Y
 file: internal/config/config.go
 kind: gotcha
+title: FromEnvironment runs after Parse so Visit sees only set flags
 body: |-
   This runs after Parse, not before, because flag.FlagSet.Visit only reports
   flags that were actually given - which is the entire signal needed to decide

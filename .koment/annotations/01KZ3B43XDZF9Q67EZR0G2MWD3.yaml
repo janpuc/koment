@@ -3,6 +3,7 @@ version: 1
 id: 01KZ3B43XDZF9Q67EZR0G2MWD3
 file: action.yml
 kind: invariant
+title: Setup adds only a fixed RUNNER_TEMP subdir to PATH, never more
 body: |-
   The setup action adds only a fixed subdirectory of GitHub runner-owned
   RUNNER_TEMP to PATH. The downloaded executable is checksum-verified and the

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5NZSWMQQBBVBT5S1HX1A46
 file: editors/vscode/binary.js
 kind: gotcha
+title: koment.binaryPath defaults to empty so a user setting always wins
 body: |-
   koment.binaryPath defaults to empty, not to "koment". A default that is also
   a valid path cannot be told apart from a user who typed it, so the bundled

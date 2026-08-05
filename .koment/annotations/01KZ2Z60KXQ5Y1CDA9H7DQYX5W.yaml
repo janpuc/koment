@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z60KXQ5Y1CDA9H7DQYX5W
 file: internal/ui/tree.go
 kind: gotcha
+title: Root-level files come back separately, not inside a node
 body: |-
   Root-level files come back separately rather than inside a node. The root is
   not a row anyone should have to expand, and giving it one would file

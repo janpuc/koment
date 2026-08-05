@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2WD0F91Y3169YGVKNH3WX7
 file: internal/repository/repository.go
 kind: invariant
+title: Identity is assigned, never computed from the filesystem path
 body: |-
   Identity is assigned, never computed from the path. Hashing the root meant
   that moving a checkout from /repos/api to /srv/api silently produced a

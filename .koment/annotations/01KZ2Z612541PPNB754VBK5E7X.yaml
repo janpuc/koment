@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z612541PPNB754VBK5E7X
 file: internal/ui/ui.go
 kind: why
+title: Every URL names its repository; single-repo deploys still carry /r/
 body: |-
   Every path carries its repository, including when only one is served. A URL
   whose meaning depends on how the server happens to be configured is a URL

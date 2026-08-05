@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6D9MX34FB8M700W71GQ7AS
 file: internal/lsp/workspace.go
 kind: invariant
+title: Diagnostic slices are initialised so LSP never sees JSON null
 body: |-
   Initialised, not declared with var. A nil Go slice marshals to JSON null,
   and LSP declares PublishDiagnosticsParams.diagnostics as an array, so a nil

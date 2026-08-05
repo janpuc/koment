@@ -3,6 +3,7 @@ version: 1
 id: 01KZ8KTTXGPJTX4KXWW5Z6B827
 file: internal/agentpolicy/hooks.go
 kind: why
+title: Opencode synthesises an apply_patch so one walker handles both clients
 body: |-
   Two clients (codex apply_patch, opencode edit/write) feed the same
   addedCommentIntent walker, but only the first produces the patch shape that

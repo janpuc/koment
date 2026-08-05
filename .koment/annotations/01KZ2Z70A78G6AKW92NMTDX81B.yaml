@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z70A78G6AKW92NMTDX81B
 file: internal/ui/assets/koment.js
 kind: why
+title: On narrow screens notes sit in source order; transforms are cleared
 body: |-
   On a narrow screen the note already sits directly under the line it
   annotates, in source order, and the code has the full width. Translating

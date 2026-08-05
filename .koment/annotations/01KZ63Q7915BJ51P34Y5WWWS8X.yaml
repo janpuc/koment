@@ -3,6 +3,7 @@ version: 1
 id: 01KZ63Q7915BJ51P34Y5WWWS8X
 file: charts/koment/templates/tests/service.yaml
 kind: gotcha
+title: Hook-succeeded is absent; helm test --logs would race deletion
 body: |-
   hook-succeeded is deliberately absent. CI runs `helm test --logs`, which
   reads the pod after the hook finishes, and deleting it on success races that

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0AVP5JQQKCT8G77A10QAM5
 file: internal/provenance/provenance.go
 kind: invariant
+title: Missing git is reported, not invented; wrong is worse than absent
 body: |-
   Reports ErrNoGit rather than guessing. A fabricated commit reference is
   worse than an absent one: an absent context degrades the historical view

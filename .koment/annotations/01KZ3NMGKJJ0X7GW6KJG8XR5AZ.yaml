@@ -3,6 +3,7 @@ version: 1
 id: 01KZ3NMGKJJ0X7GW6KJG8XR5AZ
 file: internal/mcp/transport.go
 kind: why
+title: Sweep metrics sum across repositories; drift is a deployment question
 body: |-
   sweepAll reports the whole deployment. Gauges are summed across repositories
   because the metric answers "how much drift is there", which is a deployment

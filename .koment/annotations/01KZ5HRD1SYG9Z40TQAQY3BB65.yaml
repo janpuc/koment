@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5HRD1SYG9Z40TQAQY3BB65
 file: packaging/naming_test.go
 kind: why
+title: Setup action maps runners onto archive names, not the other way
 body: |-
   The setup action names no archive literally: it maps the runner it finds
   onto one. Expanding that mapping is the only way to compare it with what

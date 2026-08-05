@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Y5SXBZ5E5JP8EDB0VGH07
 file: action.yml
 kind: gotcha
+title: Resolve latest via the release redirect, not the REST API
 body: |-
   Resolving "latest" through the release redirect rather than the REST API is
   not a style choice. The API's unauthenticated rate limit is counted per

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5HRCT2A22HS1K8EVB27747
 file: packaging/naming_test.go
 kind: invariant
+title: The release workflow names the files every channel may reference
 body: |-
   The release workflow is the producer, so it defines the names every package
   manager is allowed to reference (ADR 0109).

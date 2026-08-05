@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0BD2G026QVYB3BCP5QBKGJ
 file: internal/store/context.go
 kind: why
+title: Full commit SHA only; an abbreviation becomes ambiguous later
 body: |-
   A full SHA is required rather than an abbreviation. Git will happily accept
   a 7-character prefix today and refuse it as ambiguous once the repository

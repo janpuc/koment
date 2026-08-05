@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6323VTGBERAWV2ZYTK416J
 file: charts/koment/README.md.gotmpl
 kind: anti-pattern
+title: No chart version badge in README; it would drift from Chart.yaml
 body: |-
   Do not add chart.versionBadge or chart.appVersionBadge back. They render the
   Chart.yaml version into the generated README, and release-please bumps

@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1TRASR4YZ5NEE0YEV0SD8
 file: internal/mcp/transport.go
 kind: why
+title: mcp parses its own flags, so package cli never links the MCP SDK
 body: |-
   The mcp subcommand parses its own flags here rather than in package cli, so
   that cli never imports this package and therefore never links the MCP SDK.

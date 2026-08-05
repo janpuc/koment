@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0BD2H55X6PR6VH5CTGP12S
 file: internal/store/context.go
 kind: invariant
+title: Identity is a claim, not a proof; proven and unproven render apart
 body: |-
   The identity is a claim, not a proof. git config is trivially set to
   anything, so source records where it came from and the UI must render an

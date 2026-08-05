@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZW9AT48RT1Q9EFR5J60Q
 file: internal/metrics/metrics.go
 kind: why
+title: Servers depend on a Recorder interface, never on Prometheus types
 body: |-
   The Recorder interface exists so that neither server names a Prometheus
   type. Discard satisfies it, so a deployment without --metrics pays one

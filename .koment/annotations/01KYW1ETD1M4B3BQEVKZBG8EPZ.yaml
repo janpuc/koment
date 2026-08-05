@@ -3,6 +3,7 @@ version: 1
 id: 01KYW1ETD1M4B3BQEVKZBG8EPZ
 file: internal/cli/cli.go
 kind: gotcha
+title: File goes first; flag parsing stops at the first non-flag
 body: |-
   flag.FlagSet.Parse stops at the first argument that is not a flag, so
   "koment add main.go --kind why --body x" parses zero flags and reports the

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ0JZABHW296ZPV7DM3D11N4
 file: internal/metrics/metrics.go
 kind: invariant
+title: Metrics own their listener; never share the serving port
 body: |-
   Metrics get their own listener and are never mounted on the serving mux. The
   serving port is unauthenticated by design and expected to sit behind an

@@ -3,6 +3,7 @@ version: 1
 id: 01KZ6EQN28K960A8X5TFDH8MTQ
 file: editors/vscode/panel.js
 kind: why
+title: Annotation prose goes through escape; webview loads nothing external
 body: |-
   Annotation bodies are prose written by whoever edits the repository, and
   this renders them into a document with scripting enabled. Everything

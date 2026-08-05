@@ -3,6 +3,7 @@ version: 1
 id: 01KZ2Z60RSWSH9D3D2XSKBGWKF
 file: internal/ui/view.go
 kind: why
+title: Notes live in their own column so tall prose never grows a code line
 body: |-
   Notes are deliberately not attached to their line's row. When they were,
   each line was a grid row whose height was set by the tallest cell in it, so

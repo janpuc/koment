@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5JZCJCBVY665V7RZN7VSFT
 file: charts/koment/values.yaml
 kind: gotcha
+title: Numeric uids are pinned to the digest of the curlimages/curl image
 body: |-
   These belong to the pinned digest, not to curl in general. The
   curlimages/curl image declares USER as the name curl_user, and Kubernetes

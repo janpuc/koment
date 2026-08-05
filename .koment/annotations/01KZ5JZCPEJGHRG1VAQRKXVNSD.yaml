@@ -3,6 +3,7 @@ version: 1
 id: 01KZ5JZCPEJGHRG1VAQRKXVNSD
 file: .github/workflows/ci.yml
 kind: why
+title: Readiness uses a job token; shared runners share anonymous GH limits
 body: |-
   Readiness gates on a completed repository snapshot, so the service is only
   ready once it has read a tree from GitHub. Unauthenticated GitHub API calls
