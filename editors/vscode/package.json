@@ -6,7 +6,7 @@
   "publisher": "janpuc",
   "license": "AGPL-3.0-or-later",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.132.0"
   },
   "categories": [
     "Programming Languages",
