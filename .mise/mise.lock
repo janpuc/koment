@@ -23,23 +23,23 @@ url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/3849248
 provenance = "github-attestations"
 
 [[tools."github:janpuc/koment"]]
-version = "0.3.1"
+version = "0.8.0"
 backend = "github:janpuc/koment"
 
 [tools."github:janpuc/koment"."platforms.linux-arm64"]
-checksum = "sha256:cf62d9a04518f97c27975c2dbf804f80212e8c7d94dc5ba1f86e90822a4fd4f4"
-url = "https://github.com/janpuc/koment/releases/download/v0.3.1/koment_0.3.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/501319586"
+checksum = "sha256:46d66c155b6117996aa810fa7e9a671dff480e91759cf0e7ce50f3e2c069e423"
+url = "https://github.com/janpuc/koment/releases/download/v0.8.0/koment_0.8.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/502470372"
 
 [tools."github:janpuc/koment"."platforms.linux-x64"]
-checksum = "sha256:48201329f21b0c4c3aaece92920d2efe22642955dcfc202b3ec9af326f38c320"
-url = "https://github.com/janpuc/koment/releases/download/v0.3.1/koment_0.3.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/501319585"
+checksum = "sha256:5beba230d9621a72b65b620b8c00ab2e7230cfd651802b68b818cdbf878053d1"
+url = "https://github.com/janpuc/koment/releases/download/v0.8.0/koment_0.8.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/502470373"
 
 [tools."github:janpuc/koment"."platforms.macos-arm64"]
-checksum = "sha256:2fbc92903d59a5bf320fcd2ced40b38f19d68c9d90bb7622098172393ba540b1"
-url = "https://github.com/janpuc/koment/releases/download/v0.3.1/koment_0.3.1_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/501319588"
+checksum = "sha256:a52d7d3ff3463b4ed87ab780cc1795568a6196e9793dbbf5edf5128684816b4d"
+url = "https://github.com/janpuc/koment/releases/download/v0.8.0/koment_0.8.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/502470375"
 
 [[tools.go]]
 version = "1.26.5"

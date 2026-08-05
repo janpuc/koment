@@ -18,7 +18,7 @@ body: |-
 created: "2026-08-04"
 anchor:
   scope: excerpt
-  excerpt: '"github:janpuc/koment" = "0.3.1"'
+  excerpt: '"github:janpuc/koment" = "0.8.0"'
   before: |-
     [tools]
     actionlint = "1.7.12"
