@@ -46,6 +46,7 @@ the approved destination.
 - [0119 — Make the annotation a Kubernetes-shaped resource, cut off v1 records, and freeze the API](0119-make-the-annotation-a-kubernetes-shaped-resource.md)
 - [0120 — Promote koment to v1.0.0](0120-promote-koment-to-v1-0-0.md)
 - [0121 — Every committed koment file is a resource, and its schema is pinned to the API version](0121-every-committed-koment-file-is-a-resource-with-a-pinned-schema.md)
+- [0122 — Run Renovate on GitHub runners behind an app we own](0122-run-renovate-on-github-runners-behind-our-own-app.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

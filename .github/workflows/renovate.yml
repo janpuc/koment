@@ -1,0 +1,102 @@
+---
+name: renovate
+
+on:
+  schedule:
+    - cron: "18 4 * * *"
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: Resolve everything and open nothing
+        type: boolean
+        default: false
+      logLevel:
+        description: Log level
+        type: choice
+        default: info
+        options: [info, debug]
+  push:
+    branches: [main]
+    paths:
+      - .renovaterc.json5
+      - .github/workflows/renovate.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    name: renovate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      RENOVATE_BOT_APP_ID: ${{ vars.RENOVATE_BOT_APP_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: report that renovate is not configured
+        if: env.RENOVATE_BOT_APP_ID == ''
+        run: |
+          echo "::notice::renovate is inert: set the RENOVATE_BOT_APP_ID variable and the"\
+            "RENOVATE_BOT_PRIVATE_KEY secret to a GitHub App installed on this repository."\
+            "See docs/development.md."
+
+      - name: generate a token for the renovate app
+        id: app-token
+        if: env.RENOVATE_BOT_APP_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.RENOVATE_BOT_APP_ID }}
+          private-key: ${{ secrets.RENOVATE_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-checks: write
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: restore the renovate repository cache
+        if: env.RENOVATE_BOT_APP_ID != ''
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /tmp/renovate/cache/renovate/repository
+          key: renovate-cache-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: renovate-cache-
+
+      - name: give the renovate container its cache
+        if: env.RENOVATE_BOT_APP_ID != ''
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /tmp/renovate/cache/renovate/repository
+          sudo chown -R 12021:0 /tmp/renovate
+
+      - name: renovate
+        if: env.RENOVATE_BOT_APP_ID != ''
+        uses: renovatebot/github-action@973d3e5a68e735a444e8c03432b66eedb343c302 # v46.2.0
+        env:
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+          RENOVATE_DRY_RUN: ${{ inputs.dryRun == true && 'full' || 'null' }}
+          RENOVATE_PLATFORM: github
+          RENOVATE_PLATFORM_COMMIT: "true"
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_INTERNAL_CHECKS_FILTER: strict
+          RENOVATE_REPOSITORY_CACHE: enabled
+          RENOVATE_PRESET_CACHE_PERSISTENCE: "true"
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: save the renovate repository cache
+        if: always() && env.RENOVATE_BOT_APP_ID != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /tmp/renovate/cache/renovate/repository
+          key: renovate-cache-${{ github.run_id }}-${{ github.run_attempt }}
