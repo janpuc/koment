@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/janpuc/koment/compare/v0.5.0...v0.5.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* stop the install checks racing the release they verify ([#33](https://github.com/janpuc/koment/issues/33)) ([54d9f40](https://github.com/janpuc/koment/commit/54d9f40994b5407c07d7511bd20fc3e25b64d475))
+
 ## [0.5.0](https://github.com/janpuc/koment/compare/v0.4.0...v0.5.0) (2026-08-05)
 
 
