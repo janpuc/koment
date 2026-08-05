@@ -125,6 +125,50 @@ split it. Stage deliberately; never `git add -A` blindly.
 
 `main` requires a pull request with CI green, signed commits and linear history.
 
+## Dependency updates
+
+Renovate runs on GitHub runners from `.github/workflows/renovate.yml` — daily,
+on demand, and whenever the Renovate configuration changes. It reads
+`.renovaterc.json5`, which extends the shared `home-operations` preset.
+[ADR 0122](decisions/0122-run-renovate-on-github-runners-behind-our-own-app.md)
+records why it is self-hosted rather than the hosted app.
+
+It stays inert until a GitHub App is installed, because a pull request opened
+with `GITHUB_TOKEN` starts no workflows and so could never satisfy the required
+`ci` check. Until then the job reports that it is inert and exits.
+
+To activate it:
+
+1. Create a GitHub App (Settings → Developer settings → GitHub Apps). No webhook.
+   Repository permissions: **Checks**, **Contents**, **Issues**, **Pull
+   requests** and **Workflows**, all read and write. Nothing else.
+2. Install it on `janpuc/koment` only.
+3. Generate a private key.
+4. Add the app id as the repository variable `RENOVATE_BOT_APP_ID` and the whole
+   PEM as the secret `RENOVATE_BOT_PRIVATE_KEY`:
+
+   ```sh
+   gh variable set RENOVATE_BOT_APP_ID --body '<app id>'
+   gh secret set RENOVATE_BOT_PRIVATE_KEY < private-key.pem
+   ```
+
+5. Dry-run it before letting it open anything:
+
+   ```sh
+   gh workflow run renovate.yml -f dryRun=true -f logLevel=debug
+   ```
+
+Do not use a personal access token here. `Workflows: write` is required so
+Renovate can advance a pinned action SHA, and a token carrying that scope
+alongside a person's other scopes turns any workflow change into a path to
+their whole account.
+
+Validate a configuration change before pushing it:
+
+```sh
+npx --yes --package renovate renovate-config-validator .renovaterc.json5
+```
+
 ## Where to start reading
 
 `DESIGN.md` for the architecture, then `docs/decisions/` in order. Active
