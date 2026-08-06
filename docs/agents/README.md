@@ -15,6 +15,10 @@ client. Pick yours:
 | Zed | Zed `settings.json` | [zed.md](zed.md) |
 | Anything else | — | [other.md](other.md) |
 
+See also [allowed-annotations.md](allowed-annotations.md) for the shape and
+common examples of `spec.comments.allowedAnnotations`, the user-configurable
+extension to the intrinsic comment classes.
+
 ## Install the repository contract
 
 ```sh
