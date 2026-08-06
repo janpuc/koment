@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZBQQAMZMER0BXY162VG9J30
+  created: "2026-08-06T14:30:33Z"
+spec:
+  target:
+    file: internal/agentpolicy/hooks.go
+  type: gotcha
+  body: |-
+    A missing or unreadable policy is treated as the default, which means only
+    the hard-coded intrinsic classes apply — the safe fallback when nothing
+    tells us otherwise.
+  anchor:
+    scope: excerpt
+    excerpt: func hookPolicy() policy.Policy {
+    before: "\treturn append(encoded, '\\n'), nil\n}\n"
+    after: "\tworkingDirectory, err := filepath.Abs(\".\")\n\tif err != nil {\n\t\treturn policy.Default()"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: f021ca20f8fded11350a3379fd177df2b7420507
+    path: internal/agentpolicy/hooks.go
+    line: 61
+status:
+  lastSeenLine: 61
+  resolution: ok
+  resolvedAt: "2026-08-06T14:30:33Z"
+  resolvedCommit: f021ca20f8fded11350a3379fd177df2b7420507

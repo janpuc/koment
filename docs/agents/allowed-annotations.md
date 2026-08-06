@@ -31,6 +31,12 @@ spec:
   A bad pattern fails the install, not the first commit.
 - Both the pre-tool hook and `koment comments check` consult the
   field. Adding an entry does not require any other change.
+- The pattern matches against the comment body with leading comment
+  markers (`//`, `/*`, `*`) stripped, not the raw source text. Write
+  patterns on the body, not on the comment syntax. `// renovate:
+  enable` matches the pattern `renovate[\s:]`, not `# renovate[\s:]`
+  — the `#` only appears in the original syntax, not in the stripped
+  body.
 
 ## Common patterns
 
@@ -41,11 +47,11 @@ repository's exact wording if you need to.
 
 ```yaml
 allowedAnnotations:
-  - "# renovate[\\s:]"
+  - "renovate[\\s:]"
 ```
 
-Matches `# renovate:`, `# renovate ` and any other comment that
-introduces a Renovate configuration block.
+Matches `// renovate:`, `// renovate ` and any other comment whose
+body introduces a Renovate configuration block.
 
 ### Protocol-buffer generated files
 

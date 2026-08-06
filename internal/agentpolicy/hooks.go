@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type toolHookInput struct {
@@ -35,7 +38,8 @@ func PreToolOutput(input []byte) ([]byte, error) {
 	default:
 		return []byte("{}\n"), nil
 	}
-	comments := addedCommentIntent(body)
+	configured := hookPolicy()
+	comments := addedCommentIntent(body, configured)
 	if len(comments) == 0 {
 		return []byte("{}\n"), nil
 	}
@@ -52,6 +56,22 @@ func PreToolOutput(input []byte) ([]byte, error) {
 		return nil, fmt.Errorf("encoding PreToolUse output: %w", err)
 	}
 	return append(encoded, '\n'), nil
+}
+
+func hookPolicy() policy.Policy {
+	workingDirectory, err := filepath.Abs(".")
+	if err != nil {
+		return policy.Default()
+	}
+	root, err := store.FindRoot(workingDirectory)
+	if err != nil {
+		return policy.Default()
+	}
+	configured, err := policy.Load(root)
+	if err != nil {
+		return policy.Default()
+	}
+	return configured
 }
 
 func syntheticPatchFromEdit(filePath, content string) string {
@@ -79,7 +99,7 @@ func StopWasContinued(input []byte) (bool, error) {
 	return request.StopHookActive, nil
 }
 
-func addedCommentIntent(patch string) []string {
+func addedCommentIntent(patch string, configured policy.Policy) []string {
 	lines := strings.Split(patch, "\n")
 	file := ""
 	var found []string
@@ -97,7 +117,7 @@ func addedCommentIntent(patch string) []string {
 			index++
 		}
 		group := lines[start : index+1]
-		if intrinsicPatchComment(group) || publicDocumentationPatch(group, followingCode(lines, index+1)) {
+		if intrinsicPatchComment(group, configured) || publicDocumentationPatch(group, followingCode(lines, index+1)) {
 			continue
 		}
 		found = append(found, fmt.Sprintf("%s: %s", file, strings.TrimSpace(strings.TrimPrefix(group[0], "+"))))
@@ -123,11 +143,15 @@ func isAddedComment(line string) bool {
 	return strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "/*") || strings.HasPrefix(trimmed, "*")
 }
 
-func intrinsicPatchComment(group []string) bool {
+func intrinsicPatchComment(group []string, configured policy.Policy) bool {
 	raw := strings.Join(group, "\n")
 	if strings.Contains(raw, "https://") || strings.Contains(raw, "http://") ||
 		strings.Contains(raw, "Deprecated:") ||
 		(strings.Contains(raw, "Code generated") && strings.Contains(raw, "DO NOT EDIT.")) {
+		return true
+	}
+	body := patchCommentBody(group)
+	if configured.MatchesAllowedAnnotation(body) {
 		return true
 	}
 	for _, line := range group {
@@ -145,6 +169,20 @@ func intrinsicPatchComment(group []string) bool {
 		}
 	}
 	return true
+}
+
+func patchCommentBody(group []string) string {
+	var cleaned []string
+	for _, line := range group {
+		text := strings.TrimPrefix(line, "+")
+		text = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(text, "/*"), "//"))
+		text = strings.TrimSpace(strings.TrimSuffix(text, "*/"))
+		if text == "" {
+			continue
+		}
+		cleaned = append(cleaned, text)
+	}
+	return strings.Join(cleaned, " ")
 }
 
 func publicDocumentationPatch(group []string, code string) bool {
