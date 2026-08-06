@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/policy"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func TestCheckAllowsIntrinsicCommentsAndRejectsExplanation(t *testing.T) {

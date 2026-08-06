@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/janpuc/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/metrics"
 )
 
 func serveOverHTTP(t *testing.T, jsonResponses bool) *httptest.Server {

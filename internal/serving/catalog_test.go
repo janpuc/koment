@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/application"
+	"github.com/koment-dev/koment/internal/application"
 )
 
 func configuredRepository(id string, primary bool) Repository {

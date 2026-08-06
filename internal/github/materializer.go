@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/janpuc/koment/internal/serving"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func (c *Client) Materialize(ctx context.Context, repository serving.Repository, baseCommit string, record store.Annotation) (serving.Materialization, error) {

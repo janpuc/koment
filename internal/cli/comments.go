@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func runComments(args []string, env Environment) int {

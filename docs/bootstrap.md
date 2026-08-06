@@ -38,7 +38,7 @@ serve several assigned local roots.
 An annotation on disk:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:

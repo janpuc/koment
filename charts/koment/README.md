@@ -61,7 +61,7 @@ against the image built from the pull request before running that test.
 | github.tokenKey | string | `"github-token"` | Key inside `github.existingSecret` that holds the token. |
 | image.digest | string | `""` | Image digest. Set it to pin the exact image a tag currently points at. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| image.repository | string | `"ghcr.io/janpuc/koment"` | Container image repository. |
+| image.repository | string | `"ghcr.io/koment-dev/koment"` | Container image repository. |
 | image.tag | string | `""` | Image tag. Defaults to the chart's appVersion. |
 | ingress.annotations | object | `{}` | Annotations to add to the Ingress. |
 | ingress.className | string | `""` | IngressClass name. |
@@ -85,7 +85,7 @@ against the image built from the pull request before running that test.
 | podDisruptionBudget.minAvailable | int | `1` | Minimum available pods during voluntary disruption. |
 | podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod-level security context. The image ships a static binary and runs as a fixed non-root user. |
 | replicaCount | int | `1` | Number of service replicas. Each holds its own rebuilt snapshot. |
-| repositories | list | `[{"default":true,"defaultBranch":"main","id":"koment","name":"koment","provider":"github","remote":"janpuc/koment"}]` | Repositories this service assigns identity to and serves. `id` is the stable identity in URLs and credentials; moving a repository never changes it. |
+| repositories | list | `[{"default":true,"defaultBranch":"main","id":"koment","name":"koment","provider":"github","remote":"koment-dev/koment"}]` | Repositories this service assigns identity to and serves. `id` is the stable identity in URLs and credentials; moving a repository never changes it. |
 | resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}` | Resource requests and limits. Snapshots are held in memory, so the memory limit scales with repository size rather than with request volume. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container-level security context. |
 | service.port | int | `8080` | Port serving the UI, MCP, and the health endpoints. |

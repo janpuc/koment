@@ -16,9 +16,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/listen"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/listen"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 const (

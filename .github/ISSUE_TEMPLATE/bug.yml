@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Do not report a security vulnerability here. Use
-        [a private advisory](https://github.com/janpuc/koment/security/advisories/new).
+        [a private advisory](https://github.com/koment-dev/koment/security/advisories/new).
 
   - type: input
     id: version

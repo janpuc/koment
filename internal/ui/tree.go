@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/janpuc/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/anchor"
 )
 
 type treeNode struct {

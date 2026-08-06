@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func repository(t *testing.T) string {

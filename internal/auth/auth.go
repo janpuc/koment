@@ -15,7 +15,7 @@ import (
 
 	yaml "go.yaml.in/yaml/v3"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type Permission string

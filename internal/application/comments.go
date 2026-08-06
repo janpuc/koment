@@ -3,9 +3,9 @@ package application
 import (
 	"fmt"
 
-	"github.com/janpuc/koment/internal/commentpolicy"
-	"github.com/janpuc/koment/internal/policy"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/commentpolicy"
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 // ConvertCommentInput records explanatory comment intent before removing it.

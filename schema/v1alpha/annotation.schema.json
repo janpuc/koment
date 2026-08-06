@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json",
+  "$id": "https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json",
   "title": "koment annotation record",
   "type": "object",
   "additionalProperties": false,

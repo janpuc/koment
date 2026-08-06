@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/provenance"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/provenance"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func runAdd(args []string, env Environment) int {

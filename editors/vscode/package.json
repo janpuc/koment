@@ -3,7 +3,7 @@
   "displayName": "koment",
   "description": "Read and write out-of-band code annotations directly in the editor.",
   "version": "1.1.0",
-  "publisher": "janpuc",
+  "publisher": "koment",
   "license": "AGPL-3.0-or-later",
   "engines": {
     "vscode": "^1.100.0"
@@ -40,12 +40,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/janpuc/koment.git",
+    "url": "https://github.com/koment-dev/koment.git",
     "directory": "editors/vscode"
   },
-  "homepage": "https://github.com/janpuc/koment",
+  "homepage": "https://github.com/koment-dev/koment",
   "bugs": {
-    "url": "https://github.com/janpuc/koment/issues"
+    "url": "https://github.com/koment-dev/koment/issues"
   },
   "galleryBanner": {
     "color": "#4A56C4",

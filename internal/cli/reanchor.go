@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/janpuc/koment/internal/application"
+	"github.com/koment-dev/koment/internal/application"
 )
 
 func runReanchor(args []string, env Environment) int {

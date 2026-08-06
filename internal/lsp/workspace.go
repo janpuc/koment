@@ -12,12 +12,12 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/commentpolicy"
-	"github.com/janpuc/koment/internal/policy"
-	"github.com/janpuc/koment/internal/repository"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/commentpolicy"
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type workspaceFile struct {

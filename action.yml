@@ -25,7 +25,7 @@ runs:
       shell: bash
       env:
         KOMENT_REQUESTED: ${{ inputs.version }}
-        KOMENT_SOURCE: ${{ github.action_repository || 'janpuc/koment' }}
+        KOMENT_SOURCE: ${{ github.action_repository || 'koment-dev/koment' }}
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
 

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/janpuc/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/serving"
 )
 
 func SnapshotHandler(catalog *serving.Catalog) http.Handler {

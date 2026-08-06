@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/janpuc/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/anchor"
 )
 
 func entriesFor(paths ...string) []entry {

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/janpuc/koment/main/internal/ui/assets/koment-logo.png" alt="koment comment bubble" width="104">
+  <img src="https://raw.githubusercontent.com/koment-dev/koment/main/internal/ui/assets/koment-logo.png" alt="koment comment bubble" width="104">
 </p>
 
 # koment for VS Code
@@ -34,4 +34,4 @@ supported; each source file discovers and mutates only its own repository.
   the explicit exception flow.
 
 The CLI, MCP, browser and editor all use the same records and deterministic
-anchor resolution. Source and support: [janpuc/koment](https://github.com/janpuc/koment).
+anchor resolution. Source and support: [koment-dev/koment](https://github.com/koment-dev/koment).

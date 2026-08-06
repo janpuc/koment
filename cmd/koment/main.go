@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/janpuc/koment/internal/cli"
-	"github.com/janpuc/koment/internal/lsp"
-	"github.com/janpuc/koment/internal/mcp"
-	"github.com/janpuc/koment/internal/server"
-	"github.com/janpuc/koment/internal/ui"
+	"github.com/koment-dev/koment/internal/cli"
+	"github.com/koment-dev/koment/internal/lsp"
+	"github.com/koment-dev/koment/internal/mcp"
+	"github.com/koment-dev/koment/internal/server"
+	"github.com/koment-dev/koment/internal/ui"
 )
 
 var (

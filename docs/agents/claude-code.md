@@ -8,8 +8,8 @@ below. The plugin adds the same writable MCP server plus strict session-start
 guidance and a Stop hook that refuses completion while policy fails:
 
 ```text
-/plugin marketplace add janpuc/koment
-/plugin install koment@janpuc-tools
+/plugin marketplace add koment-dev/koment
+/plugin install koment@koment-dev
 ```
 
 Install it at project scope. The completion hook expects a koment-enabled

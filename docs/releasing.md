@@ -39,7 +39,7 @@ branch-protection API returns 404 for this repository; that means the rules
 live in a ruleset, not that the branch is unprotected. Check with:
 
 ```sh
-gh api repos/janpuc/koment/rulesets
+gh api repos/koment-dev/koment/rulesets
 ```
 
 ## 1. Land the work
@@ -85,7 +85,7 @@ not a failure.
 
 ```sh
 gh run list --branch release-please--branches--main --limit 5
-gh api -X POST repos/janpuc/koment/actions/runs/<run-id>/approve
+gh api -X POST repos/koment-dev/koment/actions/runs/<run-id>/approve
 ```
 
 Then wait for `test`, `lint`, `container build` and `helm chart` to go green.
@@ -118,10 +118,10 @@ please ──┬─> binaries ──> editor
 | Job | Publishes |
 |---|---|
 | `binaries` | six archives, `koment_<version>_checksums.txt`, a cosign signature, and rendered Homebrew/Scoop/WinGet metadata |
-| `image` | `ghcr.io/janpuc/koment:<version>`, multi-arch, SBOM and provenance, cosign-signed |
+| `image` | `ghcr.io/koment-dev/koment:<version>`, multi-arch, SBOM and provenance, cosign-signed |
 | `editor` | seven VSIX — six carrying that platform's released binary, one universal — signed, attached, then pushed to both marketplaces |
 | `mcp-registry` | MCP Registry metadata via GitHub OIDC |
-| `chart` | `oci://ghcr.io/janpuc/charts/koment`, cosign-signed |
+| `chart` | `oci://ghcr.io/koment-dev/charts/koment`, cosign-signed |
 
 ```sh
 gh run watch "$(gh run list --workflow=release --limit 1 --json databaseId --jq '.[0].databaseId')"
@@ -136,24 +136,24 @@ something that was never signed (ADR 0113).
 ```sh
 tag=v<version>
 gh release view "$tag" --json assets --jq '.assets[].name' | sort
-curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://open-vsx.org/api/janpuc/koment"
+curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://open-vsx.org/api/koment-dev/koment"
 ```
 
 Expect 6 archives, 1 checksum manifest, 2 signature bundles for the manifest and
 binaries, 7 VSIX and 7 VSIX signatures. A release missing the archives breaks
-every workflow using `janpuc/koment@v<version>`, because the setup action
+every workflow using `koment-dev/koment@v<version>`, because the setup action
 downloads them.
 
 ## 7. Bump the development pin
 
-`.mise/config.toml` pins `github:janpuc/koment` to a released version, which is
+`.mise/config.toml` pins `github:koment-dev/koment` to a released version, which is
 the `koment` a contributor gets in their shell. It is not what any gate runs —
 every `mise run` task uses `go run ./cmd/koment` — so it lags a release rather
 than blocking one. It still has to be caught up, because a pinned binary older
 than the record shape in `.koment/` cannot read this repository at all.
 
 ```sh
-mise use "github:janpuc/koment@<version>"
+mise use "github:koment-dev/koment@<version>"
 mise run annotations
 ```
 

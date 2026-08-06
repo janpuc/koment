@@ -6,11 +6,11 @@
 
 **Keep the _why_ next to your code — checked, so it can't quietly rot.**
 
-[![Release](https://img.shields.io/github/v/release/janpuc/koment?label=release)](https://github.com/janpuc/koment/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/janpuc/koment/ci.yml?branch=main&label=ci)](https://github.com/janpuc/koment/actions/workflows/ci.yml)
-[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/janpuc/koment?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/janpuc/koment)
-[![Open VSX](https://img.shields.io/open-vsx/v/janpuc/koment?label=open%20vsx)](https://open-vsx.org/extension/janpuc/koment)
-[![License](https://img.shields.io/github/license/janpuc/koment)](https://github.com/janpuc/koment/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/koment-dev/koment?label=release)](https://github.com/koment-dev/koment/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/koment-dev/koment/ci.yml?branch=main&label=ci)](https://github.com/koment-dev/koment/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/koment-dev/koment?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/koment-dev/koment)
+[![Open VSX](https://img.shields.io/open-vsx/v/koment-dev/koment?label=open%20vsx)](https://open-vsx.org/extension/koment-dev/koment)
+[![License](https://img.shields.io/github/license/koment-dev/koment)](https://github.com/koment-dev/koment/blob/main/LICENSE)
 [![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://why.koment.dev/)
 
 </div>
@@ -83,13 +83,13 @@ so there is nothing to export, import or back up.
 
 ## Quick start
 
-Install from the [latest release](https://github.com/janpuc/koment/releases/latest).
+Install from the [latest release](https://github.com/koment-dev/koment/releases/latest).
 Every release carries checksum-listed binaries for Linux, macOS and Windows on
 amd64 and arm64. The setup Action, mise, container, Helm chart, editor package,
 and registry metadata all consume those same release artifacts. With mise:
 
 ```bash
-mise use -g github:janpuc/koment
+mise use -g github:koment-dev/koment
 ```
 
 ```bash
@@ -117,7 +117,7 @@ and every refresh resolves a branch to one immutable commit before replacing a
 repository's active snapshot:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/server.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/server.schema.json
 repositories:
   - id: payments
     name: Payments API
@@ -142,10 +142,10 @@ checkout by walking up from the working directory.
 
 ## Kubernetes
 
-koment publishes an **OCI** Helm chart to `oci://ghcr.io/janpuc/charts/koment`:
+koment publishes an **OCI** Helm chart to `oci://ghcr.io/koment-dev/charts/koment`:
 
 ```bash
-helm install koment oci://ghcr.io/janpuc/charts/koment \
+helm install koment oci://ghcr.io/koment-dev/charts/koment \
   --set repositories[0].remote=you/your-repo \
   --set metrics.enabled=true \
   --set metrics.serviceMonitor.enabled=true \
@@ -198,8 +198,8 @@ anchoring.
 Claude Code can install the repository's own project-scoped marketplace plugin:
 
 ```text
-/plugin marketplace add janpuc/koment
-/plugin install koment@janpuc-tools
+/plugin marketplace add koment-dev/koment
+/plugin install koment@koment-dev
 ```
 
 It bundles writable MCP configuration, injects the strict procedure at session
@@ -252,7 +252,7 @@ database or authentication to design.
 
 ```yaml
 - uses: actions/checkout@v5
-- uses: janpuc/koment@v0.2.0
+- uses: koment-dev/koment@v0.2.0
 - run: koment check
 - run: koment site --out dist
 ```
@@ -300,7 +300,7 @@ licence scanner identify it correctly; the terms specific to this project are
 here rather than appended to it.
 
 The complete corresponding source is this repository,
-<https://github.com/janpuc/koment>, which satisfies the AGPL §13 obligation
+<https://github.com/koment-dev/koment>, which satisfies the AGPL §13 obligation
 for anyone interacting with a koment server over a network.
 
 Commercial licences are available on request for organisations whose policy
@@ -309,7 +309,7 @@ excludes AGPL, or that want warranty or indemnification — write to
 
 Releases ≤ v0.6.0 were distributed under the MIT licence and remain MIT in
 perpetuity. The last MIT-tagged source may be forked from
-[`v0.6.0`](https://github.com/janpuc/koment/tree/v0.6.0) under those terms
+[`v0.6.0`](https://github.com/koment-dev/koment/tree/v0.6.0) under those terms
 indefinitely. The decision is recorded in [ADR 0117](docs/decisions/0117-relicense-to-agpl-with-commercial-dual-licensing.md).
 
 **Does using koment make my code AGPL?** No. koment is a *tool*; annotations

@@ -8,10 +8,10 @@ version: 1.1.0
 # x-release-please-start-version
 appVersion: "1.1.0"
 # x-release-please-end
-home: https://github.com/janpuc/koment
-icon: https://raw.githubusercontent.com/janpuc/koment/main/internal/ui/assets/koment-logo.svg
+home: https://github.com/koment-dev/koment
+icon: https://raw.githubusercontent.com/koment-dev/koment/main/internal/ui/assets/koment-logo.svg
 sources:
-  - https://github.com/janpuc/koment
+  - https://github.com/koment-dev/koment
 keywords:
   - annotations
   - documentation

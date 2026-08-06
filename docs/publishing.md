@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: janpuc/koment@v0.2.0
+      - uses: koment-dev/koment@v0.2.0
       - run: |
           koment check
           koment comments check
@@ -57,7 +57,7 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - uses: janpuc/koment@v0.2.0
+      - uses: koment-dev/koment@v0.2.0
 
       - run: |
           koment site --out dist \
@@ -143,7 +143,7 @@ Nothing to migrate. The annotations were never in the site — they are in
 service at the provider repository:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/server.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/server.schema.json
 repositories:
   - id: project
     name: Project
@@ -165,12 +165,12 @@ Keeping the published site as well is reasonable; they do not conflict.
 directory will serve them — GitLab Pages, Cloudflare Pages, S3, nginx, or a
 tarball someone opens locally. The action is a convenience for GitHub runners;
 elsewhere, install the binary from the
-[releases page](https://github.com/janpuc/koment/releases) and run the same
+[releases page](https://github.com/koment-dev/koment/releases) and run the same
 command.
 
 ## The action
 
-`janpuc/koment@v0.2.0` downloads a released binary, verifies it against the
+`koment-dev/koment@v0.2.0` downloads a released binary, verifies it against the
 release's published checksums, and puts it on `PATH`. It supports Linux and
 macOS runners. Windows runners should install the checksum-listed release
 archive directly.
@@ -179,7 +179,7 @@ The tag on `uses:` picks the *action*; the `version` input picks the *koment
 release* it installs, and defaults to the latest.
 
 ```yaml
-- uses: janpuc/koment@v0.2.0
+- uses: koment-dev/koment@v0.2.0
   with:
     version: 0.2.0   # pin the CLI too, so a new release cannot change your build
 ```

@@ -9,8 +9,8 @@ import (
 
 	yaml "go.yaml.in/yaml/v3"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/serving"
 )
 
 const maximumConfiguration = 1 << 20

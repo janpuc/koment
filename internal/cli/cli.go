@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/janpuc/koment/internal/application"
-	repositorymodel "github.com/janpuc/koment/internal/repository"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	repositorymodel "github.com/koment-dev/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 const (

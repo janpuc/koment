@@ -11,11 +11,11 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/janpuc/koment/internal/agentpolicy"
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/serving"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/agentpolicy"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type RepositoryAccess map[string]bool

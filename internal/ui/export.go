@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/config"
-	"github.com/janpuc/koment/internal/provenance"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/config"
+	"github.com/koment-dev/koment/internal/provenance"
 )
 
 const (

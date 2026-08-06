@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func TestDraftAnnotationAnchorsAndAttributesTheExactSnapshot(t *testing.T) {

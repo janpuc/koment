@@ -18,17 +18,17 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/auth"
-	"github.com/janpuc/koment/internal/config"
-	githubprovider "github.com/janpuc/koment/internal/github"
-	"github.com/janpuc/koment/internal/listen"
-	"github.com/janpuc/koment/internal/mcp"
-	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/serving"
-	"github.com/janpuc/koment/internal/store"
-	"github.com/janpuc/koment/internal/ui"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/auth"
+	"github.com/koment-dev/koment/internal/config"
+	githubprovider "github.com/koment-dev/koment/internal/github"
+	"github.com/koment-dev/koment/internal/listen"
+	"github.com/koment-dev/koment/internal/mcp"
+	"github.com/koment-dev/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/store"
+	"github.com/koment-dev/koment/internal/ui"
 )
 
 const (

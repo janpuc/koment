@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Report privately through GitHub:
-<https://github.com/janpuc/koment/security/advisories/new>.
+<https://github.com/koment-dev/koment/security/advisories/new>.
 
 Do not open a public issue, and do not describe the problem in a pull request
 or a discussion. A koment repository contains the reasoning behind a codebase,

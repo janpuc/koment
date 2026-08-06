@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -18,7 +18,7 @@ spec:
     package version that must not exist. Cost one broken release (0.3.0).
   anchor:
     scope: excerpt
-    excerpt: '      "identifier": "ghcr.io/janpuc/koment",'
+    excerpt: '      "identifier": "ghcr.io/koment-dev/koment",'
     before: |2-
         "packages": [
           {

@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/janpuc/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/anchor"
 )
 
 func runSearch(args []string, env Environment) int {

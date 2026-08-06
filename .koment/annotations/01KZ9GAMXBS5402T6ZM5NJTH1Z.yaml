@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -20,7 +20,7 @@ spec:
     Five consecutive runs opened nothing because of it. The real error only
     appears under `LOG_LEVEL=debug`:
 
-    HTTPError: 403 (Forbidden): POST /repos/janpuc/koment/statuses/<sha> Error:
+    HTTPError: 403 (Forbidden): POST /repos/koment-dev/koment/statuses/<sha> Error:
     integration-unauthorized at Proxy.setBranchStatus -> setStatusCheck ->
     processBranch DEBUG: Caught error setting branch status - aborting
 

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func scrape(t *testing.T, m *Metrics) string {

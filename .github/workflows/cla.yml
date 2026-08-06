@@ -78,7 +78,7 @@ jobs:
             --paginate --jq '.[].user.login' | sort -u)
           if grep -qx "$AUTHOR" <<<"$body"; then exit 0; fi
           gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
-            -f body=$'Thank you for contributing to koment. Before this pull request can be merged, please read [CLA.md](https://github.com/janpuc/koment/blob/main/CLA.md) and post a comment on this pull request beginning with:\n\n> I have read the CLA at https://github.com/janpuc/koment/blob/main/CLA.md and I hereby sign the CLA.\n\nThe `cla` status check will turn green once the comment is recorded.'
+            -f body=$'Thank you for contributing to koment. Before this pull request can be merged, please read [CLA.md](https://github.com/koment-dev/koment/blob/main/CLA.md) and post a comment on this pull request beginning with:\n\n> I have read the CLA at https://github.com/koment-dev/koment/blob/main/CLA.md and I hereby sign the CLA.\n\nThe `cla` status check will turn green once the comment is recorded.'
 
       - name: Mark signed on signature comment
         if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, 'I have read the CLA')

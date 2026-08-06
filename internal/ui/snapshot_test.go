@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/serving"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 const snapshotCommit = "0123456789abcdef0123456789abcdef01234567"
