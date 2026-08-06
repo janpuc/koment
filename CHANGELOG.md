@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/koment-dev/koment/compare/v2.0.0...v2.0.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* move remaining artifacts to `koment-dev` ([#72](https://github.com/koment-dev/koment/issues/72)) ([962fc3c](https://github.com/koment-dev/koment/commit/962fc3c82c774ab371e3fc4e84c55ef26e61268d))
+
 ## [2.0.0](https://github.com/koment-dev/koment/compare/v1.1.0...v2.0.0) (2026-08-06)
 
 
