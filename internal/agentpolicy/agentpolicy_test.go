@@ -26,7 +26,7 @@ func TestInstallPreservesUnrelatedInstructionsAndHooks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(changes) != 11 {
+	if len(changes) != 12 {
 		t.Fatalf("changes = %#v", changes)
 	}
 	agents, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))

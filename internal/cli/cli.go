@@ -21,6 +21,7 @@ const (
 
 const usage = `koment — out-of-band code annotations
 
+  koment bootstrap [--agents <list>] [--all] [--policy-only] [--non-interactive]
   koment add <file> [--excerpt <text>] --kind <kind> --body <text|->
   koment show <file>
   koment check [path...]
@@ -71,15 +72,16 @@ func Run(args []string, env Environment, servers Servers) int {
 
 	command, rest := args[0], args[1:]
 	run, known := map[string]func([]string, Environment) int{
-		"add":      runAdd,
-		"agents":   runAgents,
-		"show":     runShow,
-		"check":    runCheck,
-		"comments": runComments,
-		"list":     runList,
-		"search":   runSearch,
-		"reanchor": runReanchor,
-		"version":  runVersion,
+		"add":       runAdd,
+		"agents":    runAgents,
+		"bootstrap": runBootstrap,
+		"show":      runShow,
+		"check":     runCheck,
+		"comments":  runComments,
+		"list":      runList,
+		"search":    runSearch,
+		"reanchor":  runReanchor,
+		"version":   runVersion,
 	}[command]
 
 	switch {
