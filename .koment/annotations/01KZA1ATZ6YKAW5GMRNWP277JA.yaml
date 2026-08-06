@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZA1ATZ6YKAW5GMRNWP277JA
+  created: "2026-08-05T22:40:01Z"
+spec:
+  target:
+    file: editors/vscode/package.json
+  type: invariant
+  title: engines.vscode is the oldest editor supported, not the newest
+  body: |-
+    This is a floor, not a dependency. It says the oldest VS Code whose API this
+    extension uses, so raising it drops every user between the old value and the
+    new one - and nothing about the extension changes to earn that. It has no
+    `@types/vscode`, so the number is not tracking a type definition either.
+
+    Renovate's npm manager reads the engines block as an ordinary dependency and
+    proposes the latest release. It did, in pull request 57, moving the floor
+    from 1.100.0 to 1.132.0 - thirty-two monthly releases of users cut off by a
+    dependency bump that added no API call. CI passed, because compiling against
+    newer types proves nothing about who can install the result.
+    `.renovaterc.json5` now disables `matchDepTypes: ["engines"]` for that
+    reason.
+
+    Raise this deliberately, when the extension starts calling an API that
+    requires it, and say so in the commit.
+  anchor:
+    scope: excerpt
+    excerpt: '"vscode": "^1.100.0"'
+    before: |2-
+        "publisher": "janpuc",
+        "license": "AGPL-3.0-or-later",
+        "engines": {
+    after: |2-
+        },
+        "categories": [
+          "Programming Languages",
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: 7327899e6b41e8c138bbf987632fafdc055f12e6
+    path: editors/vscode/package.json
+    line: 9
+status:
+  lastSeenLine: 9
+  resolution: ok
+  resolvedAt: "2026-08-05T22:40:01Z"
+  resolvedCommit: 7327899e6b41e8c138bbf987632fafdc055f12e6

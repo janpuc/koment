@@ -2,4 +2,12 @@
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["local>home-operations/renovate-config"],
   postUpdateOptions: ["gomodTidy", "gomodUpdateImportPaths"],
+  packageRules: [
+    {
+      description: "engines.vscode is the oldest supported editor, not a dependency to keep current",
+      matchManagers: ["npm"],
+      matchDepTypes: ["engines"],
+      enabled: false,
+    },
+  ],
 }
