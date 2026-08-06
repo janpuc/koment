@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.0](https://github.com/koment-dev/koment/compare/v1.1.0...v2.0.0) (2026-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* move to the koment-dev organisation ([#71](https://github.com/koment-dev/koment/issues/71))
+
+### Bug Fixes
+
+* publish dot-directory pages under a path the uploader keeps ([#70](https://github.com/koment-dev/koment/issues/70)) ([eb51cbc](https://github.com/koment-dev/koment/commit/eb51cbc7ec56cf7d4f579465bc9f9097b23d1722))
+* publish the pages that live under a dot directory ([#67](https://github.com/koment-dev/koment/issues/67)) ([2d4acca](https://github.com/koment-dev/koment/commit/2d4accaf0fa59a7a01ab56821c5b5785e91384a3))
+* verify a dot-directory page exists without naming one ([#69](https://github.com/koment-dev/koment/issues/69)) ([be2e98f](https://github.com/koment-dev/koment/commit/be2e98fe14c8d9dcced2187d85738277bb9013d6))
+
+
+### Miscellaneous
+
+* move to the koment-dev organisation ([#71](https://github.com/koment-dev/koment/issues/71)) ([aa9a54a](https://github.com/koment-dev/koment/commit/aa9a54ad7bd6c1e43fb744b9347a484678eecef7))
+
 ## [1.1.0](https://github.com/koment-dev/koment/compare/v1.0.0...v1.1.0) (2026-08-06)
 
 
