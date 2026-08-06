@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZCASB6EQGD6E0YQ03G9SM3Z
+  created: "2026-08-06T20:03:42Z"
+spec:
+  target:
+    file: .github/workflows/release.yml
+  type: why
+  title: Plugins publish in parallel with binaries
+  body: |-
+    Plugins are published alongside the release (like binaries and the image),
+    not gated on them. They depend only on please and id-token: write for cosign
+    — no binaries needed, no editor VSIX needed — and the tar.gz names are
+    derived from directory basename rather than the manifest's name field,
+    because name differs between plugins (koment vs koment-opencode) and the
+    downstream globs in the signing step match the filename pattern, not a field
+    value.
+  anchor:
+    scope: excerpt
+    excerpt: |2-
+        plugins:
+          name: publish plugins
+          needs: please
+    before: |2
+                config-file: release-please-config.json
+                manifest-file: .release-please-manifest.json
+    after: |2-
+          if: needs.please.outputs.released == 'true'
+          runs-on: ubuntu-24.04
+          permissions:
+  author:
+    name: opencode
+    kind: agent
+    source: session
+  git:
+    commit: 334600ab99090fbe636d96c309f0a1754607d8c6
+    path: .github/workflows/release.yml
+    line: 34
+status:
+  lastSeenLine: 34
+  resolution: ok
+  resolvedAt: "2026-08-06T20:03:42Z"
+  resolvedCommit: 334600ab99090fbe636d96c309f0a1754607d8c6

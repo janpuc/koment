@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZCASJZECBQRVWJBDFBQ8JDD
+  created: "2026-08-06T20:04:01Z"
+spec:
+  target:
+    file: .github/workflows/ci.yml
+  type: invariant
+  title: Plugin manifests must match release-please version exactly
+  body: |-
+    Both plugin manifests must pin the exact value in
+    .release-please-manifest.json rather than drift toward it. A version
+    mismatch would mean the release attaches archives stamped with a version
+    that release-please never wrote to the file, which silently breaks anyone
+    pinning a file:// reference against the tag. This gate fails the build
+    before the release job runs.
+  anchor:
+    scope: excerpt
+    excerpt: "            root_version=$(jq -r '.version // empty' .release-please-manifest.json)\n            if [ -n \"$root_version\" ] && [ \"$version\" != \"$root_version\" ]; then\n              echo \"::error::$manifest version ($version) does not match root ($root_version)\"\n              exit 1\n            fi"
+    before: '            test -n "$name"    || { echo "::error::$manifest: name is empty";    exit 1; }
+
+            test -n "$version" || { echo "::error::$manifest: version is empty"; exit 1; }'
+    after: '            if [ -n "$entrypoint" ]; then
+
+              dir=$(dirname "$manifest")
+
+              test -f "$dir/$entrypoint" || { echo "::error::$manifest entrypoint $entrypoint not found"; exit 1; }'
+  author:
+    name: opencode
+    kind: agent
+    source: session
+  git:
+    commit: 334600ab99090fbe636d96c309f0a1754607d8c6
+    path: .github/workflows/ci.yml
+    line: 482
+status:
+  lastSeenLine: 482

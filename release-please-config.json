@@ -26,6 +26,11 @@
         },
         {
           "type": "json",
+          "path": "plugins/koment/.opencode-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
           "path": "server.json",
           "jsonpath": "$.version"
         }

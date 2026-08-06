@@ -1,0 +1,21 @@
+{
+  "name": "koment-opencode",
+  "displayName": "koment",
+  "version": "2.0.1",
+  "description": "Keep code rationale outside source comments and enforce the repository's koment procedure.",
+  "author": {
+    "name": "Jan Pucilowski",
+    "url": "https://github.com/koment-dev"
+  },
+  "homepage": "https://github.com/koment-dev/koment",
+  "repository": "https://github.com/koment-dev/koment",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "opencode",
+    "annotations",
+    "comments",
+    "mcp",
+    "code-quality"
+  ],
+  "entrypoint": "./index.js"
+}

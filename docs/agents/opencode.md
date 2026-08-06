@@ -32,6 +32,28 @@ and re-runs the policy gate at session idle. The plugin shells out to
 `koment`, so `koment` must be on `PATH` (or set up via the project setup
 Action). Skip the `plugin` entry if you only want the read tools.
 
+## OpenCode plugin
+
+If you prefer a plugin directory over a generated file, the same hooks ship in
+`plugins/koment/.opencode-plugin/` and can be referenced by Git path:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "koment": {
+      "type": "local",
+      "command": ["koment", "mcp", "--write"]
+    }
+  },
+  "plugin": ["koment-dev/koment/plugins/koment/.opencode-plugin"]
+}
+```
+
+This path form is convenient when several repositories share the plugin from
+one upstream reference. Restart OpenCode after changing either config so the
+hook is reloaded.
+
 ## Remote
 
 ```sh
@@ -66,3 +88,5 @@ project-wide rationale in an ADR.
 - Commit `opencode.json` and every contributor gets the tools automatically.
 - `koment agents install` regenerates both `opencode.json` and
   `.opencode/plugins/koment.js`; `koment agents check` flags drift on both.
+- The decision to ship both a generated adapter and a plugin directory is
+  recorded in ADR 0126.

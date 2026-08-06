@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZCATEXYWB9H57QEQ95X87A3
+  created: "2026-08-06T20:04:30Z"
+spec:
+  target:
+    file: release-please-config.json
+  type: why
+  title: OpenCode plugin version moves with repository version
+  body: |-
+    The OpenCode plugin manifest is included here rather than in a separate
+    release-please package because the plugin version must move in lockstep
+    with the repository version. A separate package would permit independent
+    version tags, which contradicts ADR 0126: the plugin is a distribution
+    surface for a single version, not a product with its own cadence.
+  anchor:
+    scope: excerpt
+    excerpt: "        {\n          \"type\": \"json\",\n          \"path\": \"plugins/koment/.opencode-plugin/plugin.json\",\n          \"jsonpath\": \"$.version\"\n        },"
+    before: "          \"path\": \"plugins/koment/.claude-plugin/plugin.json\",\n          \"jsonpath\": \"$.version\"\n        },"
+    after: "        {\n          \"type\": \"json\",\n          \"path\": \"server.json\","
+  author:
+    name: opencode
+    kind: agent
+    source: session
+  git:
+    commit: 334600ab99090fbe636d96c309f0a1754607d8c6
+    path: release-please-config.json
+    line: 27
+status:
+  lastSeenLine: 27

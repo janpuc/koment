@@ -458,6 +458,39 @@ jobs:
           fi
           echo "$universal: no binary, falls back to PATH"
 
+  plugins:
+    name: plugins
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate plugin manifests
+        run: |
+          set -euo pipefail
+          for manifest in plugins/koment/.claude-plugin/plugin.json plugins/koment/.opencode-plugin/plugin.json; do
+            jq empty "$manifest"
+            name=$(jq -r '.name' "$manifest")
+            version=$(jq -r '.version' "$manifest")
+            entrypoint=$(jq -r '.entrypoint // empty' "$manifest")
+            test -n "$name"    || { echo "::error::$manifest: name is empty";    exit 1; }
+            test -n "$version" || { echo "::error::$manifest: version is empty"; exit 1; }
+            root_version=$(jq -r '.version // empty' .release-please-manifest.json)
+            if [ -n "$root_version" ] && [ "$version" != "$root_version" ]; then
+              echo "::error::$manifest version ($version) does not match root ($root_version)"
+              exit 1
+            fi
+            if [ -n "$entrypoint" ]; then
+              dir=$(dirname "$manifest")
+              test -f "$dir/$entrypoint" || { echo "::error::$manifest entrypoint $entrypoint not found"; exit 1; }
+            fi
+            echo "$manifest: $name@$version OK"
+          done
+
   ci:
     if: ${{ always() }}
     name: ci
@@ -466,6 +499,7 @@ jobs:
       - editor
       - helm
       - lint
+      - plugins
       - quality
       - test
     runs-on: ubuntu-24.04

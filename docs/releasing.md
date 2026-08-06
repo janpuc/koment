@@ -71,6 +71,7 @@ manifest, and every file that carries the version:
 - `charts/koment/Chart.yaml`
 - `editors/vscode/package.json`
 - `plugins/koment/.claude-plugin/plugin.json`
+- `plugins/koment/.opencode-plugin/plugin.json`
 - `server.json` — both `.version` and `.packages[0].version`
 
 Do not edit these by hand and do not bump a version in a feature branch.
@@ -111,6 +112,7 @@ channels second.
 
 ```
 please ──┬─> binaries ──> editor
+         ├─> plugins
          └─> image ──┬──> mcp-registry
                      └──> chart
 ```
@@ -118,6 +120,7 @@ please ──┬─> binaries ──> editor
 | Job | Publishes |
 |---|---|
 | `binaries` | six archives, `koment_<version>_checksums.txt`, a cosign signature, and rendered Homebrew/Scoop/WinGet metadata |
+| `plugins` | Claude and OpenCode plugin archives, cosign-signed checksums |
 | `image` | `ghcr.io/koment-dev/koment:<version>`, multi-arch, SBOM and provenance, cosign-signed |
 | `editor` | seven VSIX — six carrying that platform's released binary, one universal — signed, attached, then pushed to both marketplaces |
 | `mcp-registry` | MCP Registry metadata via GitHub OIDC |
@@ -140,7 +143,8 @@ curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://open-vsx.org/api/koment-de
 ```
 
 Expect 6 archives, 1 checksum manifest, 2 signature bundles for the manifest and
-binaries, 7 VSIX and 7 VSIX signatures. A release missing the archives breaks
+binaries, 2 plugin archives (Claude and OpenCode), 2 plugin signature bundles,
+7 VSIX and 7 VSIX signatures. A release missing the archives breaks
 every workflow using `koment-dev/koment@v<version>`, because the setup action
 downloads them.
 
