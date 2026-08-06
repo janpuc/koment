@@ -11,7 +11,7 @@
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/janpuc/koment?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/janpuc/koment)
 [![Open VSX](https://img.shields.io/open-vsx/v/janpuc/koment?label=open%20vsx)](https://open-vsx.org/extension/janpuc/koment)
 [![License](https://img.shields.io/github/license/janpuc/koment)](https://github.com/janpuc/koment/blob/main/LICENSE)
-[![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://janpuc.github.io/koment/)
+[![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://why.koment.dev/)
 
 </div>
 
@@ -31,7 +31,7 @@ Hermes and the rest the same reasoning through the same interface — because an
 agent that cannot see why something was built a certain way will happily
 refactor the reason away.
 
-**[See it running →](https://janpuc.github.io/koment/)** — koment's own
+**[See it running →](https://why.koment.dev/)** — koment's own
 annotations, rendered by koment onto GitHub Pages by [the workflow you can
 copy](docs/publishing.md).
 
