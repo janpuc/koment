@@ -98,9 +98,9 @@ jobs:
           render packaging/homebrew/koment.rb.tmpl dist/koment.rb
           render packaging/scoop/koment.json.tmpl dist/koment-scoop.json
           mkdir -p dist/winget
-          render packaging/winget/JanPuc.Koment.installer.yaml.tmpl dist/winget/JanPuc.Koment.installer.yaml
-          render packaging/winget/JanPuc.Koment.locale.en-US.yaml.tmpl dist/winget/JanPuc.Koment.locale.en-US.yaml
-          render packaging/winget/JanPuc.Koment.yaml.tmpl dist/winget/JanPuc.Koment.yaml
+          render packaging/winget/Koment.Koment.installer.yaml.tmpl dist/winget/Koment.Koment.installer.yaml
+          render packaging/winget/Koment.Koment.locale.en-US.yaml.tmpl dist/winget/Koment.Koment.locale.en-US.yaml
+          render packaging/winget/Koment.Koment.yaml.tmpl dist/winget/Koment.Koment.yaml
           (cd dist/winget && zip -q "../koment_${VERSION}_winget.zip" ./*.yaml)
 
           (cd dist && sha256sum ./*.tar.gz ./*.zip ./koment.rb ./koment-scoop.json | sed 's| \./| |' > "koment_${VERSION}_checksums.txt")

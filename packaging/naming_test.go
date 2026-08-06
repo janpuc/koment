@@ -89,7 +89,7 @@ func extensionFor(platform string) string {
 var consumers = map[string]string{
 	"the Homebrew tap":  "packaging/homebrew/koment.rb.tmpl",
 	"the Scoop bucket":  "packaging/scoop/koment.json.tmpl",
-	"the WinGet bundle": "packaging/winget/JanPuc.Koment.installer.yaml.tmpl",
+	"the WinGet bundle": "packaging/winget/Koment.Koment.installer.yaml.tmpl",
 }
 
 const setupAction = "action.yml"
@@ -192,7 +192,7 @@ func TestPackagedBinaryNamesMatchWhatTheArchivesContain(t *testing.T) {
 		platform               string
 	}{
 		{"the Homebrew tap", "packaging/homebrew/koment.rb.tmpl", `bin.install "koment"`, "darwin"},
-		{"the WinGet bundle", "packaging/winget/JanPuc.Koment.installer.yaml.tmpl", "RelativeFilePath: koment.exe", "windows"},
+		{"the WinGet bundle", "packaging/winget/Koment.Koment.installer.yaml.tmpl", "RelativeFilePath: koment.exe", "windows"},
 		{"the Scoop bucket", "packaging/scoop/koment.json.tmpl", `"bin": "koment.exe"`, "windows"},
 		{"the setup action", "action.yml", `-C "$target" koment`, "linux"},
 	} {

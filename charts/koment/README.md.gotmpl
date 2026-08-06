@@ -7,19 +7,19 @@ GitHub commits directly through the Git data API; it needs no checkout, volume,
 database, migration, or application outbox.
 
 ```sh
-helm install koment oci://ghcr.io/janpuc/charts/koment \
+helm install koment oci://ghcr.io/koment-dev/charts/koment \
   --namespace koment --create-namespace \
   --set repositories[0].remote=example/project
 ```
 
-The default repository is public `janpuc/koment`. Private reads and reviewed
+The default repository is public `koment-dev/koment`. Private reads and reviewed
 writes use an existing Secret rather than a token in Helm values:
 
 ```sh
 kubectl -n koment create secret generic koment-provider \
   --from-file=github-token=./github-token
 
-helm upgrade --install koment oci://ghcr.io/janpuc/charts/koment \
+helm upgrade --install koment oci://ghcr.io/koment-dev/charts/koment \
   --namespace koment --create-namespace \
   --set github.existingSecret=koment-provider
 ```
