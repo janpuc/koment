@@ -384,10 +384,15 @@ func (c *Client) get(ctx context.Context, apiPath string, target any) error {
 type apiError struct {
 	status  int
 	message string
+	limit   RateLimit
 }
 
 func (e *apiError) Error() string {
-	return fmt.Sprintf("github returned %s: %s", http.StatusText(e.status), e.message)
+	described := fmt.Sprintf("github returned %s: %s", http.StatusText(e.status), e.message)
+	if budget := e.limit.String(); budget != "" {
+		described += " (" + budget + ")"
+	}
+	return described
 }
 
 func hasStatus(err error, status int) bool {
@@ -444,7 +449,8 @@ func (c *Client) requestJSON(ctx context.Context, method, apiPath string, input,
 		if failure.Message == "" {
 			failure.Message = http.StatusText(response.StatusCode)
 		}
-		return &apiError{status: response.StatusCode, message: failure.Message}
+		limit, _ := rateLimitFrom(response.Header)
+		return &apiError{status: response.StatusCode, message: failure.Message, limit: limit}
 	}
 	if target == nil || len(responseBody) == 0 {
 		return nil

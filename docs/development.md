@@ -175,6 +175,10 @@ and `RENOVATE_ALLOWED_COMMANDS` permits it. Without that, a Renovate pull
 request that touches the chart leaves `charts/koment/README.md` stale and fails
 `mise run generate-check`.
 
+`.renovaterc.json5` also disables npm `engines` updates. `engines.vscode` in
+`editors/vscode/package.json` is the oldest editor the extension supports;
+tracking it to the newest release drops users without changing the extension.
+
 The preset also attaches `helm-schema`, which this repository does not permit.
 `charts/koment/values.schema.json` is hand-maintained and stricter than a
 generator can infer; helm-schema rewrites it into something permissive, and no

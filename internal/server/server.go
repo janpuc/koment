@@ -310,14 +310,24 @@ func synchronize(ctx context.Context, synchronizer serving.Synchronizer, interva
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	observeCatalog(synchronizer.Catalog, recorder, 0)
+	var refreshableAt time.Time
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			if now := time.Now().UTC(); now.Before(refreshableAt) {
+				continue
+			}
 			started := time.Now()
 			if err := synchronizer.RefreshAll(ctx); err != nil {
 				fmt.Fprintf(stderr, "koment: synchronization: %v\n", err)
+				if until, limited := githubprovider.RetryAfter(err); limited {
+					refreshableAt = until
+					fmt.Fprintf(stderr, "koment: synchronization paused until %s\n", until.Format(time.RFC3339))
+				}
+			} else {
+				refreshableAt = time.Time{}
 			}
 			observeCatalog(synchronizer.Catalog, recorder, time.Since(started))
 		}
