@@ -325,3 +325,34 @@ func TestUnknownCommandIsAUsageError(t *testing.T) {
 		t.Errorf("want the command named, got: %s", got.stderr)
 	}
 }
+
+func TestAddWarnsWhenTitleIsOmitted(t *testing.T) {
+	repository(t)
+
+	got := koment(t, "add", "main.go",
+		"--excerpt", "\tserve()",
+		"--kind", "invariant",
+		"--body", "serve must be the last call: it blocks until the process is signalled.")
+	if got.code != ExitOK {
+		t.Fatalf("add exited %d: %s", got.code, got.output())
+	}
+	if !strings.Contains(got.stderr, "no title provided") {
+		t.Errorf("the headline warning did not reach stderr:\n%s", got.stderr)
+	}
+}
+
+func TestAddStaysSilentWhenTitleIsGiven(t *testing.T) {
+	repository(t)
+
+	got := koment(t, "add", "main.go",
+		"--excerpt", "\tserve()",
+		"--kind", "invariant",
+		"--title", "Serve must be the last call",
+		"--body", "serve must be the last call: it blocks until the process is signalled.")
+	if got.code != ExitOK {
+		t.Fatalf("add exited %d: %s", got.code, got.output())
+	}
+	if strings.Contains(got.stderr, "no title provided") {
+		t.Errorf("an explicit title should silence the headline warning:\n%s", got.stderr)
+	}
+}

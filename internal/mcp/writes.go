@@ -24,7 +24,7 @@ type AddInput struct {
 	File       string `json:"file" jsonschema:"source path relative to the repository root"`
 	Excerpt    string `json:"excerpt,omitempty" jsonschema:"verbatim code excerpt; omit for a file-scoped annotation"`
 	Kind       string `json:"kind" jsonschema:"one of why, gotcha, invariant, anti-pattern"`
-	Title      string `json:"title,omitempty" jsonschema:"short headline shown beside the code, at most 72 characters on one line; derived from the body when omitted"`
+	Title      string `json:"title,omitempty" jsonschema:"optional headline shown beside the code; one line, at most 72 characters. When empty, the first sentence of the body is shown (ADR 0115)"`
 	Body       string `json:"body" jsonschema:"the rationale to record"`
 }
 
