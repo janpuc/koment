@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.1.0](https://github.com/janpuc/koment/compare/v1.0.0...v1.1.0) (2026-08-06)
+
+
+### Features
+
+* **container:** update image curlimages/curl (8.16.0 → 8.21.0) ([#55](https://github.com/janpuc/koment/issues/55)) ([4c9f9c5](https://github.com/janpuc/koment/commit/4c9f9c5f05f08d267284ab515c1dbc5e490deec2))
+* honour the rate limit github reports on every response ([#62](https://github.com/janpuc/koment/issues/62)) ([fe89381](https://github.com/janpuc/koment/commit/fe89381a1842de8553d264155bd3d9fa1d6e0b37))
+* **npm:** update dependency ovsx (1.0.2 → 1.1.0) ([#56](https://github.com/janpuc/koment/issues/56)) ([dbcfbd2](https://github.com/janpuc/koment/commit/dbcfbd25deeea53342c041d013dce401ce8a0bdc))
+
+
+### Bug Fixes
+
+* close the code findings codeql reported ([#65](https://github.com/janpuc/koment/issues/65)) ([c850130](https://github.com/janpuc/koment/commit/c850130f1435fbaa0b6d621dc80473e662b548ae))
+* give renovate the commit-status permission it aborts without ([#51](https://github.com/janpuc/koment/issues/51)) ([1cd1216](https://github.com/janpuc/koment/commit/1cd121655b9c7b00ae7f263108a61caed55c533f))
+* pin codeql-action to the version its comment claims ([#50](https://github.com/janpuc/koment/issues/50)) ([14bec7e](https://github.com/janpuc/koment/commit/14bec7ede6ef744b2b141f67bdc7554d9157b0fa))
+* stop renovate raising the extension's supported editor floor ([#63](https://github.com/janpuc/koment/issues/63)) ([c8e2171](https://github.com/janpuc/koment/commit/c8e2171b29b48555b41bc688877258e6df6fe47a))
+* stop renovate rewriting the hand-written chart schema ([#60](https://github.com/janpuc/koment/issues/60)) ([564b51b](https://github.com/janpuc/koment/commit/564b51b38a0ff4583bb08e564eca792c10cf640d))
+
+
+### Documentation
+
+* make the licence identifiable and the badges truthful ([#61](https://github.com/janpuc/koment/issues/61)) ([7327899](https://github.com/janpuc/koment/commit/7327899e6b41e8c138bbf987632fafdc055f12e6))
+* record what the renovate investigation cost ([#52](https://github.com/janpuc/koment/issues/52)) ([76d6acc](https://github.com/janpuc/koment/commit/76d6acc87b66d5b4bc89cc11b7b1a66966a24b36))
+
+
+### Continuous Integration
+
+* **github-action:** Update action renovatebot/github-action (v46.2.0 → v46.2.1) ([#66](https://github.com/janpuc/koment/issues/66)) ([a21ee5e](https://github.com/janpuc/koment/commit/a21ee5e2c816bcecfbef2b86876f06bba33e0091))
+* **github-action:** Update github-actions ([#54](https://github.com/janpuc/koment/issues/54)) ([1b52d8e](https://github.com/janpuc/koment/commit/1b52d8e4ffd754309813e50639c211c48bca4661))
+* **github-action:** Update github-actions (major) ([#58](https://github.com/janpuc/koment/issues/58)) ([ade569a](https://github.com/janpuc/koment/commit/ade569a7317057aa204300e17eb2db9a5b72452a))
+* let renovate run the chart post-upgrade tasks ([#49](https://github.com/janpuc/koment/issues/49)) ([011e5ef](https://github.com/janpuc/koment/commit/011e5ef24930af7cec15713cc46796165f0400b6))
+* run renovate on github runners ([#47](https://github.com/janpuc/koment/issues/47)) ([694e666](https://github.com/janpuc/koment/commit/694e666f353ab8b98f7916945df6bfcea4458beb))
+
 ## [1.0.0](https://github.com/janpuc/koment/compare/v0.8.0...v1.0.0) (2026-08-05)
 
 
