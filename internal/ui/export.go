@@ -20,6 +20,7 @@ import (
 const (
 	exportedSuffix  = ".html"
 	indexPage       = "index.html"
+	bypassMarker    = ".nojekyll"
 	stylesheetName  = "style.css"
 	scriptName      = "koment.js"
 	logoSVGName     = "koment-logo.svg"
@@ -127,6 +128,10 @@ func commitOf(root, given string) (string, error) {
 
 func export(repositorySnapshot *application.RepositorySnapshot, out, name string, taken *snapshot, repositories []repositoryLink) (int, error) {
 	templates := template.Must(template.ParseFS(assets, "assets/*.html"))
+
+	if err := writeFile(filepath.Join(out, bypassMarker), nil); err != nil {
+		return 0, err
+	}
 
 	for _, asset := range []string{stylesheetName, scriptName, logoSVGName, logoPNGName} {
 		content, err := assets.ReadFile("assets/" + asset)
