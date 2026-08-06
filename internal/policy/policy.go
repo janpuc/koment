@@ -13,7 +13,7 @@ import (
 
 	yaml "go.yaml.in/yaml/v3"
 
-	"github.com/janpuc/koment/internal/api"
+	"github.com/koment-dev/koment/internal/api"
 )
 
 const (

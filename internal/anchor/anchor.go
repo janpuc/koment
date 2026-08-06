@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 // Status is the record's own vocabulary. The store owns it because a record

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -24,7 +24,7 @@ spec:
       // shortened, which is the only reason it exists (ADR 0115).
     after: |2
 
-      const SchemaURL = "https://raw.githubusercontent.com/janpuc/koment/main/schema/annotation.schema.json"
+      const SchemaURL = "https://raw.githubusercontent.com/koment-dev/koment/main/schema/annotation.schema.json"
   author:
     name: janpuc
     email: janpuc@proton.me

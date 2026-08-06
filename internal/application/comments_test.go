@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/janpuc/koment/internal/policy"
-	"github.com/janpuc/koment/internal/repository"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func TestConvertCommentWritesRecordBeforeRemovingSourceProse(t *testing.T) {

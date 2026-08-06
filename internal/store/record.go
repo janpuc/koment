@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/janpuc/koment/internal/api"
+	"github.com/koment-dev/koment/internal/api"
 )
 
 // APIVersion is matched exactly. A record carrying anything else is refused

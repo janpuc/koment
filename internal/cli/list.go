@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func runList(args []string, env Environment) int {

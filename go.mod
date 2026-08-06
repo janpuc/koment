@@ -1,4 +1,4 @@
-module github.com/janpuc/koment
+module github.com/koment-dev/koment
 
 go 1.26.5
 

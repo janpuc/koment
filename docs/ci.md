@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: janpuc/koment@v0.2.0
+      - uses: koment-dev/koment@v0.2.0
       - run: koment check
       - run: koment comments check
       - run: koment agents check

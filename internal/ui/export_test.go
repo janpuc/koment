@@ -51,7 +51,7 @@ func TestExportWritesAnIndexAndAPagePerFile(t *testing.T) {
 	if !strings.Contains(index, rationale) {
 		t.Error("the index should show the first file's annotations")
 	}
-	if !strings.Contains(index, `href="https://github.com/janpuc/koment"`) {
+	if !strings.Contains(index, `href="https://github.com/koment-dev/koment"`) {
 		t.Error("the project source should remain reachable from the bottom of the rail")
 	}
 	for _, want := range []string{`data-search-dialog`, `data-search-open hidden`, `data-path="main.go"`} {

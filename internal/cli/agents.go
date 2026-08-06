@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/janpuc/koment/internal/agentpolicy"
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/agentpolicy"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/policy"
 )
 
 func runAgents(args []string, env Environment) int {

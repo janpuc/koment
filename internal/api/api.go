@@ -16,4 +16,4 @@ const Version = Group + "/v1alpha"
 // SchemaBase is where the schemas for this API version are published. The path
 // carries the version so that a record written today keeps pointing at the
 // schema that describes it after the next version exists. ADR 0121.
-const SchemaBase = "https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/"
+const SchemaBase = "https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/"

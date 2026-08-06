@@ -28,7 +28,7 @@ after its id, so a red check names the job that produced it.
 
 `mise install` puts a released `koment` on `PATH`, which is what `.mcp.json` and
 `.vscode/mcp.json` invoke. Opening the repository in VS Code recommends the
-`janpuc.koment` extension; it carries its own binary, so it needs nothing else.
+`koment.koment` extension; it carries its own binary, so it needs nothing else.
 
 Both of those run the **released** koment. The gates do not: `mise run
 annotations`, `comments` and `agent-policy` all run `go run ./cmd/koment`, so
@@ -148,7 +148,7 @@ To activate it:
    status on its own branch, and a 403 there aborts the whole run — reported as
    `Repository has changed during renovation`, which names neither the
    permission nor the request that failed.
-2. Install it on `janpuc/koment` only.
+2. Install it on `koment-dev/koment` only.
 3. Generate a private key.
 4. Add the app id as the repository variable `RENOVATE_BOT_APP_ID` and the whole
    PEM as the secret `RENOVATE_BOT_PRIVATE_KEY`:

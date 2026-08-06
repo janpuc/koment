@@ -20,13 +20,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/config"
-	"github.com/janpuc/koment/internal/listen"
-	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/provenance"
-	"github.com/janpuc/koment/internal/repository"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/config"
+	"github.com/koment-dev/koment/internal/listen"
+	"github.com/koment-dev/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/provenance"
+	"github.com/koment-dev/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 //go:embed assets

@@ -3,7 +3,7 @@ package serving
 import (
 	"context"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type Materialization struct {

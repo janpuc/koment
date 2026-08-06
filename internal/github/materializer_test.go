@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type roundTripFunc func(*http.Request) *http.Response

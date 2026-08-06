@@ -10,9 +10,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/serving"
 )
 
 func objectID(character string) string { return strings.Repeat(character, 40) }

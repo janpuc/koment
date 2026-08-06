@@ -12,11 +12,11 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/repository"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 const annotatedSource = "package main\n\nfunc main() {\n\tserve()\n}\n"

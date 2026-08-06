@@ -1,29 +1,29 @@
 {
   "version": "{{VERSION}}",
   "description": "Checked out-of-band rationale for code",
-  "homepage": "https://github.com/janpuc/koment",
+  "homepage": "https://github.com/koment-dev/koment",
   "license": "AGPL-3.0-or-later",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_windows_amd64.zip",
+      "url": "https://github.com/koment-dev/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_windows_amd64.zip",
       "hash": "{{WINDOWS_AMD64_SHA}}"
     },
     "arm64": {
-      "url": "https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_windows_arm64.zip",
+      "url": "https://github.com/koment-dev/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_windows_arm64.zip",
       "hash": "{{WINDOWS_ARM64_SHA}}"
     }
   },
   "bin": "koment.exe",
   "checkver": {
-    "github": "https://github.com/janpuc/koment"
+    "github": "https://github.com/koment-dev/koment"
   },
   "autoupdate": {
     "architecture": {
       "64bit": {
-        "url": "https://github.com/janpuc/koment/releases/download/v$version/koment_$version_windows_amd64.zip"
+        "url": "https://github.com/koment-dev/koment/releases/download/v$version/koment_$version_windows_amd64.zip"
       },
       "arm64": {
-        "url": "https://github.com/janpuc/koment/releases/download/v$version/koment_$version_windows_arm64.zip"
+        "url": "https://github.com/koment-dev/koment/releases/download/v$version/koment_$version_windows_arm64.zip"
       }
     }
   }

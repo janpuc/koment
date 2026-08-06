@@ -97,7 +97,7 @@ not rationale, and is allowed by the comment policy. The schema can move to a
 pinned published URL once the record has real external users.
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -330,7 +330,7 @@ The ordinary repository view owns navigation; there is no repository-selector
 landing page. A compact, visually distinct repository switcher sits in the top
 right of the application header and preserves the current page context when a
 matching route exists. The left rail ends with a persistent source link to
-`https://github.com/janpuc/koment`.
+`https://github.com/koment-dev/koment`.
 
 Search opens as a centered modal over the current repository instead of taking
 permanent space from source and rationale. A visible search control shows the

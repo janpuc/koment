@@ -66,5 +66,5 @@ exempt.
 ## Reporting a security issue
 
 Read [SECURITY.md](SECURITY.md). Report privately through a GitHub security
-advisory at <https://github.com/janpuc/koment/security/advisories/new>. Never
+advisory at <https://github.com/koment-dev/koment/security/advisories/new>. Never
 in a public issue, a pull request or a discussion.

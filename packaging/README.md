@@ -8,9 +8,9 @@ The rendered files are submission-ready, but an external catalog is not called
 available until its repository or marketplace accepts them. The first release
 therefore needs these owner-side steps:
 
-- place `koment.rb` at `Formula/koment.rb` in `janpuc/homebrew-tap`;
+- place `koment.rb` at `Formula/koment.rb` in `koment-dev/homebrew-tap`;
 - place `koment-scoop.json` at `bucket/koment.json` in a Scoop bucket;
 - submit the WinGet bundle to `microsoft/winget-pkgs` with `wingetcreate`.
 
 mise needs no separate manifest and installs the same archives directly through
-its GitHub backend with `mise use -g github:janpuc/koment`.
+its GitHub backend with `mise use -g github:koment-dev/koment`.

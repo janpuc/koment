@@ -11,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/janpuc/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/policy"
 )
 
 const (

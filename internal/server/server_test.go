@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/auth"
-	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/serving"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/auth"
+	"github.com/koment-dev/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/serving"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 type testMaterializer struct {

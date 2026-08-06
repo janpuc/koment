@@ -2,7 +2,7 @@
 
 This Contributor Licence Agreement ("Agreement") applies to any contribution you
 submit to the **koment** project ("the Project") hosted at
-<https://github.com/janpuc/koment>.
+<https://github.com/koment-dev/koment>.
 
 By signing this Agreement you accept its terms on your own behalf and, to the
 extent you contribute on behalf of an employer, on behalf of that employer.
@@ -78,7 +78,7 @@ Sign by posting a comment on the pull request that introduces your
 Contribution, of which the body starts with:
 
 ```text
-I have read the CLA at https://github.com/janpuc/koment/blob/main/CLA.md
+I have read the CLA at https://github.com/koment-dev/koment/blob/main/CLA.md
 and I hereby sign the CLA.
 ```
 

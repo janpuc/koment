@@ -13,10 +13,10 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/janpuc/koment/internal/config"
-	"github.com/janpuc/koment/internal/listen"
-	"github.com/janpuc/koment/internal/metrics"
-	"github.com/janpuc/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/config"
+	"github.com/koment-dev/koment/internal/listen"
+	"github.com/koment-dev/koment/internal/metrics"
+	"github.com/koment-dev/koment/internal/repository"
 )
 
 const (

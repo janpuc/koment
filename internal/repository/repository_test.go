@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func withStore(t *testing.T, name string) string {

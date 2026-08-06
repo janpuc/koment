@@ -15,8 +15,8 @@ Add this repository as a Claude marketplace and install the plugin at project
 scope:
 
 ```text
-/plugin marketplace add janpuc/koment
-/plugin install koment@janpuc-tools
+/plugin marketplace add koment-dev/koment
+/plugin install koment@koment-dev
 ```
 
 The plugin is intentionally project-scoped: its Stop hook enforces a koment

@@ -14,9 +14,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/janpuc/koment/internal/anchor"
-	"github.com/janpuc/koment/internal/policy"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/anchor"
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 // SourceComment is an exact syntactic comment group in one source file.

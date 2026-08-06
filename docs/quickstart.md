@@ -3,11 +3,11 @@
 ## Install
 
 Download the checksum-listed archive for your platform from the
-[latest release](https://github.com/janpuc/koment/releases/latest), or install
+[latest release](https://github.com/koment-dev/koment/releases/latest), or install
 that release with mise:
 
 ```sh
-mise use -g github:janpuc/koment
+mise use -g github:koment-dev/koment
 ```
 
 One static binary, no runtime. Check it:

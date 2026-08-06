@@ -6,10 +6,10 @@
   "description": "Keep code rationale outside source comments and enforce the repository's koment procedure.",
   "author": {
     "name": "Jan Pucilowski",
-    "url": "https://github.com/janpuc"
+    "url": "https://github.com/koment-dev"
   },
-  "homepage": "https://github.com/janpuc/koment",
-  "repository": "https://github.com/janpuc/koment",
+  "homepage": "https://github.com/koment-dev/koment",
+  "repository": "https://github.com/koment-dev/koment",
   "license": "AGPL-3.0-or-later",
   "keywords": [
     "annotations",

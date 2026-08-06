@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/janpuc/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/policy"
 )
 
 func TestInstallPreservesUnrelatedInstructionsAndHooks(t *testing.T) {

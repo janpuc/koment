@@ -1,25 +1,25 @@
 class Koment < Formula
   desc "Checked out-of-band rationale for code"
-  homepage "https://github.com/janpuc/koment"
+  homepage "https://github.com/koment-dev/koment"
   version "{{VERSION}}"
   license "AGPL-3.0-or-later"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_darwin_arm64.tar.gz"
+      url "https://github.com/koment-dev/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_darwin_arm64.tar.gz"
       sha256 "{{DARWIN_ARM64_SHA}}"
     else
-      url "https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_darwin_amd64.tar.gz"
+      url "https://github.com/koment-dev/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_darwin_amd64.tar.gz"
       sha256 "{{DARWIN_AMD64_SHA}}"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_linux_arm64.tar.gz"
+      url "https://github.com/koment-dev/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_linux_arm64.tar.gz"
       sha256 "{{LINUX_ARM64_SHA}}"
     else
-      url "https://github.com/janpuc/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_linux_amd64.tar.gz"
+      url "https://github.com/koment-dev/koment/releases/download/v{{VERSION}}/koment_{{VERSION}}_linux_amd64.tar.gz"
       sha256 "{{LINUX_AMD64_SHA}}"
     end
   end

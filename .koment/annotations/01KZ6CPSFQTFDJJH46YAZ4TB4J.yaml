@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -23,7 +23,7 @@ spec:
     to disagree until this pin moves.
   anchor:
     scope: excerpt
-    excerpt: '"github:janpuc/koment" = "1.0.0"'
+    excerpt: '"github:koment-dev/koment" = "1.0.0"'
     before: |-
       [tools]
       actionlint = "1.7.12"

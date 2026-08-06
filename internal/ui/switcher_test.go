@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/repository"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func twoRepositories(t *testing.T) *repository.Set {

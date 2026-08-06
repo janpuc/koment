@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/policy.schema.json",
+  "$id": "https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/policy.schema.json",
   "title": "koment repository policy",
   "type": "object",
   "additionalProperties": false,

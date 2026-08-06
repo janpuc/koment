@@ -86,7 +86,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/janpuc/koment
+        - github.com/koment-dev/koment
 
 issues:
   max-issues-per-linter: 0

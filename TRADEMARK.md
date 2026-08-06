@@ -14,7 +14,7 @@ governed by this document.
 - Refer to the project by name in plain prose when describing what the code
   does ("we use koment to track rationale"), including in articles, talks and
   documentation about the unmodified tool.
-- Link to <https://github.com/janpuc/koment> and to the official documentation
+- Link to <https://github.com/koment-dev/koment> and to the official documentation
   site.
 
 ## What you may not do without permission

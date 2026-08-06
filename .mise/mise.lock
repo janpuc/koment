@@ -41,6 +41,25 @@ checksum = "sha256:044e9aee08ca8826dca910bae30f2a9343f8781c29261a4ff4123ff9a6382
 url = "https://github.com/janpuc/koment/releases/download/v1.0.0/koment_1.0.0_darwin_arm64.tar.gz"
 url_api = "https://api.github.com/repos/janpuc/koment/releases/assets/502868171"
 
+[[tools."github:koment-dev/koment"]]
+version = "1.0.0"
+backend = "github:koment-dev/koment"
+
+[tools."github:koment-dev/koment"."platforms.linux-arm64"]
+checksum = "sha256:d308e3bb378923958da1152bc2f7b3cc618c00014496e76ff8b97d15d74e2927"
+url = "https://github.com/koment-dev/koment/releases/download/v1.0.0/koment_1.0.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/koment-dev/koment/releases/assets/502868170"
+
+[tools."github:koment-dev/koment"."platforms.linux-x64"]
+checksum = "sha256:0375e86fe2f3f3a05241ec2b61fa378b2fe3d84c862f381927bc9030a4fd1ac5"
+url = "https://github.com/koment-dev/koment/releases/download/v1.0.0/koment_1.0.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/koment-dev/koment/releases/assets/502868173"
+
+[tools."github:koment-dev/koment"."platforms.macos-arm64"]
+checksum = "sha256:044e9aee08ca8826dca910bae30f2a9343f8781c29261a4ff4123ff9a6382afa"
+url = "https://github.com/koment-dev/koment/releases/download/v1.0.0/koment_1.0.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/koment-dev/koment/releases/assets/502868171"
+
 [[tools.go]]
 version = "1.26.5"
 backend = "core:go"

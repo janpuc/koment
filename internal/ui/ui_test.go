@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/janpuc/koment/internal/application"
-	"github.com/janpuc/koment/internal/repository"
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/application"
+	"github.com/koment-dev/koment/internal/repository"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 const source = "package main\n\nfunc main() {\n\tserve()\n}\n"

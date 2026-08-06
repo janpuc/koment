@@ -3,6 +3,6 @@ repositories:
   - id: koment
     name: koment
     provider: github
-    remote: janpuc/koment
+    remote: koment-dev/koment
     default_branch: main
     default: true

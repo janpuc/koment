@@ -1,6 +1,6 @@
 image:
   # -- Container image repository.
-  repository: ghcr.io/janpuc/koment
+  repository: ghcr.io/koment-dev/koment
   # -- Image tag. Defaults to the chart's appVersion.
   tag: ""
   # -- Image digest. Set it to pin the exact image a tag currently points at.
@@ -17,7 +17,7 @@ repositories:
   - id: koment
     name: koment
     provider: github
-    remote: janpuc/koment
+    remote: koment-dev/koment
     defaultBranch: main
     default: true
 

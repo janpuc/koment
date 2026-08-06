@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/janpuc/koment/internal/store"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 const source = "package main\n\nfunc main() {\n\tserve()\n}\n"

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/janpuc/koment/internal/application"
+	"github.com/koment-dev/koment/internal/application"
 )
 
 // SnapshotSource builds one immutable snapshot from a provider commit.
