@@ -283,3 +283,34 @@ When you finish, state plainly:
 - what you got wrong along the way
 
 Do not oversell. A correction is more useful than a confident wrong claim.
+
+### CI is part of "verified" for any pull request
+
+Local `mise run` is the floor, not the ceiling. A pull request is
+not done while any required GitHub Actions check on it is failing,
+pending, or missing. Before reporting a PR as ready:
+
+1. Inspect the check status (`gh pr checks <n>` or the Actions UI).
+   Every required status must read `pass`. Pending, queued, failed,
+   cancelled, or skipped checks are not done.
+2. Quote the check names and their outcomes in the report. The reader
+   should not have to open a second tab to see what passed.
+3. If a check failed for a reason inside this repository's code or
+   configuration, fix it and push. Do not report done until the rerun
+   is green.
+4. If a check failed for a reason outside the repository — a GitHub
+   Actions infrastructure outage, a runner-image regression, a flaky
+   network call to a third-party service — say so explicitly. A
+   transient infrastructure failure does not certify the change;
+   re-run the failed jobs and quote the new outcome. Naming the flake
+   is the honest move; calling a rerun "verification" without saying
+   the first attempt failed is not.
+5. A CI configuration that uses `GITHUB_TOKEN` to open its own pull
+   request leaves its checks at `action_required` until a human
+   approves them. An unapproved run is not a passing run. State the
+   approval state if it matters for what you are claiming.
+
+The same rule applies to a release candidate (see §14): quoting
+local `mise run test` output for a release is necessary but not
+sufficient. The release pull request's required checks must be green
+on a human-approved run before the release can be reported done.
