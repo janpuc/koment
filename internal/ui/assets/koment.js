@@ -4,12 +4,34 @@
   var switcher = document.querySelector("[data-switcher]");
   if (switcher) {
     switcher.addEventListener("change", function () {
-      window.location.href = switcher.value;
+      var destination = sameOriginDestination(switcher.value);
+      if (destination) {
+        window.location.assign(destination);
+      }
     });
   }
 
   setupSearch();
   alignNotes();
+
+  function sameOriginDestination(value) {
+    if (typeof value !== "string" || value.length === 0) {
+      return null;
+    }
+    var target;
+    try {
+      target = new URL(value, document.baseURI);
+    } catch (error) {
+      return null;
+    }
+    if (target.origin !== window.location.origin) {
+      return null;
+    }
+    if (target.protocol !== "http:" && target.protocol !== "https:") {
+      return null;
+    }
+    return target.href;
+  }
 
   function setupSearch() {
     var dialog = document.querySelector("[data-search-dialog]");

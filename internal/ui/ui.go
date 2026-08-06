@@ -262,6 +262,10 @@ func newCapability() (string, error) {
 	return hex.EncodeToString(entropy[:]), nil
 }
 
+func servedOverTLS(r *http.Request) bool {
+	return r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
 func capabilityBootstrap(next http.Handler, writeToken string) http.Handler {
 	if writeToken == "" {
 		return next
@@ -272,7 +276,7 @@ func capabilityBootstrap(next http.Handler, writeToken string) http.Handler {
 			//nolint:gosec
 			http.SetCookie(w, &http.Cookie{
 				Name: capabilityCookie, Value: writeToken, Path: "/", HttpOnly: true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteStrictMode, Secure: servedOverTLS(r),
 			})
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
