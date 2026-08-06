@@ -87,6 +87,9 @@ func (s *Service) Add(input AddInput) (Mutation, error) {
 		return Mutation{}, err
 	}
 	warnings := s.captureGit(&record)
+	if strings.TrimSpace(record.Spec.Title) == "" {
+		warnings = append(warnings, "no title provided; the first sentence of the body will be shown as the headline (ADR 0115)")
+	}
 	s.observe(&record)
 	if err := s.store.Save(&record); err != nil {
 		return Mutation{}, err

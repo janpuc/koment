@@ -56,6 +56,34 @@ Four, deliberately. A free-form kind field becomes a junk drawer, and the value
 of a small vocabulary is that `koment list --kind invariant` returns something
 worth reading.
 
+## Give the headline a sentence worth reading
+
+The headline is the one line every reader sees — beside the code, in the panel,
+in the hover, in the search index. `spec.title` is optional in the schema, and
+that is deliberate: a record written before titles existed still has to render
+something. When the field is empty, `Annotation.Headline()` shows the first
+sentence of the body, shortened at a word boundary and capped at 72 characters
+with a trailing `…` when it would otherwise cut through one.
+
+The derivation is computed on read and never written back. A derived title
+stored in the record would be a second copy of the body that could drift from
+it, which is the failure this project exists to prevent.
+
+`koment add` warns when `--title` is empty so the consequence is clear at write
+time. The warning is not an error: a quick note with a tight first sentence
+renders exactly as the author intended.
+
+```
+✓ Rotation keeps the previous key   (explicit, one line)
+○ Without the skew subtraction ...  (derived, shortened with …)
+✗ Re: ticket #12345 — see the co…  (derived, but the first sentence was not a title)
+```
+
+A title is work, and a bad one is worse than the derived fallback because it
+hides the sentence it replaced. When the body's first sentence is a real,
+informative line, leave the field empty; the headline will be the same
+sentence you would have written. When it is not, write one.
+
 ## Anchor to something stable
 
 The excerpt must be unique in the file, and every edit to it produces drift.

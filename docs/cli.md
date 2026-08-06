@@ -40,6 +40,7 @@ koment add internal/auth/token.go \
 |---|---|
 | `--excerpt <text>` | verbatim snippet to anchor to. Omit for a file-scoped annotation. |
 | `--kind <kind>` | `why`, `gotcha`, `invariant` or `anti-pattern`. Required. |
+| `--title <text>` | optional headline, one line, at most 72 characters. When omitted, the first sentence of the body is shown (ADR 0115). |
 | `--body <text>` | the rationale. `-` reads stdin, which is easier for prose. |
 
 The excerpt must appear **exactly once**. Absent or ambiguous is refused, so a

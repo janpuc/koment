@@ -92,6 +92,20 @@ func TestServiceAddsAndReanchorsThroughOneContract(t *testing.T) {
 	if created.Path != ".koment/annotations/"+created.Record.Metadata.ID+".yaml" {
 		t.Fatalf("path = %q", created.Path)
 	}
+	hasHeadlineWarning(t, created.Warnings, true)
+
+	explicit, err := service.Add(AddInput{
+		File: "main.go", Excerpt: "var Second = true", Kind: store.TypeWhy,
+		Title: "Why the first value wins",
+		Body:  "The first value is the compatibility default.", Author: author,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if explicit.Record.Spec.Title != "Why the first value wins" {
+		t.Fatalf("title = %q", explicit.Record.Spec.Title)
+	}
+	hasHeadlineWarning(t, explicit.Warnings, false)
 
 	moved, err := service.Reanchor(ReanchorInput{ID: created.Record.Metadata.ID, Excerpt: "var Second = true"})
 	if err != nil {
@@ -102,6 +116,39 @@ func TestServiceAddsAndReanchorsThroughOneContract(t *testing.T) {
 	}
 	if moved.Record.Spec.Anchor.Excerpt != "var Second = true" {
 		t.Fatalf("excerpt = %q", moved.Record.Spec.Anchor.Excerpt)
+	}
+}
+
+func TestAddWithoutATitleWarnsThatTheHeadlineIsDerived(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n\nvar First = true\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(repository.Repository{ID: "sample", Root: root})
+	author := store.Author{Name: "Test Agent", Kind: store.AuthorAgent, Source: store.FromExplicit}
+
+	created, err := service.Add(AddInput{
+		File: "main.go", Excerpt: "var First = true", Kind: store.TypeWhy,
+		Body: "The first value is the compatibility default.", Author: author,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	hasHeadlineWarning(t, created.Warnings, true)
+}
+
+func hasHeadlineWarning(t *testing.T, warnings []string, want bool) {
+	t.Helper()
+	for _, warning := range warnings {
+		if strings.Contains(warning, "first sentence of the body will be shown") {
+			if want {
+				return
+			}
+			t.Fatalf("unexpected headline warning: %q", warning)
+		}
+	}
+	if want {
+		t.Fatalf("expected a headline warning, got %v", warnings)
 	}
 }
 
