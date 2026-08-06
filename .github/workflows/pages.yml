@@ -58,8 +58,8 @@ jobs:
 
       - name: verify publication
         run: |
-          test -f dist/.nojekyll
-          test -n "$(find dist/f -path '*/.*' -name '*.html' -print -quit)"
+          test -z "$(find dist -path '*/.*' -print -quit)"
+          test -n "$(find dist/f -path '*/dot-*' -name '*.html' -print -quit)"
           test -f dist/index.html
           test -f dist/annotations.json
           test -f dist/search.json

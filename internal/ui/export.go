@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +21,7 @@ import (
 const (
 	exportedSuffix  = ".html"
 	indexPage       = "index.html"
-	bypassMarker    = ".nojekyll"
+	dotReplacement  = "dot-"
 	stylesheetName  = "style.css"
 	scriptName      = "koment.js"
 	logoSVGName     = "koment-logo.svg"
@@ -129,10 +130,6 @@ func commitOf(root, given string) (string, error) {
 func export(repositorySnapshot *application.RepositorySnapshot, out, name string, taken *snapshot, repositories []repositoryLink) (int, error) {
 	templates := template.Must(template.ParseFS(assets, "assets/*.html"))
 
-	if err := writeFile(filepath.Join(out, bypassMarker), nil); err != nil {
-		return 0, err
-	}
-
 	for _, asset := range []string{stylesheetName, scriptName, logoSVGName, logoPNGName} {
 		content, err := assets.ReadFile("assets/" + asset)
 		if err != nil {
@@ -145,7 +142,7 @@ func export(repositorySnapshot *application.RepositorySnapshot, out, name string
 
 	pages := map[string]string{indexPage: ""}
 	for _, file := range repositorySnapshot.Files {
-		pages[filepath.ToSlash(filepath.Join("f", file.Path+exportedSuffix))] = file.Path
+		pages[publishedPagePath(file.Path)] = file.Path
 	}
 
 	for page, file := range pages {
@@ -167,10 +164,25 @@ func export(repositorySnapshot *application.RepositorySnapshot, out, name string
 	return len(pages), nil
 }
 
+func publishedPagePath(file string) string {
+	parts := strings.Split(filepath.ToSlash(file), "/")
+	for index, part := range parts {
+		parts[index] = url.PathEscape(publishableComponent(part))
+	}
+	return "f/" + strings.Join(parts, "/") + exportedSuffix
+}
+
+func publishableComponent(part string) string {
+	if strings.HasPrefix(part, ".") {
+		return dotReplacement + strings.TrimPrefix(part, ".")
+	}
+	return part
+}
+
 func exportedLinks(page string) links {
 	up := strings.Repeat("../", strings.Count(page, "/"))
 	return links{
-		file:       func(target string) string { return up + "f/" + escapedFilePath(target) + exportedSuffix },
+		file:       func(target string) string { return up + publishedPagePath(target) },
 		home:       up + indexPage,
 		stylesheet: up + stylesheetName,
 		script:     up + scriptName,
