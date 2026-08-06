@@ -2,9 +2,11 @@ package ui
 
 import (
 	"encoding/json"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -59,12 +61,32 @@ func TestExportWritesAnIndexAndAPagePerFile(t *testing.T) {
 	}
 }
 
-// GitHub Pages serves nothing under a directory whose name starts with a dot
-// unless this marker is present, and every repository has a .github.
-func TestExportWritesTheMarkerThatKeepsDotDirectoriesReachable(t *testing.T) {
+func TestPublishedPathsCarryNoDotComponent(t *testing.T) {
+	for source, want := range map[string]string{
+		".github/workflows/ci.yml": "f/dot-github/workflows/ci.yml.html",
+		".mise/config.toml":        "f/dot-mise/config.toml.html",
+		"internal/store/record.go": "f/internal/store/record.go.html",
+		"a/.hidden/b.go":           "f/a/dot-hidden/b.go.html",
+	} {
+		if got := publishedPagePath(source); got != want {
+			t.Errorf("publishedPagePath(%q) = %q, want %q", source, got, want)
+		}
+	}
+}
+
+// A page nothing links to is a page nobody reaches, so the written path and
+// the link have to come from the same function.
+func TestEveryLinkedPageWasWritten(t *testing.T) {
 	out := exportTo(t)
-	if _, err := os.Stat(filepath.Join(out, bypassMarker)); err != nil {
-		t.Fatalf("%s was not written: %v", bypassMarker, err)
+	index := read(t, filepath.Join(out, indexPage))
+	for _, match := range regexp.MustCompile(`href="(f/[^"]+)"`).FindAllStringSubmatch(index, -1) {
+		unescaped, err := url.PathUnescape(match[1])
+		if err != nil {
+			t.Fatalf("link %q is not a valid path: %v", match[1], err)
+		}
+		if _, err := os.Stat(filepath.Join(out, filepath.FromSlash(unescaped))); err != nil {
+			t.Errorf("index links %q but no page was written there", match[1])
+		}
 	}
 }
 

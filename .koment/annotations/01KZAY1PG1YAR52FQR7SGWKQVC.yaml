@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZAY1PG1YAR52FQR7SGWKQVC
+  created: "2026-08-06T07:01:50Z"
+spec:
+  target:
+    file: internal/ui/export.go
+  type: invariant
+  title: One function, or the link and the file disagree
+  body: |-
+    The written page and the link to it come from here and nowhere else. They
+    used to be computed separately - the file from a filepath.Join, the link
+    from escapedFilePath - and a page whose path one of them transformed was a
+    page the other could not reach. A mismatch here does not fail a build or a
+    test; it produces a site whose own index 404s, which is how six pages stayed
+    broken through several green runs.
+
+    The dot mapping exists because publishers mangle dot paths, and one in
+    particular drops them silently: actions/upload-pages-artifact excludes
+    `.github` from its tar unconditionally, so an annotation on a workflow file
+    could not be published at all. ADR 0123 records the investigation.
+
+    Do not reuse escapedFilePath here. It serves the live tier, which resolves
+    real paths and writes no files, so it must not map. The two tiers agree on
+    what a page looks like and differ on what a path may contain.
+  anchor:
+    scope: excerpt
+    excerpt: func publishedPagePath(file string) string {
+    before: |2-
+
+      // publishedPagePath is where a source file's page is written and linked in a
+      // published site. It is the one place the two must agree.
+    after: "\tparts := strings.Split(filepath.ToSlash(file), \"/\")\n\tfor index, part := range parts {\n\t\tparts[index] = url.PathEscape(publishableComponent(part))"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: be2e98fe14c8d9dcced2187d85738277bb9013d6
+    path: internal/ui/export.go
+    line: 169
+status:
+  lastSeenLine: 169
+  resolution: ok
+  resolvedAt: "2026-08-06T07:01:50Z"
+  resolvedCommit: be2e98fe14c8d9dcced2187d85738277bb9013d6
