@@ -29,11 +29,11 @@ ARG VERSION
 ARG REVISION
 LABEL org.opencontainers.image.title="koment" \
       org.opencontainers.image.description="Out-of-band code annotations, checked against the code they describe" \
-      org.opencontainers.image.source="https://github.com/janpuc/koment" \
+      org.opencontainers.image.source="https://github.com/koment-dev/koment" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}" \
-      io.modelcontextprotocol.server.name="io.github.janpuc/koment"
+      io.modelcontextprotocol.server.name="io.github.koment-dev/koment"
 
 COPY --from=build /out/koment /usr/local/bin/koment
 
