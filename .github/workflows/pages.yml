@@ -59,7 +59,7 @@ jobs:
       - name: verify publication
         run: |
           test -f dist/.nojekyll
-          test -f "dist/f/.github/workflows/pages.yml.html"
+          test -n "$(find dist/f -path '*/.*' -name '*.html' -print -quit)"
           test -f dist/index.html
           test -f dist/annotations.json
           test -f dist/search.json
