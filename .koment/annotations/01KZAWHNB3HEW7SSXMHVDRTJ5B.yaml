@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZAWHNB3HEW7SSXMHVDRTJ5B
+  created: "2026-08-06T06:35:36Z"
+spec:
+  target:
+    file: internal/ui/export.go
+  type: gotcha
+  title: Without this marker GitHub Pages hides every dot directory
+  body: |-
+    GitHub Pages serves nothing whose path contains a directory starting with a
+    dot unless a `.nojekyll` file sits at the site root. Every repository has a
+    `.github`, so without this an annotation on a workflow renders correctly,
+    uploads correctly, and then 404s for readers - silently, because the index
+    still links to it.
+
+    That is what happened to janpuc.github.io/koment: six of fifty published
+    pages were unreachable, all of them under `.github/` and `.mise/`, while the
+    generated output on disk was complete and correct. The failure lives
+    entirely between upload and serve, which is why nothing local catches it.
+
+    It is written for every published site rather than left to the operator's
+    workflow, because the trap belongs to the publishing target and not to any
+    one repository. The pages workflow now also asserts that a page under
+    `.github/` exists in the built output, so a regression fails the build
+    rather than the website.
+  anchor:
+    scope: excerpt
+    excerpt: "\tif err := writeFile(filepath.Join(out, bypassMarker), nil); err != nil {"
+    before: "func export(repositorySnapshot *application.RepositorySnapshot, out, name string, taken *snapshot, repositories []repositoryLink) (int, error) {\n\ttemplates := template.Must(template.ParseFS(assets, \"assets/*.html\"))\n"
+    after: "\t\treturn 0, err\n\t}\n"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: a21ee5e2c816bcecfbef2b86876f06bba33e0091
+    path: internal/ui/export.go
+    line: 135
+status:
+  lastSeenLine: 135
+  resolution: ok
+  resolvedAt: "2026-08-06T06:35:36Z"
+  resolvedCommit: a21ee5e2c816bcecfbef2b86876f06bba33e0091

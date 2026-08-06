@@ -59,6 +59,15 @@ func TestExportWritesAnIndexAndAPagePerFile(t *testing.T) {
 	}
 }
 
+// GitHub Pages serves nothing under a directory whose name starts with a dot
+// unless this marker is present, and every repository has a .github.
+func TestExportWritesTheMarkerThatKeepsDotDirectoriesReachable(t *testing.T) {
+	out := exportTo(t)
+	if _, err := os.Stat(filepath.Join(out, bypassMarker)); err != nil {
+		t.Fatalf("%s was not written: %v", bypassMarker, err)
+	}
+}
+
 func TestExportWritesMachineReadableSnapshotAndBodySearch(t *testing.T) {
 	out := exportTo(t)
 	var published staticPublication
