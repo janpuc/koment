@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "koment",
   "displayName": "koment",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Keep code rationale outside source comments and enforce the repository's koment procedure.",
   "author": {
     "name": "Jan Pucilowski",
