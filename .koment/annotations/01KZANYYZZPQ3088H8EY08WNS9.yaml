@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZANYYZZPQ3088H8EY08WNS9
+  created: "2026-08-06T04:40:32Z"
+spec:
+  target:
+    file: Dockerfile
+  type: why
+  title: The runtime image is digest-pinned; the build image cannot be
+  body: |-
+    Only one of these two images carries a digest, and the asymmetry is
+    deliberate.
+
+    The runtime image is a pure supply-chain input, so it is pinned by digest
+    and Renovate advances tag and digest together. Scorecard's
+    PinnedDependenciesID asks for the same treatment here, and it is wrong for
+    this stage: GO_VERSION is computed in CI from the mise toolchain and passed
+    as a build argument, so a digest would take precedence over the tag it
+    builds and a Go upgrade would silently keep compiling with the old compiler.
+    A pin that makes a version number decorative is worse than no pin, because
+    the number still looks true.
+
+    The compiler is not unverified as a result. Its version comes from the same
+    place `mise run build` reads, go.mod and .mise/config.toml agree by policy,
+    and the release attaches provenance to what was actually built.
+  anchor:
+    scope: excerpt
+    excerpt: FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS build
+    before: |2
+
+      ARG GO_VERSION=1.26.5
+    after: |2-
+
+      ARG TARGETOS
+      ARG TARGETARCH
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: c8e2171b29b48555b41bc688877258e6df6fe47a
+    path: Dockerfile
+    line: 5
+status:
+  lastSeenLine: 5
+  resolution: ok
+  resolvedAt: "2026-08-06T04:40:32Z"
+  resolvedCommit: c8e2171b29b48555b41bc688877258e6df6fe47a

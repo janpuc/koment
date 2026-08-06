@@ -8,20 +8,27 @@ spec:
   target:
     file: internal/ui/ui.go
   type: invariant
-  title: No Secure on loopback cookies; loopback is enforced before the token
+  title: Secure follows the connection, because loopback has none
   body: |-
-    The capability server intentionally uses plain HTTP on an ephemeral loopback
-    listener, so a Secure cookie would not be returned by browsers and would
-    disable write mode. Loopback is enforced before the token is created;
-    HttpOnly and SameSite=Strict protect the cookie at the browser boundary, the
-    form repeats the token, Origin must match Host, and the bootstrap redirects
-    to a fixed clean path. The gosec G124 directive covers only the incompatible
-    Secure-cookie requirement.
+    The capability server's default deployment is plain HTTP on an ephemeral
+    loopback listener (ADR 0105), where a Secure cookie is never returned by
+    the browser and write mode silently stops working. Setting the flag
+    unconditionally would disable the feature it protects.
+
+    So it follows the connection instead: TLS, or an X-Forwarded-Proto of
+    https from a terminating proxy. Loopback keeps the previous protections
+    unchanged - loopback is enforced before the token is created, HttpOnly and
+    SameSite=Strict guard the browser boundary, the form repeats the token,
+    Origin must match Host, and the bootstrap redirects to a fixed clean path.
+
+    This replaced a blanket gosec directive. Suppressing the warning answered
+    nothing for a deployment that does terminate TLS; the flag now tells the
+    truth about the connection it was set on.
   anchor:
     scope: excerpt
-    excerpt: "\t\t\thttp.SetCookie(w, &http.Cookie{\n\t\t\t\tName: capabilityCookie, Value: writeToken, Path: \"/\", HttpOnly: true,\n\t\t\t\tSameSite: http.SameSiteStrictMode,\n\t\t\t})"
-    before: "\t\tgiven := r.URL.Query().Get(capabilityQuery)\n\t\tif r.Method == http.MethodGet && sameSecret(given, writeToken) {\n\t\t\t//nolint:gosec"
-    after: "\t\t\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n\t\t\treturn\n\t\t}"
+    excerpt: "\t\t\t\tSameSite: http.SameSiteStrictMode, Secure: servedOverTLS(r),"
+    before: "\t\tif r.Method == http.MethodGet && sameSecret(given, writeToken) {\n\t\t\thttp.SetCookie(w, &http.Cookie{\n\t\t\t\tName: capabilityCookie, Value: writeToken, Path: \"/\", HttpOnly: true,"
+    after: "\t\t\t})\n\t\t\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n\t\t\treturn"
   author:
     name: Codex
     kind: agent
@@ -31,4 +38,7 @@ spec:
     path: internal/ui/ui.go
     line: 272
 status:
-  lastSeenLine: 272
+  lastSeenLine: 282
+  resolution: ok
+  resolvedAt: "2026-08-06T04:40:57Z"
+  resolvedCommit: c8e2171b29b48555b41bc688877258e6df6fe47a

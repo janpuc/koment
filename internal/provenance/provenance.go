@@ -22,7 +22,7 @@ func Capture(root, file string, line, endLine int) (*store.GitContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	if tracked, err := git(root, "ls-files", "--error-unmatch", file); err != nil || tracked == "" {
+	if tracked, err := git(root, "ls-files", "--error-unmatch", "--", file); err != nil || tracked == "" {
 		return nil, ErrNoGit
 	}
 

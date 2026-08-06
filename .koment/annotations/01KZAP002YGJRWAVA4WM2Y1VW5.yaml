@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZAP002YGJRWAVA4WM2Y1VW5
+  created: "2026-08-06T04:41:06Z"
+spec:
+  target:
+    file: internal/ui/ui.go
+  type: why
+  body: |-
+    servedOverTLS decides whether the capability cookie may demand HTTPS. The
+    default deployment is loopback plain HTTP (ADR 0105), where a Secure cookie
+    is simply never sent and the write capability silently stops working, so the
+    flag follows the connection rather than being set unconditionally.
+  anchor:
+    scope: excerpt
+    excerpt: func servedOverTLS(r *http.Request) bool {
+    before: "\treturn hex.EncodeToString(entropy[:]), nil\n}\n"
+    after: "\treturn r.TLS != nil || strings.EqualFold(r.Header.Get(\"X-Forwarded-Proto\"), \"https\")\n}\n"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: c8e2171b29b48555b41bc688877258e6df6fe47a
+    path: internal/ui/ui.go
+    line: 269
+status:
+  lastSeenLine: 265
+  resolution: ok
+  resolvedAt: "2026-08-06T04:41:06Z"
+  resolvedCommit: c8e2171b29b48555b41bc688877258e6df6fe47a
