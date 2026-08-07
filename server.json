@@ -3,7 +3,7 @@
   "name": "io.github.koment-dev/koment",
   "title": "koment",
   "description": "Read and write checked code rationale stored outside source comments.",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "websiteUrl": "https://github.com/koment-dev/koment",
   "repository": {
     "url": "https://github.com/koment-dev/koment",

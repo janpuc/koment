@@ -2,7 +2,7 @@
   "name": "koment-dev",
   "displayName": "koment",
   "description": "Read and write out-of-band code annotations directly in the editor.",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "publisher": "koment",
   "license": "AGPL-3.0-or-later",
   "engines": {
