@@ -44,6 +44,23 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: publish opencode plugin to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ needs.please.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd plugins/koment/.opencode-plugin
+          # Update package.json version to match release
+          node -e "const pkg=require('./package.json'); pkg.version='${VERSION}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2)+'\n')"
+          npm publish --access public
+
       - name: package plugins
         env:
           VERSION: ${{ needs.please.outputs.version }}
