@@ -28,7 +28,7 @@ after its id, so a red check names the job that produced it.
 
 `mise install` puts a released `koment` on `PATH`, which is what `.mcp.json` and
 `.vscode/mcp.json` invoke. Opening the repository in VS Code recommends the
-`koment.koment` extension; it carries its own binary, so it needs nothing else.
+`koment.koment-dev` extension; it carries its own binary, so it needs nothing else.
 
 Both of those run the **released** koment. The gates do not: `mise run
 annotations`, `comments` and `agent-policy` all run `go run ./cmd/koment`, so

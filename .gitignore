@@ -21,3 +21,8 @@ node_modules/
 *.swp
 .mise.local.toml
 .mise.local.lock
+
+# Local OpenCode CLI state. The repo's committed OpenCode config is
+# `opencode.json` at the project root; everything under `.opencode/` is the
+# CLI's own runtime scratch directory (see `docs/agents/opencode.md`).
+/.opencode/
