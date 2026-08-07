@@ -77,7 +77,7 @@ This table is the honest boundary between implemented and planned behavior.
 | Helm and release | hardened chart, Kind E2E, signed canonical artifacts and SBOM/provenance implemented | implemented |
 | End-user distribution | releases, setup Action, mise, Claude marketplace, MCP metadata, VS Code/Open VSX package, and generated package-manager manifests | external catalog and publisher account acceptance pending |
 | Editor presentation | inline gloss plus a panel carrying full bodies; diagnostics report only what fails `koment check` | implemented |
-| Editor distribution | seven signed packages per release — six carrying the platform's canonical binary, one universal — ordered after the binaries job, with opt-in marketplace publication and LSP configuration for every other editor | implemented; marketplace publication awaits publisher accounts |
+| Editor distribution | seven signed packages per release — six carrying the platform's canonical binary, one universal — ordered after the binaries job, with opt-in marketplace publication and LSP configuration for every other editor; the marketplace id is `koment.koment-dev` (VS Code) / `koment/koment-dev` (Open VSX) per [ADR 0126](decisions/0126-fix-vscode-marketplace-extension-name.md) | implemented; marketplace publication awaits publisher accounts |
 | Windows | archives, checksums, signatures and package manifests ship; an advisory job installs and runs the published archive | supported and non-gating by decision (ADR 0111) |
 | Maintained workspace | builds, tests, publishes and carries current annotations | implemented |
 

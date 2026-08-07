@@ -139,7 +139,8 @@ something that was never signed (ADR 0113).
 ```sh
 tag=v<version>
 gh release view "$tag" --json assets --jq '.assets[].name' | sort
-curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://open-vsx.org/api/koment-dev/koment"
+curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://open-vsx.org/api/koment/koment-dev"
+curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://marketplace.visualstudio.com/items?itemName=koment.koment-dev"
 ```
 
 Expect 6 archives, 1 checksum manifest, 2 signature bundles for the manifest and
