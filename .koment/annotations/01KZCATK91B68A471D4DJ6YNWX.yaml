@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -18,8 +18,7 @@ spec:
     browser prompt rather than a fast failure.
   anchor:
     scope: excerpt
-    excerpt: |-
-      | `plugins` | Claude and OpenCode plugin archives, cosign-signed checksums |
+    excerpt: '| `plugins` | Two plugin archives (Claude and OpenCode), per-archive cosign signatures, a combined `koment-plugins_<version>_checksums.txt`, and its cosign signature |'
     before: |-
       | Job | Publishes |
       |---|---|
@@ -38,3 +37,6 @@ spec:
     line: 123
 status:
   lastSeenLine: 123
+  resolution: ok
+  resolvedAt: "2026-08-07T07:22:55Z"
+  resolvedCommit: 2ce32806b279ebe9eabcce6c4353f095c5aee0a4

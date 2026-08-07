@@ -1,7 +1,7 @@
 # 0124 — `koment bootstrap`, a stronger agent contract, and a user-configurable comment allow-list
 
 Date: 2026-08-06
-Status: Proposed
+Status: Accepted
 Supersedes: portions of [0108](0108-layer-agent-guidance-behind-an-authoritative-policy-gate.md) (the install/check shape and the contract text)
 
 ## Context
