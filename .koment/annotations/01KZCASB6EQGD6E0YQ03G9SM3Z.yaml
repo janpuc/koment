@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
 apiVersion: koment.dev/v1alpha
 kind: Annotation
 metadata:
@@ -19,8 +19,8 @@ spec:
     value.
   anchor:
     scope: excerpt
-    excerpt: |2-
-        plugins:
+    excerpt: |-
+      plugins:
           name: publish plugins
           needs: please
     before: |2
@@ -41,5 +41,5 @@ spec:
 status:
   lastSeenLine: 34
   resolution: ok
-  resolvedAt: "2026-08-06T20:03:42Z"
-  resolvedCommit: 334600ab99090fbe636d96c309f0a1754607d8c6
+  resolvedAt: "2026-08-07T07:39:39Z"
+  resolvedCommit: a7a008594940bebbc8d651c60dd33ab47e612f67

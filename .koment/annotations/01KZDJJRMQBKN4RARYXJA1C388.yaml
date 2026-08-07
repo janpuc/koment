@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZDJJRMQBKN4RARYXJA1C388
+  created: "2026-08-07T07:39:10Z"
+spec:
+  target:
+    file: plugins/koment/.opencode-plugin/index.js
+  type: why
+  title: opencode_edit tool_name keeps ADR 0118 alignment
+  body: |-
+    The pre-tool MCP call passes tool_name: "opencode_edit" because the Go
+    classifier (agentpolicy.PreToolOutput) already recognises that name and
+    translates the filePath+content pair into a synthetic apply_patch body. That
+    translation is the contract ADR 0118 records; reusing the same name in the
+    MCP call means the hook and the pre-tool tool see the same shape and the
+    rules in agentpolicy are evaluated identically for both surfaces. A future
+    tool name that needs a new translation must land in agentpolicy first; the
+    plugin just passes the name through.
+  anchor:
+    scope: excerpt
+    excerpt: 'tool_name: "opencode_edit",'
+    before: |2-
+            if (!filePath || typeof content !== "string") return;
+            try {
+              const result = await mcp.callTool("koment_pre_tool", {
+    after: |2-
+                filePath,
+                content,
+              });
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: a7a008594940bebbc8d651c60dd33ab47e612f67
+    path: plugins/koment/.opencode-plugin/index.js
+    line: 162
+status:
+  lastSeenLine: 162
+  resolution: ok
+  resolvedAt: "2026-08-07T07:39:10Z"
+  resolvedCommit: a7a008594940bebbc8d651c60dd33ab47e612f67

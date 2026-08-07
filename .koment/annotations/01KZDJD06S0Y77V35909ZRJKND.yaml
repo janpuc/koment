@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZDJD06S0Y77V35909ZRJKND
+  created: "2026-08-07T07:36:01Z"
+spec:
+  target:
+    file: internal/mcp/hooks.go
+  type: why
+  title: koment_pre_tool bridges the CLI hook and the MCP surface
+  body: |-
+    The MCP tool deliberately reuses agentpolicy.PreToolOutput rather than
+    duplicating the comment-intent classifier. The CLI hook (`koment agents hook
+    pre-tool`) and the MCP tool must produce the same decision from the same
+    input, so the rules live in one place (agentpolicy.PreToolOutput) and the
+    MCP layer only translates JSON shapes. The "allow" decision is signalled by
+    an empty object ("{}"); the "deny" decision wraps a permissionDecision
+    envelope. Future readers should not refactor this to reimplement the
+    classifier in the MCP package - keeping it in agentpolicy is what guarantees
+    the hook and the tool agree.
+  anchor:
+    scope: excerpt
+    excerpt: func preTool(_ context.Context, _ *sdk.CallToolRequest, input PreToolInput) (*sdk.CallToolResult, PreToolOutput, error) {
+    before: "\tReason   string `json:\"reason,omitempty\"`\n}\n"
+    after: "\tpayload, err := json.Marshal(map[string]any{\n\t\t\"tool_name\": input.ToolName,\n\t\t\"tool_input\": map[string]any{"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 31
+  resolution: ok
+  resolvedAt: "2026-08-07T07:36:01Z"
+  resolvedCommit: a7a008594940bebbc8d651c60dd33ab47e612f67

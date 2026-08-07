@@ -47,7 +47,7 @@ func TestServesOverRealStdio(t *testing.T) {
 		names = append(names, tool.Name)
 	}
 	sort.Strings(names)
-	if got, want := strings.Join(names, ","), "koment_get,koment_repositories,koment_search"; got != want {
+	if got, want := strings.Join(names, ","), "koment_get,koment_pre_tool,koment_repositories,koment_search"; got != want {
 		t.Errorf("want tools %q, got %q", want, got)
 	}
 
