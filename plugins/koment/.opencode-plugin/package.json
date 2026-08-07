@@ -1,6 +1,6 @@
 {
   "name": "@koment/opencode-koment",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "OpenCode plugin for koment: enforce the no-inline-comment policy through the koment MCP server. Install with `opencode plugin install @koment/opencode-koment`.",
   "type": "module",
   "main": "index.js",

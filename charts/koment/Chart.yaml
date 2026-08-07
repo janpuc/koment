@@ -3,10 +3,10 @@ name: koment
 description: Out-of-band code annotations, checked against the code they describe
 type: application
 # x-release-please-start-version
-version: 2.1.0
+version: 2.2.0
 # x-release-please-end
 # x-release-please-start-version
-appVersion: "2.1.0"
+appVersion: "2.2.0"
 # x-release-please-end
 home: https://github.com/koment-dev/koment
 icon: https://raw.githubusercontent.com/koment-dev/koment/main/internal/ui/assets/koment-logo.svg
