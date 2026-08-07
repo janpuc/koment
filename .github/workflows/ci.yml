@@ -278,6 +278,58 @@ jobs:
           test -n "$INSTALLED_VERSION"
           koment version | grep -q "$INSTALLED_VERSION"
 
+  commit-lint:
+    name: commit-lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Collect subjects
+        id: subjects
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          MR_HEAD: ${{ github.event.merge_group.head_sha }}
+          MR_BASE: ${{ github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp)
+          trap 'rm -f "$tmp" "$tmp.new"' EXIT HUP INT TERM
+          case "$EVENT_NAME" in
+            pull_request)
+              printf '%s\n' "$PR_TITLE" >> "$tmp"
+              git log --format=%s "$GITHUB_SHA" ^origin/main >> "$tmp"
+              ;;
+            merge_group)
+              git log --format=%s "$MR_HEAD" ^"$MR_BASE" >> "$tmp"
+              ;;
+            push)
+              git log --format=%s "$GITHUB_SHA" ^"$GITHUB_SHA~1" >> "$tmp"
+              git log --format=%s "$GITHUB_SHA" ^origin/main >> "$tmp"
+              ;;
+          esac
+          : > "$tmp.new"
+          sort -u "$tmp" | while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            case "$line" in
+              'Merge '*) continue ;;
+            esac
+            printf '%s\n' "$line" >> "$tmp.new"
+          done
+          mv "$tmp.new" "$tmp"
+          { echo "subjects<<EOF"; cat "$tmp"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+
+      - name: Lint subjects
+        env:
+          SUBJECTS: ${{ steps.subjects.outputs.subjects }}
+        run: ./scripts/commitlint.sh <<< "$SUBJECTS"
+
   windows-archive:
     name: windows-archive (advisory)
     runs-on: windows-2025
@@ -495,6 +547,7 @@ jobs:
     if: ${{ always() }}
     name: ci
     needs:
+      - commit-lint
       - container
       - editor
       - helm

@@ -112,6 +112,7 @@ mise run workflow-lint
 mise run annotations
 mise run comments
 mise run agent-policy
+mise run commitlint
 ```
 
 The committed lock file pins Go and every project tool for local shells and CI,
@@ -186,11 +187,17 @@ before and after source pair and cannot be mistaken for maintained rationale.
 Read it before you touch a release. What follows is orientation, not
 instructions.
 
-A conventional commit subject decides the version, release-please turns merged
-subjects into a version and a changelog, and merging its pull request tags the
-release. The tag publishes signed binaries, the container image, the Helm chart,
-seven editor packages, MCP Registry metadata and generated package-manager
-submission files.
+A conventional commit subject decides the version. The rule is enforced:
+[ADR 0128](decisions/0128-enforce-conventional-commit-names.md) makes
+`scripts/commitlint.sh` the single source of truth, and the `commit-lint`
+job in `.github/workflows/ci.yml` (rolled into the required `ci` check
+on `main`) refuses any non-conforming subject on a pull request to
+`main` or a direct push. `mise run commitlint` runs the same check
+locally; lefthook's `commit-msg` hook runs it before push.
+release-please turns merged subjects into a version and a changelog,
+and merging its pull request tags the release. The tag publishes signed
+binaries, the container image, the Helm chart, seven editor packages,
+MCP Registry metadata and generated package-manager submission files.
 
 Two properties are worth carrying in your head before reading the procedure.
 Publication is ordered — canonical artifacts first, downstream channels second

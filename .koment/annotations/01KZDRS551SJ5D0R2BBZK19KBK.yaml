@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/janpuc/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZDRS551SJ5D0R2BBZK19KBK
+  created: "2026-08-07T09:27:31Z"
+spec:
+  target:
+    file: scripts/commitlint.sh
+  type: invariant
+  title: Single source of truth for the Conventional Commits gate
+  body: |-
+    The regex here is the canonical subject format. Three callers depend on this
+    exact shape: the `commit-lint` job in `.github/workflows/ci.yml`, the
+    `commit-msg` lefthook hook in `.lefthook.toml`, and the `mise run
+    commitlint` task. Editing the regex in any of those callers without editing
+    it here is not supported; the CI gate is the authoritative backstop because
+    local hooks are bypassable. The `Merge ` skip rule lets GitHub-generated
+    merge commits pass without polluting the gate. See ADR 0128.
+  anchor:
+    scope: excerpt
+    excerpt: 're=''^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(!)?(\([a-z0-9 .\-]+\))?!?: .+'''
+    before: |-
+      # A single ! may appear after the type OR after the scope.
+      # Scope, when present, is lowercase alphanumerics, dot, dash, space.
+      # Description is non-empty. No requirement on case or trailing punctuation.
+    after: |2-
+
+      failed=0
+      while IFS= read -r subject; do
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+status:
+  lastSeenLine: 21
+  resolution: ok
+  resolvedAt: "2026-08-07T09:27:31Z"
+  resolvedCommit: a748f977fabff2854ba6a47b740bf7635add6038

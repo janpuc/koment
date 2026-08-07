@@ -14,3 +14,9 @@ run = "mise run comments"
 
 [pre-commit.commands.agent-policy]
 run = "mise run agent-policy"
+
+[commit-msg]
+parallel = true
+
+[commit-msg.commands.commit-fmt]
+run = "./scripts/commitlint.sh <<< \"$(head -n1 {1})\""

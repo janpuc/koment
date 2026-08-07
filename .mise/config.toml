@@ -88,6 +88,12 @@ run = "go run ./cmd/koment comments check"
 description = "Reject stale or missing agent adapters"
 run = "go run ./cmd/koment agents check"
 
+[tasks.commitlint]
+description = "Lint commit subjects against Conventional Commits 1.0.0"
+run = """
+git log --format=%s origin/main..HEAD | ./scripts/commitlint.sh
+"""
+
 [tasks.workflow-lint]
 description = "Lint and audit GitHub Actions"
 run = """

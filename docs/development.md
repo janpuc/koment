@@ -16,6 +16,7 @@ mise run workflow-lint
 mise run annotations
 mise run comments
 mise run agent-policy
+mise run commitlint
 ```
 
 `.mise/config.toml` and `.mise/mise.lock` are the toolchain source of truth.
@@ -119,9 +120,15 @@ the annotation:
 
 ## Commits
 
-Conventional subjects: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`.
-One concern per commit — if reviewing needs a section-by-section walkthrough,
-split it. Stage deliberately; never `git add -A` blindly.
+Conventional Commits 1.0.0 subjects are MANDATORY. See
+[ADR 0128](decisions/0128-enforce-conventional-commit-names.md); the
+regex lives in `scripts/commitlint.sh` and the gate is the `commit-lint`
+job in `.github/workflows/ci.yml` (rolled into the required `ci` check
+on `main`). `mise run commitlint` runs the same script locally. Use
+`!` after the type (or after the scope) for breaking changes.
+
+One concern per commit — if reviewing needs a section-by-section
+walkthrough, split it. Stage deliberately; never `git add -A` blindly.
 
 `main` requires a pull request with CI green, signed commits and linear history.
 
