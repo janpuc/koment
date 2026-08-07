@@ -1,0 +1,33 @@
+{
+  "name": "@koment/opencode-plugin",
+  "version": "2.0.1",
+  "description": "OpenCode plugin for koment - enforce code rationale policies in OpenCode",
+  "type": "module",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koment-dev/koment.git",
+    "directory": "plugins/koment/.opencode-plugin"
+  },
+  "keywords": [
+    "opencode",
+    "koment",
+    "plugin",
+    "policy",
+    "code-rationale"
+  ],
+  "author": "koment-dev",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/koment-dev/koment/issues"
+  },
+  "homepage": "https://github.com/koment-dev/koment/plugins/koment/.opencode-plugin#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "index.js",
+    "plugin.json",
+    "README.md"
+  ]
+}

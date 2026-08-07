@@ -206,6 +206,13 @@ It bundles writable MCP configuration, injects the strict procedure at session
 start and runs the policy gate before Claude can finish a turn. Install a
 released `koment` binary and run `koment agents install` in the repository first.
 
+OpenCode ships a parallel plugin at
+[`plugins/koment/.opencode-plugin/`](plugins/koment/.opencode-plugin/). Add
+it to `opencode.json` by Git reference or path, and it installs the same hooks
+— deny ordinary Go comment intent and run the policy gate on session end.
+ADR 0126 records the decision to ship both a generated adapter and a plugin
+directory.
+
 ## Give it to your agents
 
 ```bash
