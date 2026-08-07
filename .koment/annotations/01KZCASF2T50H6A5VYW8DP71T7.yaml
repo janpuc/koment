@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZCASF2T50H6A5VYW8DP71T7
+  created: "2026-08-06T20:04:01Z"
+spec:
+  target:
+    file: .github/workflows/ci.yml
+  type: invariant
+  title: Plugins job gates merges without ruleset edit
+  body: |-
+    The ci job's aggregate gate runs under always() so the ruleset-required
+    status still resolves even when an upstream job was cancelled or skipped.
+    The reject step uses `contains(needs.*.result, ...)` rather than iterating
+    jobs: adding plugins here means a failed plugins run blocks a merge without
+    a ruleset edit. This is the same pattern the annotation at 01KZ6416GSBA5
+    already states — do not duplicate it in branch rules.
+  anchor:
+    scope: excerpt
+    excerpt: |2-
+        plugins:
+          name: plugins
+          runs-on: ubuntu-24.04
+    before: |2
+                fi
+                echo "$universal: no binary, falls back to PATH"
+    after: |2
+          permissions:
+          contents: read
+        steps:
+  author:
+    name: opencode
+    kind: agent
+    source: session
+  git:
+    commit: 334600ab99090fbe636d96c309f0a1754607d8c6
+    path: .github/workflows/ci.yml
+    line: 461
+status:
+  lastSeenLine: 461
+  resolution: ok
+  resolvedAt: "2026-08-06T20:04:01Z"
+  resolvedCommit: 334600ab99090fbe636d96c309f0a1754607d8c6

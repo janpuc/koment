@@ -8,20 +8,21 @@ spec:
   target:
     file: .github/workflows/ci.yml
   type: anti-pattern
-  title: Do not add windows-archive to required (ADR 0111)
+  title: windows-archive and setup-action are required despite instability
   body: |-
-    windows-archive is missing from this list on purpose (ADR 0111). It installs
-    the last published release rather than this pull request, because no Windows
-    runner builds the change under review, so a red result can mean a runner
-    image moved or a release has not happened yet. Adding it here makes an
-    irreproducible check able to block unrelated work, and the first false red
-    would get it deleted instead of demoted. It still runs and still reports; it
-    just cannot stop a merge.
+    windows-archive installs the last published release rather than this pull
+    request, because no Windows runner builds the change under review, so a red
+    result can mean a runner image moved or a release has not happened yet.
+    setup-action depends on downloading a released binary from GitHub, which
+    fails when GitHub Actions has outages. Both are in the needs list because
+    they provide signal on release health, not on code correctness. A red result
+    here indicates a release problem, not a code problem.
   anchor:
     scope: excerpt
     excerpt: |2-
             - setup-action
             - test
+            - windows-archive
     before: |2-
             - helm
             - lint

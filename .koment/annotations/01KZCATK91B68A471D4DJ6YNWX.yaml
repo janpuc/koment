@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZCATK91B68A471D4DJ6YNWX
+  created: "2026-08-06T20:04:30Z"
+spec:
+  target:
+    file: docs/releasing.md
+  type: why
+  title: Plugins publish in parallel to avoid Go build delay
+  body: |-
+    The plugins job is listed separately from binaries because its artifacts do
+    not depend on the Go build: the plugin is pure JavaScript and metadata. It
+    runs in parallel with binaries and image so a slow Go cross-compilation does
+    not delay plugin publication. The job needs id-token: write for cosign, same
+    as binaries, because a missing OIDC credential surfaces as a five-minute
+    browser prompt rather than a fast failure.
+  anchor:
+    scope: excerpt
+    excerpt: |-
+      | `plugins` | Claude and OpenCode plugin archives, cosign-signed checksums |
+    before: |-
+      | Job | Publishes |
+      |---|---|
+      | `binaries` | six archives, `koment_<version>_checksums.txt`, a cosign signature, and rendered Homebrew/Scoop/WinGet metadata |
+    after: |-
+      | `image` | `ghcr.io/koment-dev/koment:<version>`, multi-arch, SBOM and provenance, cosign-signed |
+      | `editor` | seven VSIX — six carrying that platform's released binary, one universal — signed, attached, then pushed to both marketplaces |
+      | `mcp-registry` | MCP Registry metadata via GitHub OIDC |
+  author:
+    name: opencode
+    kind: agent
+    source: session
+  git:
+    commit: 334600ab99090fbe636d96c309f0a1754607d8c6
+    path: docs/releasing.md
+    line: 123
+status:
+  lastSeenLine: 123

@@ -532,9 +532,11 @@ Distribution is promoted in layers:
    the platform archives. An Aqua registry entry supplies the short `mise use
    koment` name and stronger checksum or attestation metadata.
 3. The koment Claude marketplace and official Claude plugin directory package
-   the strict instructions, hooks and MCP declaration. The official MCP
-   Registry points at koment's labeled OCI artifact or a checksummed MCPB
-   bundle rather than requiring an npm wrapper.
+   the strict instructions, hooks and MCP declaration. An OpenCode plugin at
+   `plugins/koment/.opencode-plugin/` provides the same hooks for OpenCode
+   through a Git-reference path. The official MCP Registry points at
+   koment's labeled OCI artifact or a checksummed MCPB bundle rather than
+   requiring an npm wrapper.
 4. The VS Code Marketplace and Open VSX publish the same extension artifact
    when the editor integration exists.
 5. Homebrew core, Nixpkgs, AUR, MacPorts and other community catalogs are
