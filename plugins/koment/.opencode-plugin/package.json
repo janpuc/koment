@@ -17,7 +17,7 @@
     "code-rationale"
   ],
   "author": "koment-dev",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/koment-dev/koment/issues"
   },

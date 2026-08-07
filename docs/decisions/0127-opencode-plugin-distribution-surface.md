@@ -1,4 +1,4 @@
-# 0126 — OpenCode plugin distribution surface
+# 0127 — OpenCode plugin distribution surface
 
 Date: 2026-08-06
 Status: Accepted
