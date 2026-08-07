@@ -1,7 +1,7 @@
 {
-  "name": "@koment/opencode-plugin",
+  "name": "@koment/opencode-koment",
   "version": "2.0.1",
-  "description": "OpenCode plugin for koment - enforce code rationale policies in OpenCode",
+  "description": "OpenCode plugin for koment: enforce the no-inline-comment policy through the koment MCP server. Install with `opencode plugin install @koment/opencode-koment`.",
   "type": "module",
   "main": "index.js",
   "repository": {
@@ -13,6 +13,7 @@
     "opencode",
     "koment",
     "plugin",
+    "mcp",
     "policy",
     "code-rationale"
   ],
@@ -24,6 +25,9 @@
   "homepage": "https://github.com/koment-dev/koment/plugins/koment/.opencode-plugin#readme",
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "postinstall": "node -e \"import('node:child_process').then(({execSync}) => { try { execSync('command -v koment', {stdio: 'ignore'}); } catch { console.warn('\\nkoment: the `koment` binary was not found on PATH.\\n  Install with: https://github.com/koment-dev/koment/releases\\n  The plugin will load, but the session-end dispose hook (koment check, comments check, agents check)\\n  requires the binary. The pre-tool MCP gate runs without it.\\n'); } })\""
   },
   "files": [
     "index.js",

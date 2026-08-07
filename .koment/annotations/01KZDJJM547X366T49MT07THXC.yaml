@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZDJJM547X366T49MT07THXC
+  created: "2026-08-07T07:39:05Z"
+spec:
+  target:
+    file: plugins/koment/.opencode-plugin/index.js
+  type: why
+  title: Hand-rolled JSON-RPC client over stdio
+  body: |-
+    The plugin speaks JSON-RPC 2.0 directly over the child's stdio rather than
+    importing an MCP client SDK. Two reasons: (1) keeping the dependency surface
+    small means the npm package stays a few hundred bytes rather than pulling in
+    a transport library the user does not see, and (2) the protocol the plugin
+    needs is fixed and narrow (initialize, notifications/initialized,
+    tools/call) so a full SDK would carry surface area without buying anything.
+    A future MCP feature the plugin needs (resources, prompts) is the trigger to
+    add a dependency; today the plugin would not use it.
+  anchor:
+    scope: excerpt
+    excerpt: function startMCP(directory) {
+    before: |
+      import { spawn } from "node:child_process";
+      import { randomUUID } from "node:crypto";
+    after: |2-
+        const child = spawn("koment", ["mcp", "--write"], {
+          cwd: directory,
+          env: process.env,
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: a7a008594940bebbc8d651c60dd33ab47e612f67
+    path: plugins/koment/.opencode-plugin/index.js
+    line: 4
+status:
+  lastSeenLine: 4
+  resolution: ok
+  resolvedAt: "2026-08-07T07:39:05Z"
+  resolvedCommit: a7a008594940bebbc8d651c60dd33ab47e612f67

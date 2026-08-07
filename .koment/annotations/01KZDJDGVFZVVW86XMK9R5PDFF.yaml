@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZDJDGVFZVVW86XMK9R5PDFF
+  created: "2026-08-07T07:36:18Z"
+spec:
+  target:
+    file: internal/mcp/mcp.go
+  type: why
+  title: koment_pre_tool is read-only; no --write required
+  body: |-
+    koment_pre_tool lives in the base toolset rather than the write set because
+    it inspects intent without mutating state. The classification decision is a
+    query against the loaded policy; nothing on disk changes. Placing it in the
+    write set would force every pre-tool call to start the MCP server in write
+    mode, which is not necessary and enlarges the trust surface. ADR 0127
+    records this; future readers adding hooks or checks should keep the same
+    split: read-only inspections in the base set, mutations behind --write.
+  anchor:
+    scope: excerpt
+    excerpt: 'sdk.AddTool(server, &sdk.Tool{Name: "koment_pre_tool", Description: preToolDescription}, preTool)'
+    before: "\tsdk.AddTool(server, &sdk.Tool{Name: \"koment_get\", Description: getDescription}, get(repositories, recorder))\n\tsdk.AddTool(server, &sdk.Tool{Name: \"koment_search\", Description: searchDescription}, search(repositories, recorder))\n\tsdk.AddTool(server, &sdk.Tool{Name: \"koment_repositories\", Description: repositoriesDescription}, list(repositories))"
+    after: "\tif writes {\n\t\taddWriteTools(server, repositories)\n\t}"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: a7a008594940bebbc8d651c60dd33ab47e612f67
+    path: internal/mcp/mcp.go
+    line: 47
+status:
+  lastSeenLine: 47
+  resolution: ok
+  resolvedAt: "2026-08-07T07:36:18Z"
+  resolvedCommit: a7a008594940bebbc8d651c60dd33ab47e612f67

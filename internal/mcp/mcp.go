@@ -44,6 +44,7 @@ func newServer(repositories *repository.Set, recorder metrics.Recorder, writes b
 	sdk.AddTool(server, &sdk.Tool{Name: "koment_get", Description: getDescription}, get(repositories, recorder))
 	sdk.AddTool(server, &sdk.Tool{Name: "koment_search", Description: searchDescription}, search(repositories, recorder))
 	sdk.AddTool(server, &sdk.Tool{Name: "koment_repositories", Description: repositoriesDescription}, list(repositories))
+	sdk.AddTool(server, &sdk.Tool{Name: "koment_pre_tool", Description: preToolDescription}, preTool)
 	if writes {
 		addWriteTools(server, repositories)
 	}

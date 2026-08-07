@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZDJJWPV493687FPNSWY7KYB
+  created: "2026-08-07T07:39:14Z"
+spec:
+  target:
+    file: plugins/koment/.opencode-plugin/index.js
+  type: why
+  title: Dispose hook shells out; pre-tool uses MCP
+  body: |-
+    The dispose hook runs the three policy gates via shellout to the koment CLI
+    (`koment check`, `koment comments check`, `koment agents check`) rather than
+    via MCP. This is the deliberate split ADR 0127 records: the pre-tool gate is
+    on the hot path of every edit and benefits from the MCP server the plugin
+    already holds; the three gates are end-of-session checks, they print to
+    stdout, they exit non-zero on failure, and they operate against the working
+    directory in place. Lifting them into MCP tools would require either a
+    separate command output format or a process spawn - neither is cheaper than
+    the existing shellout, and either widens the trust surface. If a future
+    survey shows the gates need to run on a hotter path, the right move is to
+    add them as MCP tools; for now they stay where the CLI already does the
+    work.
+  anchor:
+    scope: excerpt
+    excerpt: 'dispose: async () => {'
+    before: |2-
+              deny("koment pre-tool MCP call failed: " + (err && err.message ? err.message : String(err)));
+            }
+          },
+    after: |2-
+            const failures = [];
+            for (const command of [
+              ["check"],
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+  git:
+    commit: a7a008594940bebbc8d651c60dd33ab47e612f67
+    path: plugins/koment/.opencode-plugin/index.js
+    line: 174
+status:
+  lastSeenLine: 174
+  resolution: ok
+  resolvedAt: "2026-08-07T07:39:14Z"
+  resolvedCommit: a7a008594940bebbc8d651c60dd33ab47e612f67

@@ -134,7 +134,7 @@ func TestServerExposesExactlyTheThreeAgreedTools(t *testing.T) {
 	for _, tool := range tools.Tools {
 		names = append(names, tool.Name)
 	}
-	want := []string{"koment_get", "koment_repositories", "koment_search"}
+	want := []string{"koment_get", "koment_pre_tool", "koment_repositories", "koment_search"}
 	sort.Strings(names)
 	if strings.Join(names, ",") != strings.Join(want, ",") {
 		t.Errorf("the surface is fixed at %v, got %v", want, names)
@@ -153,7 +153,7 @@ func TestWritableServerAddsOnlyTheFourMutationTools(t *testing.T) {
 		names = append(names, tool.Name)
 	}
 	sort.Strings(names)
-	want := []string{"koment_acknowledge_comment", "koment_add", "koment_convert_comment", "koment_get", "koment_reanchor", "koment_repositories", "koment_search"}
+	want := []string{"koment_acknowledge_comment", "koment_add", "koment_convert_comment", "koment_get", "koment_pre_tool", "koment_reanchor", "koment_repositories", "koment_search"}
 	if strings.Join(names, ",") != strings.Join(want, ",") {
 		t.Fatalf("tools = %v, want %v", names, want)
 	}
@@ -283,5 +283,46 @@ func TestSearchRejectsAnEmptyQuery(t *testing.T) {
 	}
 	if !result.IsError {
 		t.Error("want a tool error for an empty query")
+	}
+}
+
+func TestPreToolAllaysOrdinaryEdits(t *testing.T) {
+	session := connect(t, repositoryWithOneAnnotation(t))
+
+	got := callTool[PreToolOutput](t, session, "koment_pre_tool", map[string]any{
+		"tool_name": "opencode_edit",
+		"filePath":  "internal/foo.go",
+		"content":   "package internal\n\nfunc Foo() {}\n",
+	})
+	if got.Decision != "allow" {
+		t.Fatalf("ordinary edit must be allowed, got %q (reason=%q)", got.Decision, got.Reason)
+	}
+}
+
+func TestPreToolDeniesCommentIntent(t *testing.T) {
+	session := connect(t, repositoryWithOneAnnotation(t))
+
+	got := callTool[PreToolOutput](t, session, "koment_pre_tool", map[string]any{
+		"tool_name": "opencode_edit",
+		"filePath":  "internal/foo.go",
+		"content":   "// this is a stray explanatory comment\npackage internal\n",
+	})
+	if got.Decision != "deny" {
+		t.Fatalf("comment intent must be denied, got %q (reason=%q)", got.Decision, got.Reason)
+	}
+	if got.Reason == "" {
+		t.Fatal("a deny decision must carry a reason")
+	}
+}
+
+func TestPreToolHandlesApplyPatch(t *testing.T) {
+	session := connect(t, repositoryWithOneAnnotation(t))
+
+	got := callTool[PreToolOutput](t, session, "koment_pre_tool", map[string]any{
+		"tool_name": "apply_patch",
+		"command":   "*** Update File: internal/foo.go\n@@\n+package internal\n+func Foo() {}\n",
+	})
+	if got.Decision != "allow" {
+		t.Fatalf("clean apply_patch must be allowed, got %q (reason=%q)", got.Decision, got.Reason)
 	}
 }
