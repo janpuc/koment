@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/koment-dev/koment/compare/v2.1.0...v2.2.0) (2026-08-07)
+
+
+### Features
+
+* enforce Conventional Commits 1.0.0 via CI gate and local hook ([#86](https://github.com/koment-dev/koment/issues/86)) ([ecc0393](https://github.com/koment-dev/koment/commit/ecc0393f6fe76efcc4f7422d859bbcb46404036b))
+
 ## [2.1.0](https://github.com/koment-dev/koment/compare/v2.0.1...v2.1.0) (2026-08-07)
 
 
