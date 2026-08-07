@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/koment-dev/koment?label=release)](https://github.com/koment-dev/koment/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/koment-dev/koment/ci.yml?branch=main&label=ci)](https://github.com/koment-dev/koment/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/koment-dev/koment?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/koment-dev/koment)
-[![Open VSX](https://img.shields.io/open-vsx/v/koment-dev/koment?label=open%20vsx)](https://open-vsx.org/extension/koment-dev/koment)
+[![Open VSX](https://img.shields.io/open-vsx/v/koment/koment-dev?label=open%20vsx)](https://open-vsx.org/extension/koment/koment-dev)
 [![License](https://img.shields.io/github/license/koment-dev/koment)](https://github.com/koment-dev/koment/blob/main/LICENSE)
 [![Annotations](https://img.shields.io/badge/annotations-browse-brightgreen)](https://why.koment.dev/)
 
