@@ -157,7 +157,7 @@ func TestWritableServerAddsOnlyTheFourMutationTools(t *testing.T) {
 	if strings.Join(names, ",") != strings.Join(want, ",") {
 		t.Fatalf("tools = %v, want %v", names, want)
 	}
-	if instructions := session.InitializeResult().Instructions; !strings.Contains(instructions, "Before editing an existing file") {
+	if instructions := session.InitializeResult().Instructions; !strings.Contains(instructions, "Before any edit or write to an existing file") {
 		t.Fatalf("initialization instructions = %q", instructions)
 	}
 }

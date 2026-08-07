@@ -306,6 +306,8 @@ func isIntrinsic(group *ast.CommentGroup, raw string, public bool, configured po
 		return true
 	case configured.Allows(policy.IntrinsicToolchain) && directivesOnly(group):
 		return true
+	case configured.MatchesAllowedAnnotation(commentBody(raw)):
+		return true
 	default:
 		return false
 	}

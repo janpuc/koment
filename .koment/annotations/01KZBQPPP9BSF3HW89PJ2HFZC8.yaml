@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01KZBQPPP9BSF3HW89PJ2HFZC8
+  created: "2026-08-06T14:30:13Z"
+spec:
+  target:
+    file: internal/cli/bootstrap.go
+  type: why
+  body: |-
+    Selection precedence for `koment bootstrap` from ADR 0124: --agents, --all,
+    --policy-only, the existing policy's adapter list, a TTY prompt per adapter,
+    and finally an error when nothing resolved the selection.
+  anchor:
+    scope: excerpt
+    excerpt: func resolveBootstrapAdapters(agentsList string, all, policyOnly, nonInteractive bool, existing policy.Policy, env Environment) ([]policy.Adapter, error) {
+    before: "\treturn ExitOK\n}\n"
+    after: "\tswitch {\n\tcase agentsList != \"\":\n\t\treturn parseAdapterList(agentsList)"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 72
+  resolution: ok
+  resolvedAt: "2026-08-06T14:30:13Z"
+  resolvedCommit: f021ca20f8fded11350a3379fd177df2b7420507

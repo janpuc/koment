@@ -2,8 +2,13 @@ package agentpolicy
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/koment-dev/koment/internal/policy"
+	"github.com/koment-dev/koment/internal/store"
 )
 
 func TestPreToolOutputFlagsCommentIntentButAllowsPublicDocumentation(t *testing.T) {
@@ -65,6 +70,42 @@ func TestPreToolOutputOpencodeEditAllowsIntrinsicDirective(t *testing.T) {
 	if string(output) != "{}\n" {
 		t.Fatalf("output = %s", output)
 	}
+}
+
+func TestPreToolOutputAllowsCommentThatMatchesPolicyAnnotation(t *testing.T) {
+	root := withPolicyContaining(t, "renovate[\\s:]")
+	t.Chdir(root)
+
+	patch := "*** Begin Patch\n*** Update File: internal/sample.go\n@@\n+// renovate: enable\n*** End Patch"
+	output := runPreTool(t, toolHookApplyPatch, toolHookPatch{Command: patch})
+	if string(output) != "{}\n" {
+		t.Fatalf("output = %s", output)
+	}
+}
+
+func TestPreToolOutputBlocksCommentWhenPatternDoesNotMatch(t *testing.T) {
+	root := withPolicyContaining(t, "renovate[\\s:]")
+	t.Chdir(root)
+
+	patch := "*** Begin Patch\n*** Update File: internal/sample.go\n@@\n+// explain the call\n*** End Patch"
+	output := runPreTool(t, toolHookApplyPatch, toolHookPatch{Command: patch})
+	if !strings.Contains(string(output), `"permissionDecision":"deny"`) {
+		t.Fatalf("ordinary comment was not blocked: %s", output)
+	}
+}
+
+func withPolicyContaining(t *testing.T, pattern string) string {
+	t.Helper()
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, store.DirName), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	configured := policy.Default()
+	configured.Spec.Comments.AllowedAnnotations = []string{pattern}
+	if err := policy.Save(root, configured); err != nil {
+		t.Fatal(err)
+	}
+	return root
 }
 
 type toolHookPatch struct {

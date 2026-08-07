@@ -119,6 +119,36 @@ func TestCheckContentUsesUnsavedSource(t *testing.T) {
 	}
 }
 
+func TestCheckAllowsConfiguredAnnotationPattern(t *testing.T) {
+	root := t.TempDir()
+	configured := policy.Default()
+	configured.Spec.Comments.AllowedAnnotations = []string{"renovate[\\s:]"}
+	source := "package sample\n\n// renovate: enable\n\nfunc run() {}\n"
+	writeSource(t, root, "sample.go", source)
+	violations, err := Check(root, configured, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(violations) != 0 {
+		t.Fatalf("renovate comment was flagged:\n%#v", violations)
+	}
+}
+
+func TestCheckRejectsCommentThatDoesNotMatchConfiguredPattern(t *testing.T) {
+	root := t.TempDir()
+	configured := policy.Default()
+	configured.Spec.Comments.AllowedAnnotations = []string{"renovate[\\s:]"}
+	source := "package sample\n\n// renovate-prefix unrelated note.\n\nfunc run() {}\n"
+	writeSource(t, root, "sample.go", source)
+	violations, err := Check(root, configured, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(violations) == 0 {
+		t.Fatal("comment that does not match the configured pattern was accepted")
+	}
+}
+
 func TestCommentIntentDoesNotAutoConvertCommentedCode(t *testing.T) {
 	prose := SourceComment{File: "sample.go", Body: "Retry because the peer closes idle connections."}
 	code := SourceComment{File: "sample.go", Body: "retry()"}

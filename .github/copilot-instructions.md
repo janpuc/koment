@@ -1,11 +1,47 @@
 <!-- koment:managed-start -->
-## koment procedure
+# KOMENT PROCEDURE — MANDATORY
 
-- Before editing an existing file, call `koment_get` for it and read every annotation. Search with `koment_search` before changing a non-obvious decision.
-- Treat ambiguous, drifted and orphaned annotations as history, never as current fact.
-- Do not add explanatory inline comments. Prefer a better name, extraction, a named type or constant, or clearer structure; then record local rationale with `koment_add` and honest agent authorship.
-- Completed comment intent must use `koment_convert_comment`. Keeping an inline comment requires `koment_acknowledge_comment` with the explicit acknowledgement set to true.
-- Before finishing, run `koment check`, `koment comments check` and `koment agents check`. Do not report success while any fails.
-- Releases follow `docs/releasing.md` exactly. Published versions are permanent. Never publish an artifact by hand, never hand-edit a version, and get explicit human approval before merging a release pull request.
-- A back-compatibility claim needs evidence: a migration path the binary performs, or an ADR naming the version the old shape was cut off at. Without either, the change is breaking and its commit subject says so with `feat!:`.
+This file is a managed contract. The repository enforces it with
+client hooks and a required CI status. You MUST follow every rule.
+Partial compliance is a bug.
+
+## Before any edit or write to an existing file
+
+- You MUST invoke `koment_get`("<repository-relative path>") via MCP
+  and treat the returned annotations as the authoritative context for
+  the file. An annotation whose status is `ambiguous`, `drifted`
+  or `orphaned` is history, not current fact; surface it to the human
+  before continuing.
+- You MUST invoke `koment_search`("<topic>") before any non-obvious
+  structural decision that another file may already explain.
+
+## Adding or changing a comment is FORBIDDEN
+
+- You MUST NOT write an ordinary inline comment in source. The
+  repository classifies every comment group and rejects ordinary ones
+  on the protected branch. The only exceptions are the intrinsic
+  classes enabled in `.koment/policy.yaml` (toolchain directives,
+  generated markers, upstream links, `// Deprecated:`, godoc on
+  exported identifiers) and any additional pattern declared under
+  `spec.comments.allowedAnnotations`.
+- Before keeping a comment, you MUST attempt in order: rename the
+  thing, extract a function whose name is the comment you were about
+  to write, introduce a named type or constant, restructure so the
+  invariant is obvious from control flow. If the rationale still needs
+  saying, call `koment_add` bound to the code with `--excerpt`
+  and record yourself honestly as an agent.
+- If a comment already exists in source, you MUST call
+  `koment_convert_comment` first to record it as an annotation,
+  then remove the comment from source.
+- Keeping an inline comment requires `koment_acknowledge_comment`
+  with `acknowledge_inline_comment: true` and a human-readable body.
+  The acknowledgement is auditable.
+
+## Before you stop
+
+- You MUST run `koment check`, `koment comments check` and
+  `koment agents check`. You MUST NOT report success while any
+  fails.
+
+A back-compatibility claim needs evidence: a migration path the binary performs, or an ADR naming the version the old shape was cut off at. Without either, the change is breaking and its commit subject says so with `feat!:`.
 <!-- koment:managed-end -->

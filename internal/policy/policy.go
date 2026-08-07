@@ -84,10 +84,11 @@ type Spec struct {
 
 // CommentsPolicy configures strict classification and repository exclusions.
 type CommentsPolicy struct {
-	Mode           string      `yaml:"mode"`
-	Intrinsic      []Intrinsic `yaml:"intrinsic"`
-	GeneratedPaths []string    `yaml:"generatedPaths,omitempty"`
-	VendoredPaths  []string    `yaml:"vendoredPaths,omitempty"`
+	Mode               string      `yaml:"mode"`
+	Intrinsic          []Intrinsic `yaml:"intrinsic"`
+	AllowedAnnotations []string    `yaml:"allowedAnnotations,omitempty"`
+	GeneratedPaths     []string    `yaml:"generatedPaths,omitempty"`
+	VendoredPaths      []string    `yaml:"vendoredPaths,omitempty"`
 }
 
 // AgentsPolicy selects generated instruction adapters and the principles they
@@ -275,6 +276,9 @@ func (p Policy) Validate() error {
 	if err := validateIntrinsics(p.Spec.Comments.Intrinsic); err != nil {
 		return err
 	}
+	if err := validateAllowedAnnotations(p.Spec.Comments.AllowedAnnotations); err != nil {
+		return err
+	}
 	if err := validateGlobs("spec.comments.generatedPaths", p.Spec.Comments.GeneratedPaths); err != nil {
 		return err
 	}
@@ -338,6 +342,34 @@ func validateIntrinsics(values []Intrinsic) error {
 		seen[value] = true
 	}
 	return nil
+}
+
+func validateAllowedAnnotations(patterns []string) error {
+	for _, pattern := range patterns {
+		if pattern == "" {
+			return fmt.Errorf("spec.comments.allowedAnnotations contains an empty pattern")
+		}
+		if _, err := regexp.Compile(pattern); err != nil {
+			return fmt.Errorf("spec.comments.allowedAnnotations pattern %q does not compile: %w", pattern, err)
+		}
+	}
+	return nil
+}
+
+// MatchesAllowedAnnotation reports whether body matches any pattern in
+// spec.comments.allowedAnnotations. Invalid patterns are silently skipped;
+// Validate is the place that rejects them.
+func (p Policy) MatchesAllowedAnnotation(body string) bool {
+	for _, pattern := range p.Spec.Comments.AllowedAnnotations {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			continue
+		}
+		if re.MatchString(body) {
+			return true
+		}
+	}
+	return false
 }
 
 func validatePrinciples(values []Principle) error {
