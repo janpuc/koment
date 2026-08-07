@@ -467,6 +467,7 @@ jobs:
       - helm
       - lint
       - quality
+      - setup-action
       - test
     runs-on: ubuntu-24.04
     permissions: {}
