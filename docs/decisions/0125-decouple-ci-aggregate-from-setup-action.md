@@ -1,7 +1,7 @@
 # 0125 — Decouple the `ci` aggregate from the `setup-action` smoke
 
 Date: 2026-08-06
-Status: Proposed
+Status: Accepted
 
 ## Context
 

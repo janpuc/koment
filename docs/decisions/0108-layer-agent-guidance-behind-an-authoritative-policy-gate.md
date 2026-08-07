@@ -1,7 +1,7 @@
 # 0108 — Layer agent guidance behind an authoritative policy gate
 
 Date: 2026-08-03
-Status: Accepted
+Status: Superseded by 0124
 
 ## Context
 

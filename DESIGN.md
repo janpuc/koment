@@ -677,7 +677,7 @@ not claim that repository files can control an arbitrary process.
 
 ## Implementation sequence
 
-### 0. Bootstrap and contract — proposed (ADR 0124)
+### 0. Bootstrap and contract — implemented (ADR 0124)
 
 Introduce the human-facing `koment bootstrap` command (interactive adapter
 selection, policy install, managed-contract refresh without removing

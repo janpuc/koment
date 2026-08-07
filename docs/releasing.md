@@ -120,7 +120,7 @@ please ──┬─> binaries ──> editor
 | Job | Publishes |
 |---|---|
 | `binaries` | six archives, `koment_<version>_checksums.txt`, a cosign signature, and rendered Homebrew/Scoop/WinGet metadata |
-| `plugins` | Claude and OpenCode plugin archives, cosign-signed checksums |
+| `plugins` | Two plugin archives (Claude and OpenCode), per-archive cosign signatures, a combined `koment-plugins_<version>_checksums.txt`, and its cosign signature |
 | `image` | `ghcr.io/koment-dev/koment:<version>`, multi-arch, SBOM and provenance, cosign-signed |
 | `editor` | seven VSIX — six carrying that platform's released binary, one universal — signed, attached, then pushed to both marketplaces |
 | `mcp-registry` | MCP Registry metadata via GitHub OIDC |
@@ -144,7 +144,8 @@ curl -fsSLI -o /dev/null -w '%{http_code}\n' "https://marketplace.visualstudio.c
 ```
 
 Expect 6 archives, 1 checksum manifest, 2 signature bundles for the manifest and
-binaries, 2 plugin archives (Claude and OpenCode), 2 plugin signature bundles,
+binaries, 2 plugin archives (Claude and OpenCode), 2 per-archive plugin
+signature bundles, 1 plugin checksum manifest and its signature bundle,
 7 VSIX and 7 VSIX signatures. A release missing the archives breaks
 every workflow using `koment-dev/koment@v<version>`, because the setup action
 downloads them.

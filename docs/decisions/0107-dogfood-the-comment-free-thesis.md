@@ -34,9 +34,12 @@ Apply this order before writing an inline comment:
    ADR.
 
 Allow only toolchain directives, necessary upstream links, deprecation markers
-and genuine public API documentation. Enforce the Go rule with an AST-aware CI
-check that distinguishes documentation and directives from implementation
-commentary.
+and genuine public API documentation. A repository may additionally declare
+repository-specific patterns under `spec.comments.allowedAnnotations` (a list
+of Go regexp strings; ADR 0124); those patterns widen the intrinsic set for
+that repository without weakening the strict check. Enforce the Go rule with
+an AST-aware CI check that distinguishes documentation and directives from
+implementation commentary.
 
 Treat a completed explanatory comment as comment intent. The shared application
 service can convert it into a normal annotation, durably writing the annotation
