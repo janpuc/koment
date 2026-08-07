@@ -48,14 +48,19 @@ exempt.
   mise run annotations
   mise run comments
   mise run agent-policy
+  mise run commitlint
   ```
 - No new explanatory inline comments. Rename, extract, introduce a named type
   or constant, restructure, then use `koment add`. Inline comments survive only
   through an explicit `koment comments acknowledge`.
-- One concern per commit. Conventional Commit subjects (`feat:`, `fix:`,
-  `docs:`, `refactor:`, `test:`, `chore:`) decide how release-please turns
-  merged work into a version. Use `!` after the type for breaking changes; from
-  1.0.0 that produces a major version.
+- One concern per commit. Conventional Commits 1.0.0 subjects are MANDATORY
+  and enforced by the `commit-lint` job in `.github/workflows/ci.yml`
+  (rolled into the required `ci` check on `main`) and by the `commit-msg`
+  lefthook hook. The rule of record is
+  [ADR 0128](docs/decisions/0128-enforce-conventional-commit-names.md)
+  and the regex lives in `scripts/commitlint.sh`. Use `!` after the type
+  (or after the scope) for breaking changes; from 1.0.0 that produces a
+  major version.
 - A claim that a change is backward compatible needs evidence: a migration the
   binary performs, or an ADR naming the version the old shape was cut off at.
   Without either, the change is breaking and its subject says `feat!:`.

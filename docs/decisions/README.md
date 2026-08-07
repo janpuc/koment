@@ -48,6 +48,7 @@ the approved destination.
 - [0121 — Every committed koment file is a resource, and its schema is pinned to the API version](0121-every-committed-koment-file-is-a-resource-with-a-pinned-schema.md)
 - [0122 — Run Renovate on GitHub runners behind an app we own](0122-run-renovate-on-github-runners-behind-our-own-app.md)
 - [0123 — A published path never begins with a dot](0123-a-published-path-never-begins-with-a-dot.md)
+- [0128 — Enforce Conventional Commits 1.0.0 subjects](0128-enforce-conventional-commit-names.md)
 
 Use [0000-template.md](0000-template.md) for a new decision. A new dependency or
 a structural change still requires its own ADR when these decisions do not

@@ -189,8 +189,16 @@ settable both ways; adding a flag gets the environment variable for free.
 - **Never commit or push unless explicitly asked.** Leave work in the tree.
 - Never `git add -A` blindly. Stage deliberately.
 - Never rewrite published history.
-- Conventional commit subjects: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`,
-  `chore:`.
+- Commit subjects MUST follow
+  [Conventional Commits 1.0.0](https://www.conventionalcommits.org/).
+  The rule of record is
+  [ADR 0128](docs/decisions/0128-enforce-conventional-commit-names.md).
+  The `commit-lint` job in `.github/workflows/ci.yml` (rolled into the
+  required `ci` check on `main`) and the `commit-msg` lefthook hook
+  enforce it; the regex lives in `scripts/commitlint.sh`. Types are
+  the spec's full set: `feat`, `fix`, `docs`, `style`, `refactor`,
+  `test`, `chore`, `perf`, `ci`, `build`, `revert`. Use `!` after the
+  type (or after the scope) for breaking changes.
 
 ## 9. Naming
 
