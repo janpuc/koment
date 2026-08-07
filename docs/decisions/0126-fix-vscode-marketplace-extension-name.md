@@ -1,7 +1,7 @@
 # 0126 — Fix the VS Code extension marketplace name to `koment-dev`
 
 Date: 2026-08-07
-Status: Accepted
+Status: Superseded by [0127](0127-fix-vscode-marketplace-display-name.md)
 
 ## Context
 
