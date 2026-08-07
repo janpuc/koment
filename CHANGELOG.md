@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.1.0](https://github.com/koment-dev/koment/compare/v2.0.1...v2.1.0) (2026-08-07)
+
+
+### Features
+
+* add OpenCode plugin support and auto-deploy workflow ([#80](https://github.com/koment-dev/koment/issues/80)) ([fa2989b](https://github.com/koment-dev/koment/commit/fa2989b2344327e3c0c8baf85b61774ed6ad0562))
+* implement ADR 0124 (bootstrap, RFC 2119 contract, allowedAnnotations) ([#79](https://github.com/koment-dev/koment/issues/79)) ([03e818a](https://github.com/koment-dev/koment/commit/03e818a44403b40f6c414fc42fc8d5ca6fd2f8ea))
+
+
+### Bug Fixes
+
+* make the OpenCode plugin a first-class installable on npm ([#83](https://github.com/koment-dev/koment/issues/83)) ([dfe1499](https://github.com/koment-dev/koment/commit/dfe14995871a11b9dfe8a7005e75e4b904a1053d))
+* release pipeline blockers and license consistency for 2.1.0 ([#82](https://github.com/koment-dev/koment/issues/82)) ([eb35e9f](https://github.com/koment-dev/koment/commit/eb35e9f19f0554c6e44d17c1933769f2580068cb))
+* rename VS Code extension package to koment-dev for marketplace ([#81](https://github.com/koment-dev/koment/issues/81)) ([2ce3280](https://github.com/koment-dev/koment/commit/2ce32806b279ebe9eabcce6c4353f095c5aee0a4))
+* warn when an annotation is written without a title ([#76](https://github.com/koment-dev/koment/issues/76)) ([cd58694](https://github.com/koment-dev/koment/commit/cd586943520ff074356dc34c07d00a268fffa8b4))
+
+
+### Documentation
+
+* propose koment bootstrap, stronger contract, and allowedAnnotations field ([#78](https://github.com/koment-dev/koment/issues/78)) ([f021ca2](https://github.com/koment-dev/koment/commit/f021ca20f8fded11350a3379fd177df2b7420507))
+
 ## [2.0.1](https://github.com/koment-dev/koment/compare/v2.0.0...v2.0.1) (2026-08-06)
 
 
