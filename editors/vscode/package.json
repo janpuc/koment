@@ -1,6 +1,6 @@
 {
   "name": "koment-dev",
-  "displayName": "koment",
+  "displayName": "koment-dev",
   "description": "Read and write out-of-band code annotations directly in the editor.",
   "version": "2.1.0",
   "publisher": "koment",
