@@ -499,8 +499,8 @@ jobs:
       - editor
       - helm
       - lint
-      - plugins
       - quality
+      - setup-action
       - test
       - windows-archive
     runs-on: ubuntu-24.04
